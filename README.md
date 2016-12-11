@@ -1,2 +1,2 @@
-# meteorcapture
-Experimental project to develop meteor videography tools
+# MeteorCapture
+MeteorCapture is an experimental project to develop meteor videography software for Linux.
