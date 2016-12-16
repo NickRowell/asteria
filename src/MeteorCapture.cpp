@@ -1,15 +1,21 @@
-//============================================================================
-// Name        : MeteorCapture.cpp
-// Author      : 
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
-//============================================================================
+/**
+ * Main application entry point.
+ */
 
-#include <iostream>
+
+#include "Camera.h"
+
 using namespace std;
 
 int main() {
-	cout << "Hello World" << endl; // prints Hello World
-	return 0;
+	Camera cam = Camera();
+
+	vector< pair<int,string> > cams = cam.getCamerasList();
+
+	for (unsigned i=0; i < cams.size(); i++) {
+	    cout << "Cam " << cams[i].first << ": " << cams[i].second << endl;
+	}
+
 }
+
+
