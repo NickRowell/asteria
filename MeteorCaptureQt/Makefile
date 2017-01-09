@@ -33,7 +33,7 @@ MOVE          = mv -f
 TAR           = tar -cf
 COMPRESS      = gzip -9f
 DISTNAME      = MeteorCaptureQt1.0.0
-DISTDIR = /home/nrowell/workspace/git/MeteorCaptureQt/.tmp/MeteorCaptureQt1.0.0
+DISTDIR = /home/nrowell/workspace/git/MeteorCapture/MeteorCaptureQt/.tmp/MeteorCaptureQt1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1 -Wl,-rpath,/opt/python/anaconda3/lib
 LIBS          = $(SUBLIBS) -L/opt/python/anaconda3/lib -lQt5Multimedia -lQt5Widgets -lQt5Gui -lQt5Network -lQt5Core -lGL -lpthread 
@@ -52,19 +52,25 @@ SOURCES       = main.cpp \
 		util/IOUtil.cpp \
 		util/V4L2Util.cpp \
 		MeteorCapture.cpp \
-		cameraselectionwindow.cpp \
 		gui/cameraselectionwindow.cpp \
-		gui/configselectionwindow.cpp moc_cameraselectionwindow.cpp \
-		moc_configselectionwindow.cpp
+		gui/configselectionwindow.cpp \
+		gui/configcreationwindow.cpp \
+		gui/mainwindow.cpp moc_cameraselectionwindow.cpp \
+		moc_configselectionwindow.cpp \
+		moc_configcreationwindow.cpp \
+		moc_mainwindow.cpp
 OBJECTS       = main.o \
 		IOUtil.o \
 		V4L2Util.o \
 		MeteorCapture.o \
 		cameraselectionwindow.o \
-		cameraselectionwindow.o \
 		configselectionwindow.o \
+		configcreationwindow.o \
+		mainwindow.o \
 		moc_cameraselectionwindow.o \
-		moc_configselectionwindow.o
+		moc_configselectionwindow.o \
+		moc_configcreationwindow.o \
+		moc_mainwindow.o
 DIST          = /opt/python/anaconda3/mkspecs/features/spec_pre.prf \
 		/opt/python/anaconda3/mkspecs/common/unix.conf \
 		/opt/python/anaconda3/mkspecs/common/linux.conf \
@@ -178,16 +184,18 @@ DIST          = /opt/python/anaconda3/mkspecs/features/spec_pre.prf \
 		util/IOUtil.h \
 		util/V4L2Util.h \
 		Camera.h \
-		cameraselectionwindow.h \
 		gui/cameraselectionwindow.h \
 		gui/configselectionwindow.h \
-		infra/meteorcapturestate.h main.cpp \
+		infra/meteorcapturestate.h \
+		gui/configcreationwindow.h \
+		gui/mainwindow.h main.cpp \
 		util/IOUtil.cpp \
 		util/V4L2Util.cpp \
 		MeteorCapture.cpp \
-		cameraselectionwindow.cpp \
 		gui/cameraselectionwindow.cpp \
-		gui/configselectionwindow.cpp
+		gui/configselectionwindow.cpp \
+		gui/configcreationwindow.cpp \
+		gui/mainwindow.cpp
 QMAKE_TARGET  = MeteorCaptureQt
 DESTDIR       = 
 TARGET        = MeteorCaptureQt
@@ -428,8 +436,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents math/mat2x2.h math/mat3x3.h math/mat4x4.h math/quat.h math/vec2.h math/vec3.h math/vec4.h optics/GeometricOpticsModel.h optics/PinholeCameraWithRadialDistortion.h util/IOUtil.h util/V4L2Util.h Camera.h cameraselectionwindow.h gui/cameraselectionwindow.h gui/configselectionwindow.h infra/meteorcapturestate.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp util/IOUtil.cpp util/V4L2Util.cpp MeteorCapture.cpp cameraselectionwindow.cpp gui/cameraselectionwindow.cpp gui/configselectionwindow.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents math/mat2x2.h math/mat3x3.h math/mat4x4.h math/quat.h math/vec2.h math/vec3.h math/vec4.h optics/GeometricOpticsModel.h optics/PinholeCameraWithRadialDistortion.h util/IOUtil.h util/V4L2Util.h Camera.h gui/cameraselectionwindow.h gui/configselectionwindow.h infra/meteorcapturestate.h gui/configcreationwindow.h gui/mainwindow.h $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp util/IOUtil.cpp util/V4L2Util.cpp MeteorCapture.cpp gui/cameraselectionwindow.cpp gui/configselectionwindow.cpp gui/configcreationwindow.cpp gui/mainwindow.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -452,9 +460,9 @@ check: first
 
 compiler_rcc_make_all:
 compiler_rcc_clean:
-compiler_moc_header_make_all: moc_cameraselectionwindow.cpp moc_configselectionwindow.cpp
+compiler_moc_header_make_all: moc_cameraselectionwindow.cpp moc_configselectionwindow.cpp moc_configcreationwindow.cpp moc_mainwindow.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_cameraselectionwindow.cpp moc_configselectionwindow.cpp
+	-$(DEL_FILE) moc_cameraselectionwindow.cpp moc_configselectionwindow.cpp moc_configcreationwindow.cpp moc_mainwindow.cpp
 moc_cameraselectionwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QWidget \
 		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
 		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs.h \
@@ -576,7 +584,7 @@ moc_cameraselectionwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QWidge
 		/opt/python/anaconda3/include/qt/QtMultimedia/qvideoframe.h \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qabstractvideobuffer.h \
 		gui/cameraselectionwindow.h
-	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/cameraselectionwindow.h -o moc_cameraselectionwindow.cpp
+	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCapture/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/cameraselectionwindow.h -o moc_cameraselectionwindow.cpp
 
 moc_configselectionwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QWidget \
 		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
@@ -683,7 +691,224 @@ moc_configselectionwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QWidge
 		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
 		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h \
 		gui/configselectionwindow.h
-	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/configselectionwindow.h -o moc_configselectionwindow.cpp
+	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCapture/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/configselectionwindow.h -o moc_configselectionwindow.cpp
+
+moc_configcreationwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QWidget \
+		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobal.h \
+		/opt/python/anaconda3/include/qt/QtCore/qconfig.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfeatures.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsystemdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qprocessordetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcompilerdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypeinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypetraits.h \
+		/opt/python/anaconda3/include/qt/QtCore/qisenum.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsysinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlogging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qflags.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbasicatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_bootstrap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qgenericatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_cxx11.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_gcc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_msvc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv7.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv6.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv5.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_ia64.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_x86.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_unix.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobalstatic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmutex.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnumeric.h \
+		/opt/python/anaconda3/include/qt/QtCore/qversiontagging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnamespace.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs_win.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstring.h \
+		/opt/python/anaconda3/include/qt/QtCore/qchar.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrefcount.h \
+		/opt/python/anaconda3/include/qt/QtCore/qarraydata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringbuilder.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qalgorithms.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiterator.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhashfunctions.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpair.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearraylist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qregexp.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringmatcher.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcoreevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qscopedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmetatype.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvarlengtharray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontainerfwd.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject_impl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmargins.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpaintdevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrect.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsize.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpoint.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpalette.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcolor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgb.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgba64.h \
+		/opt/python/anaconda3/include/qt/QtGui/qbrush.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvector.h \
+		/opt/python/anaconda3/include/qt/QtGui/qmatrix.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpolygon.h \
+		/opt/python/anaconda3/include/qt/QtGui/qregion.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdatastream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiodevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qline.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtransform.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpainterpath.h \
+		/opt/python/anaconda3/include/qt/QtGui/qimage.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixelformat.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qshareddata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhash.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfont.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontmetrics.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontinfo.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qsizepolicy.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcursor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qkeysequence.h \
+		/opt/python/anaconda3/include/qt/QtGui/qevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvariant.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdebug.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtextstream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlocale.h \
+		/opt/python/anaconda3/include/qt/QtCore/qset.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontiguouscache.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurlquery.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfile.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfiledevice.h \
+		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h \
+		gui/configcreationwindow.h
+	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCapture/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/configcreationwindow.h -o moc_configcreationwindow.cpp
+
+moc_mainwindow.cpp: /opt/python/anaconda3/include/qt/QtWidgets/QMainWindow \
+		/opt/python/anaconda3/include/qt/QtWidgets/qmainwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobal.h \
+		/opt/python/anaconda3/include/qt/QtCore/qconfig.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfeatures.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsystemdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qprocessordetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcompilerdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypeinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypetraits.h \
+		/opt/python/anaconda3/include/qt/QtCore/qisenum.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsysinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlogging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qflags.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbasicatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_bootstrap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qgenericatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_cxx11.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_gcc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_msvc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv7.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv6.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv5.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_ia64.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_x86.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_unix.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobalstatic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmutex.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnumeric.h \
+		/opt/python/anaconda3/include/qt/QtCore/qversiontagging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnamespace.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs_win.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstring.h \
+		/opt/python/anaconda3/include/qt/QtCore/qchar.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrefcount.h \
+		/opt/python/anaconda3/include/qt/QtCore/qarraydata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringbuilder.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qalgorithms.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiterator.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhashfunctions.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpair.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearraylist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qregexp.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringmatcher.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcoreevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qscopedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmetatype.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvarlengtharray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontainerfwd.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject_impl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmargins.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpaintdevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrect.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsize.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpoint.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpalette.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcolor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgb.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgba64.h \
+		/opt/python/anaconda3/include/qt/QtGui/qbrush.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvector.h \
+		/opt/python/anaconda3/include/qt/QtGui/qmatrix.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpolygon.h \
+		/opt/python/anaconda3/include/qt/QtGui/qregion.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdatastream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiodevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qline.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtransform.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpainterpath.h \
+		/opt/python/anaconda3/include/qt/QtGui/qimage.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixelformat.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qshareddata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhash.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfont.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontmetrics.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontinfo.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qsizepolicy.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcursor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qkeysequence.h \
+		/opt/python/anaconda3/include/qt/QtGui/qevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvariant.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdebug.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtextstream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlocale.h \
+		/opt/python/anaconda3/include/qt/QtCore/qset.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontiguouscache.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurlquery.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfile.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfiledevice.h \
+		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qtabwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qicon.h \
+		gui/mainwindow.h
+	/opt/python/anaconda3/bin/moc $(DEFINES) -I/opt/python/anaconda3/mkspecs/linux-g++ -I/home/nrowell/workspace/git/MeteorCapture/MeteorCaptureQt -I/opt/python/anaconda3/include/qt -I/opt/python/anaconda3/include/qt/QtMultimedia -I/opt/python/anaconda3/include/qt/QtWidgets -I/opt/python/anaconda3/include/qt/QtGui -I/opt/python/anaconda3/include/qt/QtNetwork -I/opt/python/anaconda3/include/qt/QtCore -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib/gcc/x86_64-unknown-linux-gnu/4.8.5/include-fixed -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/x86_64-unknown-linux-gnu -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++/backward -I/usr/local/include -I/root/qt5-x64-2.7/conda-bld_1474036701962/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include -I/usr/include gui/mainwindow.h -o moc_mainwindow.cpp
 
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
@@ -827,7 +1052,13 @@ main.o: main.cpp /opt/python/anaconda3/include/qt/QtWidgets/QApplication \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qcameraviewfindersettings.h \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qvideoframe.h \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qabstractvideobuffer.h \
-		gui/configselectionwindow.h
+		gui/configselectionwindow.h \
+		gui/mainwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QMainWindow \
+		/opt/python/anaconda3/include/qt/QtWidgets/qmainwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qtabwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qicon.h \
+		infra/meteorcapturestate.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 IOUtil.o: util/IOUtil.cpp util/IOUtil.h
@@ -840,9 +1071,6 @@ V4L2Util.o: util/V4L2Util.cpp util/V4L2Util.h \
 MeteorCapture.o: MeteorCapture.cpp util/V4L2Util.h \
 		util/IOUtil.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MeteorCapture.o MeteorCapture.cpp
-
-cameraselectionwindow.o: cameraselectionwindow.cpp 
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o cameraselectionwindow.o cameraselectionwindow.cpp
 
 cameraselectionwindow.o: gui/cameraselectionwindow.cpp gui/cameraselectionwindow.h \
 		/opt/python/anaconda3/include/qt/QtWidgets/QWidget \
@@ -965,6 +1193,7 @@ cameraselectionwindow.o: gui/cameraselectionwindow.cpp gui/cameraselectionwindow
 		/opt/python/anaconda3/include/qt/QtMultimedia/qcameraviewfindersettings.h \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qvideoframe.h \
 		/opt/python/anaconda3/include/qt/QtMultimedia/qabstractvideobuffer.h \
+		infra/meteorcapturestate.h \
 		/opt/python/anaconda3/include/qt/QtWidgets/QPushButton \
 		/opt/python/anaconda3/include/qt/QtWidgets/qpushbutton.h \
 		/opt/python/anaconda3/include/qt/QtWidgets/qabstractbutton.h \
@@ -1097,14 +1326,296 @@ configselectionwindow.o: gui/configselectionwindow.cpp gui/configselectionwindow
 		/opt/python/anaconda3/include/qt/QtCore/qfile.h \
 		/opt/python/anaconda3/include/qt/QtCore/qfiledevice.h \
 		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
-		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h
+		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h \
+		infra/meteorcapturestate.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QApplication \
+		/opt/python/anaconda3/include/qt/QtWidgets/qapplication.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcoreapplication.h \
+		/opt/python/anaconda3/include/qt/QtCore/qeventloop.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qdesktopwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qguiapplication.h \
+		/opt/python/anaconda3/include/qt/QtGui/qinputmethod.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QStyle \
+		/opt/python/anaconda3/include/qt/QtWidgets/qstyle.h \
+		/opt/python/anaconda3/include/qt/QtGui/qicon.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QDesktopWidget \
+		/opt/python/anaconda3/include/qt/QtWidgets/QVBoxLayout \
+		/opt/python/anaconda3/include/qt/QtWidgets/qboxlayout.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qlayout.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qlayoutitem.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qgridlayout.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QHBoxLayout \
+		/opt/python/anaconda3/include/qt/QtWidgets/QGroupBox \
+		/opt/python/anaconda3/include/qt/QtWidgets/qgroupbox.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qframe.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QLabel \
+		/opt/python/anaconda3/include/qt/QtWidgets/qlabel.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QPushButton \
+		/opt/python/anaconda3/include/qt/QtWidgets/qpushbutton.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qabstractbutton.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QDialogButtonBox \
+		/opt/python/anaconda3/include/qt/QtWidgets/qdialogbuttonbox.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QLineEdit \
+		/opt/python/anaconda3/include/qt/QtWidgets/qlineedit.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtextcursor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtextformat.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpen.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtextoption.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QFileDialog \
+		/opt/python/anaconda3/include/qt/QtWidgets/qfiledialog.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdir.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfileinfo.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qdialog.h \
+		/opt/python/anaconda3/include/qt/QtCore/QDebug
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o configselectionwindow.o gui/configselectionwindow.cpp
+
+configcreationwindow.o: gui/configcreationwindow.cpp gui/configcreationwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QWidget \
+		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobal.h \
+		/opt/python/anaconda3/include/qt/QtCore/qconfig.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfeatures.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsystemdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qprocessordetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcompilerdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypeinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypetraits.h \
+		/opt/python/anaconda3/include/qt/QtCore/qisenum.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsysinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlogging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qflags.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbasicatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_bootstrap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qgenericatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_cxx11.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_gcc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_msvc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv7.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv6.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv5.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_ia64.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_x86.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_unix.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobalstatic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmutex.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnumeric.h \
+		/opt/python/anaconda3/include/qt/QtCore/qversiontagging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnamespace.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs_win.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstring.h \
+		/opt/python/anaconda3/include/qt/QtCore/qchar.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrefcount.h \
+		/opt/python/anaconda3/include/qt/QtCore/qarraydata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringbuilder.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qalgorithms.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiterator.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhashfunctions.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpair.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearraylist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qregexp.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringmatcher.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcoreevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qscopedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmetatype.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvarlengtharray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontainerfwd.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject_impl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmargins.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpaintdevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrect.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsize.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpoint.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpalette.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcolor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgb.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgba64.h \
+		/opt/python/anaconda3/include/qt/QtGui/qbrush.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvector.h \
+		/opt/python/anaconda3/include/qt/QtGui/qmatrix.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpolygon.h \
+		/opt/python/anaconda3/include/qt/QtGui/qregion.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdatastream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiodevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qline.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtransform.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpainterpath.h \
+		/opt/python/anaconda3/include/qt/QtGui/qimage.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixelformat.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qshareddata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhash.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfont.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontmetrics.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontinfo.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qsizepolicy.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcursor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qkeysequence.h \
+		/opt/python/anaconda3/include/qt/QtGui/qevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvariant.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdebug.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtextstream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlocale.h \
+		/opt/python/anaconda3/include/qt/QtCore/qset.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontiguouscache.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurlquery.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfile.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfiledevice.h \
+		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o configcreationwindow.o gui/configcreationwindow.cpp
+
+mainwindow.o: gui/mainwindow.cpp gui/mainwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/QMainWindow \
+		/opt/python/anaconda3/include/qt/QtWidgets/qmainwindow.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobal.h \
+		/opt/python/anaconda3/include/qt/QtCore/qconfig.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfeatures.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsystemdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qprocessordetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcompilerdetection.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypeinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtypetraits.h \
+		/opt/python/anaconda3/include/qt/QtCore/qisenum.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsysinfo.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlogging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qflags.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbasicatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_bootstrap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qgenericatomic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_cxx11.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_gcc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_msvc.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv7.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv6.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_armv5.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_ia64.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_x86.h \
+		/opt/python/anaconda3/include/qt/QtCore/qatomic_unix.h \
+		/opt/python/anaconda3/include/qt/QtCore/qglobalstatic.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmutex.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnumeric.h \
+		/opt/python/anaconda3/include/qt/QtCore/qversiontagging.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs.h \
+		/opt/python/anaconda3/include/qt/QtCore/qnamespace.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobjectdefs_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qwindowdefs_win.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstring.h \
+		/opt/python/anaconda3/include/qt/QtCore/qchar.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrefcount.h \
+		/opt/python/anaconda3/include/qt/QtCore/qarraydata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringbuilder.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qalgorithms.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiterator.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhashfunctions.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpair.h \
+		/opt/python/anaconda3/include/qt/QtCore/qbytearraylist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringlist.h \
+		/opt/python/anaconda3/include/qt/QtCore/qregexp.h \
+		/opt/python/anaconda3/include/qt/QtCore/qstringmatcher.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcoreevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qscopedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmetatype.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvarlengtharray.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontainerfwd.h \
+		/opt/python/anaconda3/include/qt/QtCore/qobject_impl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmargins.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpaintdevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qrect.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsize.h \
+		/opt/python/anaconda3/include/qt/QtCore/qpoint.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpalette.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcolor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgb.h \
+		/opt/python/anaconda3/include/qt/QtGui/qrgba64.h \
+		/opt/python/anaconda3/include/qt/QtGui/qbrush.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvector.h \
+		/opt/python/anaconda3/include/qt/QtGui/qmatrix.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpolygon.h \
+		/opt/python/anaconda3/include/qt/QtGui/qregion.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdatastream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qiodevice.h \
+		/opt/python/anaconda3/include/qt/QtCore/qline.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtransform.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpainterpath.h \
+		/opt/python/anaconda3/include/qt/QtGui/qimage.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixelformat.h \
+		/opt/python/anaconda3/include/qt/QtGui/qpixmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer.h \
+		/opt/python/anaconda3/include/qt/QtCore/qshareddata.h \
+		/opt/python/anaconda3/include/qt/QtCore/qhash.h \
+		/opt/python/anaconda3/include/qt/QtCore/qsharedpointer_impl.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfont.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontmetrics.h \
+		/opt/python/anaconda3/include/qt/QtGui/qfontinfo.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qsizepolicy.h \
+		/opt/python/anaconda3/include/qt/QtGui/qcursor.h \
+		/opt/python/anaconda3/include/qt/QtGui/qkeysequence.h \
+		/opt/python/anaconda3/include/qt/QtGui/qevent.h \
+		/opt/python/anaconda3/include/qt/QtCore/qvariant.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmap.h \
+		/opt/python/anaconda3/include/qt/QtCore/qdebug.h \
+		/opt/python/anaconda3/include/qt/QtCore/qtextstream.h \
+		/opt/python/anaconda3/include/qt/QtCore/qlocale.h \
+		/opt/python/anaconda3/include/qt/QtCore/qset.h \
+		/opt/python/anaconda3/include/qt/QtCore/qcontiguouscache.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurl.h \
+		/opt/python/anaconda3/include/qt/QtCore/qurlquery.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfile.h \
+		/opt/python/anaconda3/include/qt/QtCore/qfiledevice.h \
+		/opt/python/anaconda3/include/qt/QtGui/qvector2d.h \
+		/opt/python/anaconda3/include/qt/QtGui/qtouchdevice.h \
+		/opt/python/anaconda3/include/qt/QtWidgets/qtabwidget.h \
+		/opt/python/anaconda3/include/qt/QtGui/qicon.h \
+		infra/meteorcapturestate.h \
+		/opt/python/anaconda3/include/qt/QtCore/QDebug \
+		/opt/python/anaconda3/include/qt/QtMultimedia/QCameraInfo \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcamerainfo.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcamera.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qmediacontrol.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qtmultimediadefs.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qmediaobject.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qmultimedia.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qmediaservice.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcameraexposure.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qmediaenumdebug.h \
+		/opt/python/anaconda3/include/qt/QtCore/qmetaobject.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcamerafocus.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcameraimageprocessing.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qcameraviewfindersettings.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qvideoframe.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/qabstractvideobuffer.h \
+		/opt/python/anaconda3/include/qt/QtMultimedia/QCamera
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o mainwindow.o gui/mainwindow.cpp
 
 moc_cameraselectionwindow.o: moc_cameraselectionwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_cameraselectionwindow.o moc_cameraselectionwindow.cpp
 
 moc_configselectionwindow.o: moc_configselectionwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_configselectionwindow.o moc_configselectionwindow.cpp
+
+moc_configcreationwindow.o: moc_configcreationwindow.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_configcreationwindow.o moc_configcreationwindow.cpp
+
+moc_mainwindow.o: moc_mainwindow.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_mainwindow.o moc_mainwindow.cpp
 
 ####### Install
 

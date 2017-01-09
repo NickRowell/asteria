@@ -15,7 +15,7 @@ void MainWindow::slotInit() {
     qInfo() << "Launching camera " << state->qCameraInfo->description();
 
     // ...Initialise everything...
-    camera = new QCamera(cameraInfo);
+    camera = new QCamera(state->qCameraInfo);
 
 
     show();
