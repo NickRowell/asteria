@@ -1,13 +1,12 @@
 /*
- * V4L2Util.h
+ * IOUtil.h
  *
  *  Created on: 26 Dec 2016
  *      Author: nrowell
  */
 
-#ifndef V4L2UTIL_H_
-#define V4L2UTIL_H_
-
+#ifndef IOUTIL_H_
+#define IOUTIL_H_
 
 #include <vector>     // provides vector
 #include <string>     // provides string
@@ -21,26 +20,19 @@
 #include <list>
 #include <sys/ioctl.h>
 
-#include "IOUtil.h"
-
-#include <linux/videodev2.h>
-
-// Mean I can use vector rather tha std::vector etc.
 using namespace std;
 
-class V4L2Util {
-
+class IOUtil {
 public:
+	IOUtil();
+	virtual ~IOUtil();
 
-	V4L2Util();
+	string intToString(int nb);
 
-	virtual ~V4L2Util();
-
-	vector< pair< int, string > > getCamerasList();
+	int xioctl (int fh, int request, void *arg);
 
 private:
 
-
 };
 
-#endif /* V4L2UTIL_H_ */
+#endif /* IOUTIL_H_ */

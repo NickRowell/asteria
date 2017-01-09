@@ -9,7 +9,7 @@
 
 using namespace std;
 
-int main() {
+int main2() {
 
 //	V4L2Util v4l2util;
 //	vector< pair<int,string> > cams = v4l2util.getCamerasList();
