@@ -17,6 +17,8 @@ CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState
 {
     this->state = state;
 
+    // Test
+
     // Query the available cameras
     cameras = V4L2Util::getCamerasList();
 
