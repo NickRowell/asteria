@@ -1,19 +1,25 @@
 #ifndef METEORCAPTURESTATE_H
 #define METEORCAPTURESTATE_H
 
-
-class QCameraInfo;
+#include <string>     // provides string
 
 class MeteorCaptureState
 {
 
 public:
+
     // Cannot be loaded from config file: must be created programmatically,
     // either by user selection or automated selection of default camera.
-    QCameraInfo * qCameraInfo;
 
+    /**
+     * \brief Path to the camera device file
+     */
+    std::string * cameraPath;
 
-
+    /**
+     * \brief Open file descriptor on the camera device
+     */
+    int * fd;
 
     MeteorCaptureState() {}
 };

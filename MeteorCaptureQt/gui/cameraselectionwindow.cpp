@@ -1,5 +1,6 @@
 #include "gui/cameraselectionwindow.h"
 #include "infra/meteorcapturestate.h"
+#include "util/V4L2Util.h"
 
 #include <QPushButton>
 #include <QApplication>
@@ -7,15 +8,17 @@
 #include <QRadioButton>
 #include <QVBoxLayout>
 #include <QStyle>
+#include <QDebug>
 #include <QDesktopWidget>
 #include <QButtonGroup>
+#include <QString>
 
 CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState * state) : QWidget(parent)
 {
     this->state = state;
 
     // Query the available cameras
-    cameras = QCameraInfo::availableCameras();
+    cameras = V4L2Util::getCamerasList();
 
     if(cameras.size() == 0) {
         // Not found any cameras! Can't proceed.
@@ -30,12 +33,10 @@ CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState
     QVBoxLayout *vbox = new QVBoxLayout;
 
     // Initialise the radio buttons used to select the camera
-    int p=0;
-    foreach (const QCameraInfo &cameraInfo, cameras) {
-        radios[p] = new QRadioButton(cameraInfo.description(), this);
+    for(unsigned int p=0; p<cameras.size(); p++) {
+        radios[p] = new QRadioButton(QString::fromStdString(cameras[p].second), this);
         vbox->addWidget(radios[p]);
         group->addButton(radios[p], p);
-        p++;
     }
     group->setExclusive(true);
     radios[0]->setChecked(true);
@@ -67,13 +68,21 @@ void CameraSelectionWindow::slotCameraButtonClicked()
     int p = group->checkedId();
 
     // Retrieve the info for the selected camera
-    QCameraInfo camInfo = cameras.at(p);
+    pair< string, string > camera = cameras.at(p);
 
-    // Copy QCameraInfo to dynamic memory and store pointer in the state object
-    state->qCameraInfo = new QCameraInfo(camInfo);
+    // Copy path to the camera device
+    state->cameraPath = new string(camera.first);
+    // Open the camera device and store the file descriptor to the state
+    state->fd = new int(open(camera.first.c_str(), O_RDWR));
 
-    qInfo() << "Selected camera = " << camInfo.description();
+    qInfo() << "Selected camera = " << QString::fromStdString(camera.second);
+
+    qInfo() << "Pixel formats:";
+
+    V4L2Util::printPixelFormats(*(state->fd));
+
+
 
     hide();
-    emit cameraSelected(camInfo);
+    emit cameraSelected(camera.first);
 }

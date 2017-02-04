@@ -14,7 +14,8 @@ SOURCES += \
     gui/cameraselectionwindow.cpp \
     gui/configselectionwindow.cpp \
     gui/configcreationwindow.cpp \
-    gui/mainwindow.cpp
+    gui/mainwindow.cpp \
+    gui/glmeteordrawer.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -33,4 +34,5 @@ HEADERS += \
     gui/configselectionwindow.h \
     infra/meteorcapturestate.h \
     gui/configcreationwindow.h \
-    gui/mainwindow.h
+    gui/mainwindow.h \
+    gui/glmeteordrawer.h

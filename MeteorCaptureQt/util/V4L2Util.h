@@ -48,7 +48,15 @@ public:
 
 	virtual ~V4L2Util();
 
-	vector< pair< int, string > > getCamerasList();
+    static vector< pair< string, string > > getCamerasList();
+
+    static void printPixelFormats(int & fd);
+
+    static long getEpochTimeShift();
+
+
+
+
 
 	bool getInfos(int &);
 
@@ -62,11 +70,7 @@ public:
 
 	void whatTypesOfStreamingDoesDeviceSupport(int & fd);
 
-	void whatPixelFormatsAreAvailable(int & fd);
-
 	static void printUserControls(int & fd);
-
-	static long getEpochTimeShift();
 
 private:
 

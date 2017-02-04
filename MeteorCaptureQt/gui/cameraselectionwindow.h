@@ -1,12 +1,17 @@
 #ifndef CAMERASELECTIONWINDOW_H
 #define CAMERASELECTIONWINDOW_H
 
+#include <vector>     // provides vector
+#include <utility>    // provides pair
+#include <string>     // provides string
+
 #include <QWidget>
-#include <QCameraInfo>
 
 class QButtonGroup;
 class QPushButton;
 class MeteorCaptureState;
+
+using namespace std;
 
 class CameraSelectionWindow : public QWidget
 {
@@ -15,11 +20,11 @@ public:
     explicit CameraSelectionWindow(QWidget *parent = 0, MeteorCaptureState * state = 0);
 private:
     MeteorCaptureState * state;
-    QList<QCameraInfo> cameras;
+    vector< pair< string, string > > cameras;
     QButtonGroup *group;
     QPushButton *m_button;
 signals:
-    void cameraSelected(QCameraInfo & camInfo);
+    void cameraSelected(string cameraPath);
 public slots:
 
 private slots:

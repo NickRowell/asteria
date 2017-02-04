@@ -5,6 +5,7 @@
 
 class MeteorCaptureState;
 class QCamera;
+class QCloseEvent;
 
 class MainWindow : public QMainWindow
 {
@@ -14,6 +15,7 @@ public:
 private:
     MeteorCaptureState * state;
     QCamera *camera;
+    void closeEvent(QCloseEvent *bar);
 signals:
 
 public slots:

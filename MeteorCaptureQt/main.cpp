@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
 
     // Implements advancing from camera window to config window
-    QObject::connect(&camWin, SIGNAL (cameraSelected(QCameraInfo &)), &configWin, SLOT (show()));
+    QObject::connect(&camWin, SIGNAL (cameraSelected(string)), &configWin, SLOT (show()));
     // Implements returning from config window to camera window
     QObject::connect(&configWin, SIGNAL (cancel()), &camWin, SLOT (show()));
     // Implements advancing from config window to main window
