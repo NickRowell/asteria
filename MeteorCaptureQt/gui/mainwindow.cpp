@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "infra/meteorcapturestate.h"
+#include "gui/glmeteordrawer.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -16,15 +17,17 @@
 MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindow(parent)
 {
     this->state = state;
+    drawer = new GLMeteorDrawer(this);
+
+
+    // Notify image display window when new frame is available
+    connect(this, SIGNAL (newFrameCaptured()), drawer, SLOT (newFrame()));
+
 }
 
 void MainWindow::slotInit() {
 
     qInfo() << "Launching camera " << QString::fromStdString(*(state->cameraPath));
-
-    // Set up the camera and read an image
-
-
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -119,6 +122,11 @@ void MainWindow::slotInit() {
         exit(1);
     }
 
+
+    //////////////////////////////////// TO OPERATE METHOD:
+
+
+
     /* Here is where you typically start two loops:
      * - One which runs for as long as you want to
      *   capture frames (shoot the video).
@@ -182,15 +190,20 @@ void MainWindow::slotInit() {
 //		// Write the image data out to a JPEG file
         int jpgfile;
         char filename [100];
-        sprintf(filename, "/home/nrowell/Temp/myimage_%lu_%u.jpeg", i, j);
+        sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
         if((jpgfile = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
             perror("open");
             exit(1);
         }
+
+        // Notify attached listeners that a new frame is available
+        emit newFrameCaptured();
+
         write(jpgfile, buffer_start[j], bufferinfo.length);
         ::close(jpgfile);
     }
 
+    //////////////////////////////////// TO SHUTDOWN METHOD:
 
     // Deactivate streaming
     if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &type) < 0){

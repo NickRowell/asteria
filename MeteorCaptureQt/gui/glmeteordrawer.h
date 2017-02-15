@@ -1,16 +1,19 @@
 #ifndef GLMETEORDRAWER_H
 #define GLMETEORDRAWER_H
-/*
+
 #include <QtGui>
 #include <QOpenGLWidget>
 
-class GLMeteorDrawer : public QGLWidget
-{
-    Q_OBJECT        // must include this if you use Qt signals/slots
+class MeteorCaptureState;
+
+class GLMeteorDrawer : public QOpenGLWidget {
+
+    Q_OBJECT
 
 public:
-    GLMeteorDrawer(QWidget *parent) : QGLWidget(parent) {}
-
+    GLMeteorDrawer(QWidget *parent, MeteorCaptureState * state = 0);
+private:
+    MeteorCaptureState * state;
 
 protected:
 
@@ -19,6 +22,9 @@ protected:
     void resizeGL(int w, int h);
 
     void paintGL();
+
+public slots:
+    void newFrame();
 };
-*/
+
 #endif // GLMETEORDRAWER_H
