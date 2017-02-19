@@ -20,10 +20,8 @@
 *.tar
 *.zip
 
-# Any other specific things:
-/Debug/
-/Release/
-/doc/
+# Don't store any built version of the project (for now - might want to do this in future)
+/build-*
 
 # Don't store the local configuration; this will be regenerated on each build machine
 MeteorCaptureQt/MeteorCaptureQt.pro.user

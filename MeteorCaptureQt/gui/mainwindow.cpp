@@ -6,6 +6,9 @@
 #include <sys/ioctl.h>          // IOCTL etc
 #include <sys/mman.h>           // mmap etc
 
+#include <fstream>
+#include <iostream>
+
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -35,14 +38,15 @@ void MainWindow::slotInit() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    struct v4l2_format format;
-    format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    format.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-    format.fmt.pix.width = 640;
-    format.fmt.pix.height = 480;
+    struct v4l2_format * format = state->format;
 
-    if(ioctl(*(this->state->fd), VIDIOC_S_FMT, &format) < 0) {
+    format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//    format->fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
+    format->fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+    format->fmt.pix.width = 640;
+    format->fmt.pix.height = 480;
+
+    if(ioctl(*(this->state->fd), VIDIOC_S_FMT, format) < 0) {
         perror("VIDIOC_S_FMT");
         ::close(*(this->state->fd));
         exit(1);
@@ -55,20 +59,16 @@ void MainWindow::slotInit() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Inform device about buffers to use
-    struct v4l2_requestbuffers bufrequest;
-    bufrequest.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    bufrequest.memory = V4L2_MEMORY_MMAP;
-    bufrequest.count = 32;
+    struct v4l2_requestbuffers * bufrequest = state->bufrequest;
+    bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    bufrequest->memory = V4L2_MEMORY_MMAP;
+    bufrequest->count = 32;
 
-//    qInfo() <<  "Requested buffers:" << bufrequest.count;
-
-    if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, &bufrequest) < 0){
+    if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, bufrequest) < 0){
         perror("VIDIOC_REQBUFS");
         ::close(*(this->state->fd));
         exit(1);
     }
-
-//    qInfo() <<  "Provided buffers:" << bufrequest.count;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -78,20 +78,22 @@ void MainWindow::slotInit() {
 
     // Here, the device informs us how much memory is required for the buffers
     // given the image format, frame dimensions and number of buffers.
-    struct v4l2_buffer bufferinfo;
-    memset(&bufferinfo, 0, sizeof(bufferinfo));
+    struct v4l2_buffer * bufferinfo = state->bufferinfo;
 
-    bufferinfo.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    bufferinfo.memory = V4L2_MEMORY_MMAP;
+    memset(bufferinfo, 0, sizeof(*bufferinfo));
+
+    bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    bufferinfo->memory = V4L2_MEMORY_MMAP;
 
 //	bufferinfo.flags = bufferinfo.flags | V4L2_BUF_FLAG_TIMECODE;
 
-    void * buffer_start[bufrequest.count];
+    // Array of pointers to the start of each buffer in memory
+    state->buffer_start = new char*[bufrequest->count];
 
-    for(unsigned int b = 0; b < bufrequest.count; b++) {
-        bufferinfo.index = b;
+    for(unsigned int b = 0; b < bufrequest->count; b++) {
+        bufferinfo->index = b;
 
-        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, &bufferinfo) < 0){
+        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, bufferinfo) < 0){
             perror("VIDIOC_QUERYBUF");
             exit(1);
         }
@@ -100,14 +102,16 @@ void MainWindow::slotInit() {
 
         // bufferinfo.length: number of bytes of memory required for the buffer
         // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-        buffer_start[b] = mmap(NULL, bufferinfo.length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo.m.offset);
+        state->buffer_start[b] = (char *)mmap(NULL, bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo->m.offset);
 
-        if(buffer_start[b] == MAP_FAILED){
+        if(state->buffer_start[b] == MAP_FAILED){
             perror("mmap");
             exit(1);
         }
 
-        memset(buffer_start[b], 0, bufferinfo.length);
+        memset(state->buffer_start[b], 0, bufferinfo->length);
+
+//        qInfo() <<  "Buffer length [bytes]:" << bufferinfo->length;
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -116,8 +120,7 @@ void MainWindow::slotInit() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    int type = bufferinfo.type;
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &type) < 0){
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &(bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMON");
         exit(1);
     }
@@ -136,21 +139,21 @@ void MainWindow::slotInit() {
     for(unsigned long i = 0; i < 10; i++) {
 
         // Index into circular buffer
-        unsigned int j = i % bufrequest.count;
+        unsigned int j = i % bufrequest->count;
 
         qInfo() << "buffer index = " << j;
 
-        bufferinfo.index = j;
+        bufferinfo->index = j;
 
         // Put the buffer in the incoming queue.
-        if(ioctl(*(this->state->fd), VIDIOC_QBUF, &bufferinfo) < 0){
+        if(ioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }
 
         // The buffer's waiting in the outgoing queue.
-        bufferinfo.flags = V4L2_BUF_FLAG_TIMECODE;
-        if(ioctl(*(this->state->fd), VIDIOC_DQBUF, &bufferinfo) < 0){
+        bufferinfo->flags = V4L2_BUF_FLAG_TIMECODE;
+        if(ioctl(*(this->state->fd), VIDIOC_DQBUF, bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }
@@ -159,15 +162,15 @@ void MainWindow::slotInit() {
         // which is mapped into application address space at buffer_start[j]
 
         // Retrieve the timestamp and frame index for this image
-        bufferinfo.timestamp;  // A struct timeval
-        bufferinfo.timecode;   // A struct v4l2_timecode
-        bufferinfo.sequence;   // __u32 recording the sequence count of this frame
+        bufferinfo->timestamp;  // A struct timeval
+        bufferinfo->timecode;   // A struct v4l2_timecode
+        bufferinfo->sequence;   // __u32 recording the sequence count of this frame
 
         time_t timer;
         tm * gmt = gmtime (&timer);
 
-        qInfo() << "Sequence  = " << bufferinfo.sequence;
-        qInfo() << "Timestamp = " << bufferinfo.timestamp.tv_sec << " [s] " << bufferinfo.timestamp.tv_usec << " [usec]";
+        qInfo() << "Sequence  = " << bufferinfo->sequence;
+        qInfo() << "Timestamp = " << bufferinfo->timestamp.tv_sec << " [s] " << bufferinfo->timestamp.tv_usec << " [usec]";
 //		cout << "Timecode: " << endl;
 //		cout << "  frames  = " << bufferinfo.timecode.frames << endl;
 //		cout << "  hours   = " << bufferinfo.timecode.hours << endl;
@@ -188,37 +191,76 @@ void MainWindow::slotInit() {
 //        printf( "Years/Days =  %ld / %ld \n", years, daysPastTheYear);
 
 //		// Write the image data out to a JPEG file
-        int jpgfile;
+        int imgFileHandle;
         char filename [100];
-        sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
-        if((jpgfile = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
+
+        switch(format->fmt.pix.pixelformat) {
+        case V4L2_PIX_FMT_GREY:
+            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.pgm", i, j);
+            break;
+        case V4L2_PIX_FMT_MJPEG:
+            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
+            break;
+        }
+
+
+        if((imgFileHandle = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
             perror("open");
             exit(1);
         }
 
+        perror("Here");
+
+        switch(format->fmt.pix.pixelformat) {
+        case V4L2_PIX_FMT_GREY: {
+
+            perror("About to write out image");
+
+            // Pointer to start of buffer data
+            char * bufStart = (char *)state->buffer_start[j];
+
+            std::ofstream out(filename);
+            // Raw PGMs:
+            out << "P5\n" << "640" << " 480" << " 255\n";
+            for(unsigned int k=0; k<480; k++) {
+                for(unsigned int l=0; l<640; l++) {
+                    unsigned int offset = k*640 + l;
+                    // Pointer to the pixel data
+                    char * pPix = (char *)(bufStart+offset);
+                    // Cast to a char
+                    char pix = *pPix;
+                    out << pix;
+                }
+            }
+            out.close();
+            break;
+        }
+        case V4L2_PIX_FMT_MJPEG: {
+            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
+            break;
+        }
+        }
+
+
+        ::close(imgFileHandle);
+
         // Notify attached listeners that a new frame is available
         emit newFrameCaptured();
-
-        write(jpgfile, buffer_start[j], bufferinfo.length);
-        ::close(jpgfile);
     }
-
-    //////////////////////////////////// TO SHUTDOWN METHOD:
-
-    // Deactivate streaming
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &type) < 0){
-        perror("VIDIOC_STREAMOFF");
-        exit(1);
-    }
-
-
 
     show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    qInfo() << "Closing the camera";
+    qInfo() << "Deactivating streaming...";
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+        perror("VIDIOC_STREAMOFF");
+        exit(1);
+    }
+
+
+    qInfo() << "Closing the camera...";
     ::close(*(this->state->fd));
 
 //    if (maybeSave()) {
