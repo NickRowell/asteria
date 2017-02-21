@@ -41,8 +41,8 @@ void MainWindow::slotInit() {
     struct v4l2_format * format = state->format;
 
     format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    format->fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
-    format->fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+    format->fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
+//    format->fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
     format->fmt.pix.width = 640;
     format->fmt.pix.height = 480;
 
@@ -208,8 +208,6 @@ void MainWindow::slotInit() {
             perror("open");
             exit(1);
         }
-
-        perror("Here");
 
         switch(format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
