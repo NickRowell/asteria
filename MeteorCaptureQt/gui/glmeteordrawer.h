@@ -3,10 +3,17 @@
 
 #include <QtGui>
 #include <QOpenGLWidget>
+#include <QOpenGLFunctions>
 
 class MeteorCaptureState;
 
-class GLMeteorDrawer : public QOpenGLWidget {
+/**
+ * QOpenGLWidget provides control over the main rendering pipeline,
+ * QOpenGLFunctions provides functions to set up the rendering context.
+ *
+ * @brief The GLMeteorDrawer class
+ */
+class GLMeteorDrawer : public QOpenGLWidget, protected QOpenGLFunctions {
 
     Q_OBJECT
 
@@ -15,6 +22,12 @@ public:
 private:
     MeteorCaptureState * state;
 
+    // Vertex attribute indices used in my shaders
+    static const GLuint PositionAttributeIndex = 0;
+    static const GLuint TexCoordAttributeIndex = 1;
+    static const GLuint NormalAttributeIndex   = 2;
+    static const GLuint ColourAttributeIndex   = 3;
+
 protected:
 
     void initializeGL();
@@ -22,6 +35,21 @@ protected:
     void resizeGL(int w, int h);
 
     void paintGL();
+
+    // Function used to load, compile and install shaders
+    int installShaders(const GLchar *, const GLchar *, GLuint &);
+    // Function used to link program
+    int linkProgram(GLuint &);
+
+    int printOpenGLError();
+    void printShaderInfoLog(GLuint);
+    void printProgramInfoLog(GLuint);
+    GLint getUniLoc (GLuint, const GLchar *);
+
+    // Shader source parsing functions
+    int readShaderSource (const char  *, GLchar **);
+    int readShader (const char *, char *, int);
+    int shaderSize (const char *);
 
 public slots:
     void newFrame();

@@ -15,7 +15,8 @@ SOURCES += \
     gui/configselectionwindow.cpp \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \
-    gui/glmeteordrawer.cpp
+    gui/glmeteordrawer.cpp \
+    util/GLutils.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -35,4 +36,10 @@ HEADERS += \
     infra/meteorcapturestate.h \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
-    gui/glmeteordrawer.h
+    gui/glmeteordrawer.h \
+    util/GLutils.h
+
+DISTFILES += \
+    shaders/f_scene.glsl \
+    shaders/f_screen.glsl \
+    shaders/v_surfaces.glsl
