@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindo
 
 
     // Notify image display window when new frame is available
-    connect(this, SIGNAL (newFrameCaptured()), drawer, SLOT (newFrame()));
+    connect(this, SIGNAL (newFrameCaptured(char *)), drawer, SLOT (newFrame(char *)));
 
 }
 
@@ -217,6 +217,9 @@ void MainWindow::slotInit() {
             // Pointer to start of buffer data
             char * bufStart = (char *)state->buffer_start[j];
 
+            // Notify attached listeners that a new frame is available
+            emit newFrameCaptured(bufStart);
+
             std::ofstream out(filename);
             // Raw PGMs:
             out << "P5\n" << "640" << " 480" << " 255\n";
@@ -242,8 +245,7 @@ void MainWindow::slotInit() {
 
         ::close(imgFileHandle);
 
-        // Notify attached listeners that a new frame is available
-        emit newFrameCaptured();
+
     }
 
     show();

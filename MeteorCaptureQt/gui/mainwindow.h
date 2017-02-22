@@ -22,7 +22,7 @@ private:
     void closeEvent(QCloseEvent *bar);
 
 signals:
-    void newFrameCaptured();
+    void newFrameCaptured(char * bufferStart);
 
 public slots:
     void slotInit();

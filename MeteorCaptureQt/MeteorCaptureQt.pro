@@ -40,6 +40,5 @@ HEADERS += \
     util/GLutils.h
 
 DISTFILES += \
-    shaders/f_scene.glsl \
     shaders/f_screen.glsl \
-    shaders/v_surfaces.glsl
+    shaders/v_screen.glsl

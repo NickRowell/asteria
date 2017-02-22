@@ -22,6 +22,13 @@ public:
 private:
     MeteorCaptureState * state;
 
+    // Handle to GL program used to draw textures onto screen
+    GLuint prog_id_screen;
+    // Handle to GL texture object used to store cideo frame
+    GLuint VideoImageTexture;
+    // Handle to location in device memory of the texture memory
+    GLint uni_screen_tex;
+
     // Vertex attribute indices used in my shaders
     static const GLuint PositionAttributeIndex = 0;
     static const GLuint TexCoordAttributeIndex = 1;
@@ -52,7 +59,7 @@ protected:
     int shaderSize (const char *);
 
 public slots:
-    void newFrame();
+    void newFrame(char *bufferStart);
 };
 
 #endif // GLMETEORDRAWER_H
