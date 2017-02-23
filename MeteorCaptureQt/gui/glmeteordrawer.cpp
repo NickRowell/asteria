@@ -1,90 +1,141 @@
 #include "gui/glmeteordrawer.h"
 #include "infra/meteorcapturestate.h"
 
+#include <QOpenGLShaderProgram>
+#include <QOpenGLTexture>
+
 // Includes for open, close, lseek, ...
 #include <fcntl.h>
 #include <unistd.h>
 
 GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, MeteorCaptureState * state) : QOpenGLWidget(parent) {
     this->state = state;
+    this->makeCurrent();
+    this->initializeGL();
 }
 
 void GLMeteorDrawer::newFrame(char * bufferStart) {
 
-    // Copy the frame to device memory, trigger a redraw
+//    // Copy the frame to device memory, trigger a redraw
 
-    qInfo() << "Got new frame ";
+//    qInfo() << "Got new frame ";
 
-    unsigned int width = 640;
-    unsigned int height = 480;
+//    unsigned int width = 640;
+//    unsigned int height = 480;
 
-    // TODO: map the pixel format in use by the camera to the appropriate GL type
-    GLenum format = GL_RGB;  // GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER
+//    // TODO: map the pixel format in use by the camera to the appropriate GL type
+//    GLenum format = GL_RGB;  // GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER
 
-    // TODO: set data type of the input pixels
-    GLenum type = GL_UNSIGNED_BYTE; // GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2,
+//    // TODO: set data type of the input pixels
+//    GLenum type = GL_UNSIGNED_BYTE; // GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2,
 
-    // TODO: set the internal format used by the texture
-    GLint internalFormat = GL_R8; //
+//    // TODO: set the internal format used by the texture
+//    GLint internalFormat = GL_R8; //
 
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, bufferStart);
+//    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+//    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, bufferStart);
 
-    // Post redraw
-
+//    // Post redraw
+//    update();
 }
 
 void GLMeteorDrawer::initializeGL()
 {
-    // Load, compile & install shaders, create texture object
+    qInfo() << "Initialising GL";
 
-    // TODO: map the pixel format in use by the camera to the appropriate GL type
-    GLenum format = GL_RED;  // GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER
+    initializeOpenGLFunctions();
 
-    // TODO: set data type of the input pixels
-    GLenum type = GL_UNSIGNED_BYTE; // GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2,
+    QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
+    const char * vsrc =
+        "#version 330\n"
+        // Vertex position
+        "layout(location = 0) in vec3 position;\n"
+        // Texture coordinates
+        "layout(location = 1) in vec2 texCoords;\n"
+        // Pass out the texture coordinates of the vertex
+        "out vec2 texCoord;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(position, 1.0);\n"
+        "    texCoord   = texCoords;\n"
+        "}\n";
+    vshader->compileSourceCode(vsrc);
 
-    // TODO: set the internal format used by the texture
-    GLint internalFormat = GL_R8; // GL_R16, GL_RGB8, GL_RGB32F
+    QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+    const char * fsrc =
+        "#version 330\n"
+        // Simple pass-through fragment shader used to render quad textures.
+        "in vec2 texCoord;\n"           // <-- Texture coordinate of this fragment
+        "out vec3 colourOut;\n"         // <-- Output from the fragment shader (pixel colour)
+        "uniform sampler2D texture;\n"
+        "void main()\n"
+        "{\n"
+        "    colourOut = texture2D(texture, texCoord).rgb;\n"
+        "}\n";
+    fshader->compileSourceCode(fsrc);
 
-    unsigned int width = 640;
-    unsigned int height = 480;
+    program = new QOpenGLShaderProgram;
+    program->addShader(vshader);
+    program->addShader(fshader);
+    program->bindAttributeLocation("position", PositionAttributeIndex);
+    program->bindAttributeLocation("texCoords", TexCoordAttributeIndex);
+    program->link();
+    program->bind();
+    program->setUniformValue("texture", 0);
 
-    // Parse shader source (screen shaders)
-    GLchar *v_screen, *f_screen;
-    readShaderSource("v_screen.glsl", &v_screen);
-    readShaderSource("f_screen.glsl", &f_screen);
 
-    if(!installShaders(v_screen, f_screen, prog_id_screen))
-    {
-        printf("Screen shaders did not install correctly!\n");
-        return;
-    }
-    else
-    {
-        // Bind vertex attributes to specific indices (must be done before linking)
-        glBindAttribLocation(prog_id_screen, PositionAttributeIndex, "position");
-        glBindAttribLocation(prog_id_screen, TexCoordAttributeIndex, "texCoords");
 
-        // Shaders compiled correctly; now link into a program
-        if(!linkProgram(prog_id_screen))
-        {
-            printf("Screen program did not link correctly!\n");
-            return;
-        }
-        else
-        {
-            // Everything installed, compiled and linked: get uniform handles
-            uni_screen_tex = getUniLoc(prog_id_screen, "tex");
-        }
-    }
 
-    // Create & set up textures objects
-    glGenTextures(1, &VideoImageTexture);
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
-    // Floating point rendering:
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
+//    // Load, compile & install shaders, create texture object
 
+//    // TODO: map the pixel format in use by the camera to the appropriate GL type
+//    GLenum format = GL_RED;  // GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER
+
+//    // TODO: set data type of the input pixels
+//    GLenum type = GL_UNSIGNED_BYTE; // GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2,
+
+//    // TODO: set the internal format used by the texture
+//    GLint internalFormat = GL_R8; // GL_R16, GL_RGB8, GL_RGB32F
+
+//    unsigned int width = 640;
+//    unsigned int height = 480;
+
+//    // Parse shader source (screen shaders)
+//    GLchar *v_screen, *f_screen;
+//    readShaderSource("v_screen.glsl", &v_screen);
+//    readShaderSource("f_screen.glsl", &f_screen);
+
+//    if(!installShaders(v_screen, f_screen, prog_id_screen))
+//    {
+//        printf("Screen shaders did not install correctly!\n");
+//        return;
+//    }
+//    else
+//    {
+//        // Bind vertex attributes to specific indices (must be done before linking)
+//        glBindAttribLocation(prog_id_screen, PositionAttributeIndex, "position");
+//        glBindAttribLocation(prog_id_screen, TexCoordAttributeIndex, "texCoords");
+
+//        // Shaders compiled correctly; now link into a program
+//        if(!linkProgram(prog_id_screen))
+//        {
+//            printf("Screen program did not link correctly!\n");
+//            return;
+//        }
+//        else
+//        {
+//            // Everything installed, compiled and linked: get uniform handles
+//            uni_screen_tex = getUniLoc(prog_id_screen, "tex");
+//        }
+//    }
+
+//    // Create & set up textures objects
+//    glGenTextures(1, &VideoImageTexture);
+//    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+//    // Floating point rendering:
+//    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
+
+    qInfo() << "Finished initialising GL";
 }
 
 void GLMeteorDrawer::resizeGL(int w, int h)
@@ -97,25 +148,8 @@ void GLMeteorDrawer::paintGL()
     unsigned int width = 640;
     unsigned int height = 480;
 
-    // Now draw both the scene radiance and camera images into the default
-    // FrameBuffer onto a screen-aligned quad.
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        printf("Problem with default FrameBuffer!\n");
-    }
-
-    glUseProgram(prog_id_screen);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    glViewport(0, 0, width, height);
-
-    // Bind texture for rendering
-    glUniform1i(uni_screen_tex, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
 
     // Contains position and texture coordinates for each of four vertices, in
     // CLIP SPACE coordinates so that we don't need to apply any transformations
@@ -128,19 +162,61 @@ void GLMeteorDrawer::paintGL()
         { 1.0f,  1.0f, 0.0f,  1.0f,  1.0f}
     };
 
-    glEnableVertexAttribArray(PositionAttributeIndex);
-    glEnableVertexAttribArray(TexCoordAttributeIndex);
+    program->enableAttributeArray(PositionAttributeIndex);
+    program->enableAttributeArray(TexCoordAttributeIndex);
+    program->setAttributeArray(PositionAttributeIndex, GL_FLOAT, &quad[0][0], 3, 5*sizeof(float));
+    program->setAttributeArray(TexCoordAttributeIndex, GL_FLOAT, &quad[0][3], 2, 5*sizeof(float));
 
-    // Texture coordinates attribute
-    glVertexAttribPointer(PositionAttributeIndex, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), &quad[0][0]);
-    glVertexAttribPointer(TexCoordAttributeIndex, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), &quad[0][3]);
+    // Need to bind the texture
+    texture->bind();
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    glDisableVertexAttribArray(PositionAttributeIndex);
-    glDisableVertexAttribArray(TexCoordAttributeIndex);
 
-    // Show the image.
-    glFlush();
+    // Now draw both the scene radiance and camera images into the default
+    // FrameBuffer onto a screen-aligned quad.
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+//    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+//        printf("Problem with default FrameBuffer!\n");
+//    }
+
+//    glUseProgram(prog_id_screen);
+
+//    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//    glClear(GL_COLOR_BUFFER_BIT);
+
+//    glViewport(0, 0, width, height);
+
+//    // Bind texture for rendering
+//    glUniform1i(uni_screen_tex, 0);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+
+//    // Contains position and texture coordinates for each of four vertices, in
+//    // CLIP SPACE coordinates so that we don't need to apply any transformations
+//    // inside the vertex shader
+//    float quad[4][5]=
+//    {    // X       Y       Z      U      V
+//        {-1.0f, -1.0f, 0.0f,  0.0f,  0.0f},
+//        { 1.0f, -1.0f, 0.0f,  1.0f,  0.0f},
+//        {-1.0f,  1.0f, 0.0f,  0.0f,  1.0f},
+//        { 1.0f,  1.0f, 0.0f,  1.0f,  1.0f}
+//    };
+
+//    glEnableVertexAttribArray(PositionAttributeIndex);
+//    glEnableVertexAttribArray(TexCoordAttributeIndex);
+
+//    // Texture coordinates attribute
+//    glVertexAttribPointer(PositionAttributeIndex, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), &quad[0][0]);
+//    glVertexAttribPointer(TexCoordAttributeIndex, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), &quad[0][3]);
+//    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+//    glDisableVertexAttribArray(PositionAttributeIndex);
+//    glDisableVertexAttribArray(TexCoordAttributeIndex);
+
+//    // Show the image.
+//    glFlush();
 }
 
 /**

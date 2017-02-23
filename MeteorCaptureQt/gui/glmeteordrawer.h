@@ -7,6 +7,9 @@
 
 class MeteorCaptureState;
 
+QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram);
+QT_FORWARD_DECLARE_CLASS(QOpenGLTexture);
+
 /**
  * QOpenGLWidget provides control over the main rendering pipeline,
  * QOpenGLFunctions provides functions to set up the rendering context.
@@ -23,11 +26,15 @@ private:
     MeteorCaptureState * state;
 
     // Handle to GL program used to draw textures onto screen
-    GLuint prog_id_screen;
+//    GLuint prog_id_screen;
     // Handle to GL texture object used to store cideo frame
-    GLuint VideoImageTexture;
+//    GLuint VideoImageTexture;
     // Handle to location in device memory of the texture memory
-    GLint uni_screen_tex;
+//    GLint uni_screen_tex;
+
+    QOpenGLTexture * texture;
+    QOpenGLShaderProgram * program;
+
 
     // Vertex attribute indices used in my shaders
     static const GLuint PositionAttributeIndex = 0;

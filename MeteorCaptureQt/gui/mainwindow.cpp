@@ -20,12 +20,10 @@
 MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindow(parent)
 {
     this->state = state;
-    drawer = new GLMeteorDrawer(this);
-
+    drawer = new GLMeteorDrawer(this, state);
 
     // Notify image display window when new frame is available
     connect(this, SIGNAL (newFrameCaptured(char *)), drawer, SLOT (newFrame(char *)));
-
 }
 
 void MainWindow::slotInit() {
@@ -220,20 +218,20 @@ void MainWindow::slotInit() {
             // Notify attached listeners that a new frame is available
             emit newFrameCaptured(bufStart);
 
-            std::ofstream out(filename);
-            // Raw PGMs:
-            out << "P5\n" << "640" << " 480" << " 255\n";
-            for(unsigned int k=0; k<480; k++) {
-                for(unsigned int l=0; l<640; l++) {
-                    unsigned int offset = k*640 + l;
-                    // Pointer to the pixel data
-                    char * pPix = (char *)(bufStart+offset);
-                    // Cast to a char
-                    char pix = *pPix;
-                    out << pix;
-                }
-            }
-            out.close();
+//            std::ofstream out(filename);
+//            // Raw PGMs:
+//            out << "P5\n" << "640" << " 480" << " 255\n";
+//            for(unsigned int k=0; k<480; k++) {
+//                for(unsigned int l=0; l<640; l++) {
+//                    unsigned int offset = k*640 + l;
+//                    // Pointer to the pixel data
+//                    char * pPix = (char *)(bufStart+offset);
+//                    // Cast to a char
+//                    char pix = *pPix;
+//                    out << pix;
+//                }
+//            }
+//            out.close();
             break;
         }
         case V4L2_PIX_FMT_MJPEG: {
