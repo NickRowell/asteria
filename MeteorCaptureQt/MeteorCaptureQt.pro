@@ -16,7 +16,8 @@ SOURCES += \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
-    util/GLutils.cpp
+    util/GLutils.cpp \
+    infra/acquisitionthread.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -37,8 +38,14 @@ HEADERS += \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
-    util/GLutils.h
+    util/GLutils.h \
+    infra/acquisitionthread.h
 
 DISTFILES += \
     shaders/f_screen.glsl \
-    shaders/v_screen.glsl
+    shaders/v_screen.glsl \
+    images/side1.png \
+    images/side4.png
+
+RESOURCES += \
+    meteorcaptureqt.qrc

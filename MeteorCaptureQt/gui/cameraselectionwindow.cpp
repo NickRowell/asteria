@@ -1,6 +1,7 @@
 #include "gui/cameraselectionwindow.h"
 #include "infra/meteorcapturestate.h"
 #include "util/V4L2Util.h"
+#include "gui/glmeteordrawer.h"
 
 #include <QPushButton>
 #include <QApplication>
@@ -16,8 +17,6 @@
 CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState * state) : QWidget(parent)
 {
     this->state = state;
-
-    // Test
 
     // Query the available cameras
     cameras = V4L2Util::getCamerasList();
@@ -46,6 +45,7 @@ CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState
     // Create the camera selection button
     m_button = new QPushButton("Ok", this);
     vbox->addWidget(m_button);
+
     vbox->addStretch(1);
 
     QGroupBox *groupBox = new QGroupBox(tr("Select the camera to use:"), this);

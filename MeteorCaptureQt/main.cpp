@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QSurfaceFormat>
 
 #include "gui/cameraselectionwindow.h"
 #include "gui/configselectionwindow.h"
@@ -11,10 +12,15 @@ int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
 
+//    QSurfaceFormat format;
+//    format.setDepthBufferSize(24);
+//    QSurfaceFormat::setDefaultFormat(format);
+
     MeteorCaptureState * state = new MeteorCaptureState();
 
 
     CameraSelectionWindow camWin(0, state);
+
     ConfigSelectionWindow configWin(0, state);
     MainWindow mainWin(0, state);
 
@@ -26,13 +32,7 @@ int main(int argc, char **argv)
     // Implements advancing from config window to main window
     QObject::connect(&configWin, SIGNAL (ok()), &mainWin, SLOT (slotInit()));
 
-
-
     camWin.show();
-
-
-
-
 
     return app.exec();
 }

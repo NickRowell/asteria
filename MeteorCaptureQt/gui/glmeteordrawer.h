@@ -4,11 +4,12 @@
 #include <QtGui>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
+#include <QOpenGLBuffer>
 
 class MeteorCaptureState;
 
-QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram);
-QT_FORWARD_DECLARE_CLASS(QOpenGLTexture);
+QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
+QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 
 /**
  * QOpenGLWidget provides control over the main rendering pipeline,
@@ -21,51 +22,34 @@ class GLMeteorDrawer : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
 
 public:
-    GLMeteorDrawer(QWidget *parent, MeteorCaptureState * state = 0);
+
+    explicit GLMeteorDrawer(QWidget *parent = 0, MeteorCaptureState *state = 0);
+    ~GLMeteorDrawer();
+
+    QSize sizeHint() const Q_DECL_OVERRIDE;
+    void setClearColor(const QColor &color);
+
 private:
     MeteorCaptureState * state;
 
-    // Handle to GL program used to draw textures onto screen
-//    GLuint prog_id_screen;
-    // Handle to GL texture object used to store cideo frame
-//    GLuint VideoImageTexture;
-    // Handle to location in device memory of the texture memory
-//    GLint uni_screen_tex;
+    // Handle to GL texture object used to store video frame
+    GLuint VideoImageTexture;
 
-    QOpenGLTexture * texture;
     QOpenGLShaderProgram * program;
-
-
-    // Vertex attribute indices used in my shaders
-    static const GLuint PositionAttributeIndex = 0;
-    static const GLuint TexCoordAttributeIndex = 1;
-    static const GLuint NormalAttributeIndex   = 2;
-    static const GLuint ColourAttributeIndex   = 3;
+    QOpenGLBuffer vbo;
 
 protected:
 
-    void initializeGL();
+    void initializeGL() Q_DECL_OVERRIDE;
 
-    void resizeGL(int w, int h);
+    void resizeGL(int w, int h) Q_DECL_OVERRIDE;
 
-    void paintGL();
-
-    // Function used to load, compile and install shaders
-    int installShaders(const GLchar *, const GLchar *, GLuint &);
-    // Function used to link program
-    int linkProgram(GLuint &);
+    void paintGL() Q_DECL_OVERRIDE;
 
     int printOpenGLError();
-    void printShaderInfoLog(GLuint);
-    void printProgramInfoLog(GLuint);
-    GLint getUniLoc (GLuint, const GLchar *);
-
-    // Shader source parsing functions
-    int readShaderSource (const char  *, GLchar **);
-    int readShader (const char *, char *, int);
-    int shaderSize (const char *);
 
 public slots:
+
     void newFrame(char *bufferStart);
 };
 

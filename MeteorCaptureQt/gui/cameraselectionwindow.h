@@ -10,6 +10,7 @@
 class QButtonGroup;
 class QPushButton;
 class MeteorCaptureState;
+class GLMeteorDrawer;
 
 using namespace std;
 

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "infra/acquisitionthread.h"
 
 class MeteorCaptureState;
 class GLMeteorDrawer;
@@ -17,8 +18,10 @@ public:
 
 private:
     MeteorCaptureState * state;
-    QCamera *camera;
     GLMeteorDrawer *drawer;
+
+    AcquisitionThread *acqThread;
+
     void closeEvent(QCloseEvent *bar);
 
 signals:
