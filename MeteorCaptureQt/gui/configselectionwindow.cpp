@@ -73,6 +73,13 @@ void ConfigSelectionWindow::slotLoadButtonClicked() {
 
     qInfo() << "Got directory " << dir;
 
+    // Load files from config directory. These are likely to be:
+    //
+    // 1) Main config file, containing key-value pairs
+    // 2) Calibration history data, for running calibrations
+    // 3) Other data files e.g. Earth geoid data, JPL ephemeris, maps, etc
+
+
 }
 
 void ConfigSelectionWindow::slotCreateButtonClicked() {

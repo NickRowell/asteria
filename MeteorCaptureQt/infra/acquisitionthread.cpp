@@ -1,4 +1,5 @@
 #include "acquisitionthread.h"
+#include "util/jpgutil.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -55,13 +56,7 @@ void AcquisitionThread::launch() {
 void AcquisitionThread::run() {
 
     mutex.lock();
-    struct v4l2_format * format = state->format;
-    struct v4l2_requestbuffers * bufrequest = state->bufrequest;
-
-
-
     mutex.unlock();
-
 
 //    qInfo() << "Launching camera " << QString::fromStdString(*(state->cameraPath));
 
@@ -72,10 +67,12 @@ void AcquisitionThread::run() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
 
-
+    struct v4l2_format * format = state->format;
     format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    format->fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
-//    format->fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+    // Suitable for Watec camera:
+//    format->fmt.pix.pixelformat = V4L2_PIX_FMT_GREY;
+    // Suitable for webcam:
+    format->fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
     format->fmt.pix.width = 640;
     format->fmt.pix.height = 480;
 
@@ -92,6 +89,7 @@ void AcquisitionThread::run() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Inform device about buffers to use
+    struct v4l2_requestbuffers * bufrequest = state->bufrequest;
     bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     bufrequest->memory = V4L2_MEMORY_MMAP;
     bufrequest->count = 32;
@@ -221,24 +219,24 @@ void AcquisitionThread::run() {
 
 
 
-////		// Write the image data out to a JPEG file
-////        int imgFileHandle;
-////        char filename [100];
+        // Write the image data out to a JPEG file
+        int imgFileHandle;
+        char filename [100];
 
-////        switch(format->fmt.pix.pixelformat) {
-////        case V4L2_PIX_FMT_GREY:
-////            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.pgm", i, j);
-////            break;
-////        case V4L2_PIX_FMT_MJPEG:
-////            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
-////            break;
-////        }
+        switch(format->fmt.pix.pixelformat) {
+        case V4L2_PIX_FMT_GREY:
+            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.pgm", i, j);
+            break;
+        case V4L2_PIX_FMT_MJPEG:
+            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
+            break;
+        }
 
 
-////        if((imgFileHandle = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
-////            perror("open");
-////            exit(1);
-////        }
+        if((imgFileHandle = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
+            perror("open");
+            exit(1);
+        }
 
         switch(format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
@@ -269,6 +267,15 @@ void AcquisitionThread::run() {
             break;
         }
         case V4L2_PIX_FMT_MJPEG: {
+
+            // Convert the JPEG image to greyscale
+
+            char * decodedImage = new char[640*480];
+
+            JpgUtil::convertJpeg((unsigned char *)state->buffer_start[j], bufferinfo->length, decodedImage);
+
+            emit acquiredImage(decodedImage);
+
 //            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
             break;
         }

@@ -1,4 +1,4 @@
-TEMPLATE = app
+ TEMPLATE = app
 TARGET = MeteorCaptureQt
 
 QT = core gui opengl
@@ -17,7 +17,8 @@ SOURCES += \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
     util/GLutils.cpp \
-    infra/acquisitionthread.cpp
+    infra/acquisitionthread.cpp \
+    util/jpgutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -39,7 +40,10 @@ HEADERS += \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
     util/GLutils.h \
-    infra/acquisitionthread.h
+    infra/acquisitionthread.h \
+    util/jpgutil.h
+
+LIBS += -ljpeg
 
 DISTFILES += \
     shaders/f_screen.glsl \
