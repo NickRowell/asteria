@@ -43,7 +43,15 @@ public:
      */
     char ** buffer_start;
 
+    /**
+     * \brief The image width
+     */
+    unsigned int width;
 
+    /**
+     * \brief The image height
+     */
+    unsigned int height;
 
     MeteorCaptureState() {
         bufferinfo = new v4l2_buffer();

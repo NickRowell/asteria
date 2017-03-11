@@ -23,8 +23,6 @@ MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindo
     drawer = new GLMeteorDrawer(this, state);
 
     this->setCentralWidget(drawer);
-
-    show();
 }
 
 void MainWindow::slotInit() {

@@ -23,15 +23,15 @@ GLMeteorDrawer::~GLMeteorDrawer() {
 }
 
 QSize GLMeteorDrawer::sizeHint() const {
-    return QSize(640, 480);
+    return QSize(state->width, state->height);
 }
 
 void GLMeteorDrawer::newFrame(char * bufferStart) {
 
      glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
 
-     unsigned int width = 640;
-     unsigned int height = 480;
+     unsigned int width = state->width;
+     unsigned int height = state->height;
      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferStart);
 
     // Post redraw
@@ -107,8 +107,8 @@ void GLMeteorDrawer::initializeGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    unsigned int width = 640;
-    unsigned int height = 480;
+    unsigned int width = state->width;
+    unsigned int height = state->height;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
 
     qInfo() << "Finished initialising GL";

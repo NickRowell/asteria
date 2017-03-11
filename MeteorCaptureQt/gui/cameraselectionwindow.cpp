@@ -79,12 +79,6 @@ void CameraSelectionWindow::slotCameraButtonClicked()
 
     qInfo() << "Selected camera = " << QString::fromStdString(camera.second);
 
-    qInfo() << "Pixel formats:";
-
-    V4L2Util::printPixelFormats(*(state->fd));
-
-
-
     hide();
     emit cameraSelected(camera.first);
 }

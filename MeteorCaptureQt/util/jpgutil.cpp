@@ -5,6 +5,28 @@ JpgUtil::JpgUtil()
 
 }
 
+void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize, char *decodedImage) {
+
+    // Pointer to data in input image buffer
+    unsigned char * pBuf = buffer;
+
+    // Pointer to data in output image buffer
+    char * pOut = decodedImage;
+
+    // Pixels are encoded in groups of four bytes
+    for(unsigned int p=0; p<insize; p += 4) {
+
+        char y1 = *(pBuf++);
+        char cr = *(pBuf++);
+        char y2 = *(pBuf++);
+        char cb = *(pBuf++);
+
+        // Discard the colour information, or use it somehow?
+        *(pOut++) = y1;
+        *(pOut++) = y2;
+    }
+}
+
 void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, char *decodedImage) {
 
     unsigned char r, g, b;
@@ -66,3 +88,6 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, ch
     (void) jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
 }
+
+
+
