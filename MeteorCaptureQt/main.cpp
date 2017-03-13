@@ -32,6 +32,9 @@ int main(int argc, char **argv)
     // Implements advancing from config window to main window
     QObject::connect(&configWin, SIGNAL (ok()), &mainWin, SLOT (slotInit()));
 
+    // Brings up config creation window if user optsa to create new one
+
+
     camWin.show();
 
     return app.exec();

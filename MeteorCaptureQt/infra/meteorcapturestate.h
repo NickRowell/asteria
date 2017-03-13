@@ -23,6 +23,13 @@ public:
      */
     int * fd;
 
+
+    // TODO: much of this should be moved to different class
+
+    // Should separate genuine parameters of the system etc from temporary
+    // objects created during operation of the software.
+
+
     /**
      * \brief Information about the video buffer(s) in use.
      */
@@ -52,6 +59,39 @@ public:
      * \brief The image height
      */
     unsigned int height;
+
+
+
+
+
+
+    // System parameters
+
+    // Station parameters
+
+
+    // Camera parameters
+
+    // Detection parameters
+
+    // Analysis parameters
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     MeteorCaptureState() {
         bufferinfo = new v4l2_buffer();

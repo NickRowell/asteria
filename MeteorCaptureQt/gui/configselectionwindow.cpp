@@ -1,4 +1,5 @@
 #include "gui/configselectionwindow.h"
+#include "gui/configcreationwindow.h"
 #include "infra/meteorcapturestate.h"
 
 #include <QApplication>
@@ -28,7 +29,7 @@ ConfigSelectionWindow::ConfigSelectionWindow(QWidget *parent, MeteorCaptureState
     // Create content objects
     configLabel = new QLabel(tr("Config:"));
     configLine = new QLineEdit();
-    configLine->setReadOnly(true);
+    configLine->setReadOnly(false);
     loadButton = new QPushButton("Load config", this);
     createButton = new QPushButton("Create config", this);
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -86,6 +87,11 @@ void ConfigSelectionWindow::slotCreateButtonClicked() {
 
     // Present user with ConfigCreationWindow
     // Capture the OK signal from the config creation window
+
+
+    ConfigCreationWindow * configCreationWin = new ConfigCreationWindow(0, state);
+
+    configCreationWin->show();
 
 }
 
