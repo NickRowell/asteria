@@ -1,12 +1,14 @@
 #ifndef CONFIGCREATIONWINDOW_H
 #define CONFIGCREATIONWINDOW_H
 
-#include <QWidget>
+#include <QDialog>
 
+class QDialogButtonBox;
+class QTabWidget;
 class QLineEdit;
 class MeteorCaptureState;
 
-class ConfigCreationWindow : public QWidget
+class ConfigCreationWindow : public QDialog
 {
     Q_OBJECT
 public:
@@ -14,22 +16,21 @@ public:
 
 private:
 
-    MeteorCaptureState * state;
+    MeteorCaptureState *state;
 
-    // System parameters
-
-    // Camera parameters
-
-    // Station parameters
-    QLineEdit * longitudeEntry;
-    QLineEdit * latitudeEntry;
+    QTabWidget *tabWidget;
+    QDialogButtonBox *buttonBox;
 
 signals:
+    void ok();
+    void cancel();
 
 public slots:
 
-    void loadConfig(char * path);
-    void saveConfig(char * path);
+    void loadConfig();
+    void saveConfig();
+    void slotOkButtonClicked();
+    void slotCancelButtonClicked();
 
 };
 

@@ -2,7 +2,7 @@
 #include <QSurfaceFormat>
 
 #include "gui/cameraselectionwindow.h"
-#include "gui/configselectionwindow.h"
+#include "gui/configcreationwindow.h"
 #include "gui/mainwindow.h"
 #include "infra/meteorcapturestate.h"
 
@@ -21,7 +21,8 @@ int main(int argc, char **argv)
 
     CameraSelectionWindow camWin(0, state);
 
-    ConfigSelectionWindow configWin(0, state);
+    ConfigCreationWindow configWin(0, state);
+
     MainWindow mainWin(0, state);
 
 

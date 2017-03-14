@@ -12,13 +12,15 @@ SOURCES += \
     util/V4L2Util.cpp \
     MeteorCapture.cpp \
     gui/cameraselectionwindow.cpp \
-    gui/configselectionwindow.cpp \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
     util/GLutils.cpp \
     infra/acquisitionthread.cpp \
-    util/jpgutil.cpp
+    util/jpgutil.cpp \
+    gui/systemtab.cpp \
+    gui/stationtab.cpp \
+    gui/cameratab.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -34,14 +36,16 @@ HEADERS += \
     util/V4L2Util.h \
     Camera.h \
     gui/cameraselectionwindow.h \
-    gui/configselectionwindow.h \
     infra/meteorcapturestate.h \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
     util/GLutils.h \
     infra/acquisitionthread.h \
-    util/jpgutil.h
+    util/jpgutil.h \
+    gui/systemtab.h \
+    gui/stationtab.h \
+    gui/cameratab.h
 
 LIBS += -ljpeg
 

@@ -69,6 +69,18 @@ public:
 
     // Station parameters
 
+    /**
+     * \brief Station longitude [decimal degrees]
+     */
+    double longitude;
+
+    /**
+     * \brief Station latitude [decimal degrees]
+     */
+    double latitude;
+
+
+
 
     // Camera parameters
 
