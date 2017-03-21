@@ -15,17 +15,24 @@
 #include <QFileDialog>
 #include <QDebug>
 
-#include "gui/systemtab.h"
-#include "gui/stationtab.h"
-#include "gui/cameratab.h"
+#include "config/configstore.h"
+#include "gui/configparameterfamilytab.h"
 
 ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState * state) : QDialog(parent), state(state)
 {
     tabWidget = new QTabWidget;
-    tabWidget->addTab(new SystemTab(state), tr("System parameters"));
-    tabWidget->addTab(new StationTab(state), tr("Station parameters"));
-    tabWidget->addTab(new CameraTab(state), tr("Camera parameters"));
 
+    store = new ConfigStore();
+    tabs = new ConfigParameterFamilyTab *[store->numFamilies];
+
+    // Add one tabbed widget per parameter family present in the config
+    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+        // Build the GUI
+        ConfigParameterFamily * fam = store->families[famOff];
+        ConfigParameterFamilyTab * tab = new ConfigParameterFamilyTab(fam, tabWidget);
+        tabs[famOff] = tab;
+        tabWidget->addTab(tab, QString("%1 Parameters:").arg(fam->title.c_str()));
+    }
 
     QPushButton *load_button = new QPushButton("Load", this);
     QPushButton *save_button = new QPushButton("Save", this);
@@ -36,11 +43,10 @@ ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState *
     buttonBox->addButton(load_button, QDialogButtonBox::ActionRole);
     buttonBox->addButton(save_button, QDialogButtonBox::ActionRole);
 
-
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(slotOkButtonClicked()));
-    connect(buttonBox, SIGNAL(rejected()), this, SLOT(slotCancelButtonClicked()));
-    connect(load_button, SIGNAL(pressed()), this, SLOT(loadConfig()));
-    connect(save_button, SIGNAL(pressed()), this, SLOT(saveConfig()));
+    connect(buttonBox, SIGNAL(accepted()), this, SLOT(okClicked()));
+    connect(buttonBox, SIGNAL(rejected()), this, SLOT(cancelClicked()));
+    connect(load_button, SIGNAL(pressed()), this, SLOT(loadClicked()));
+    connect(save_button, SIGNAL(pressed()), this, SLOT(saveClicked()));
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(tabWidget);
@@ -53,8 +59,8 @@ ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState *
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), rect));
 }
 
-
-void ConfigCreationWindow::loadConfig() {
+// Read files in the config directory, pick out the parameters and load them into the GUI form
+void ConfigCreationWindow::loadClicked() {
 
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select config directory"),
                                                     "",
@@ -70,17 +76,38 @@ void ConfigCreationWindow::loadConfig() {
     // 3) Other data files e.g. Earth geoid data, JPL ephemeris, maps, etc
 }
 
-void ConfigCreationWindow::saveConfig() {
+// Write parameters from the GUI form to disk
+void ConfigCreationWindow::saveClicked() {
+
+    // Do we have a config directory at this point?
 
 }
 
-void ConfigCreationWindow::slotOkButtonClicked() {
-    // Verify config and move on to main window
-    hide();
-    emit ok();
+// Read parameters from the GUI, verify them and store them in the state
+void ConfigCreationWindow::okClicked() {
+
+    // Check if ALL the parameter families are valid
+    bool allValid = true;
+
+    // Verify each configparameterfamilytab in turn
+    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+        bool valid = tabs[famOff]->readAndValidate();
+        if(!valid) {
+            allValid = false;
+        }
+    }
+
+    if(allValid) {
+        // Verify config and move on to main window
+        hide();
+        emit ok();
+    }
+    else {
+        // Indicate with some kind of error message...?
+    }
 }
 
-void ConfigCreationWindow::slotCancelButtonClicked() {
+void ConfigCreationWindow::cancelClicked() {
     // Hide this widget and show camera selection window
     hide();
     emit cancel();

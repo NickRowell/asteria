@@ -18,9 +18,13 @@ SOURCES += \
     util/GLutils.cpp \
     infra/acquisitionthread.cpp \
     util/jpgutil.cpp \
-    gui/systemtab.cpp \
-    gui/stationtab.cpp \
-    gui/cameratab.cpp
+    config/configparameter.cpp \
+    config/parameterdouble.cpp \
+    config/configparameterfamily.cpp \
+    config/configstore.cpp \
+    config/stationparameters.cpp \
+    gui/configparameterfamilytab.cpp \
+    config/parameterdir.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -43,11 +47,19 @@ HEADERS += \
     util/GLutils.h \
     infra/acquisitionthread.h \
     util/jpgutil.h \
-    gui/systemtab.h \
-    gui/stationtab.h \
-    gui/cameratab.h
+    config/configparameter.h \
+    config/configstore.h \
+    config/parameterdouble.h \
+    config/configparameterfamily.h \
+    config/stationparameters.h \
+    gui/configparameterfamilytab.h \
+    config/systemparameters.h \
+    config/cameraparameters.h \
+    config/parameterdir.h
 
 LIBS += -ljpeg
+
+CONFIG += c++11
 
 DISTFILES += \
     shaders/f_screen.glsl \

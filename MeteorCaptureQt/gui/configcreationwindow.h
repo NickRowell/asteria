@@ -7,6 +7,8 @@ class QDialogButtonBox;
 class QTabWidget;
 class QLineEdit;
 class MeteorCaptureState;
+class ConfigStore;
+class ConfigParameterFamilyTab;
 
 class ConfigCreationWindow : public QDialog
 {
@@ -18,8 +20,13 @@ private:
 
     MeteorCaptureState *state;
 
+    ConfigStore *store;
+    ConfigParameterFamilyTab ** tabs;
+
     QTabWidget *tabWidget;
     QDialogButtonBox *buttonBox;
+
+
 
 signals:
     void ok();
@@ -27,10 +34,10 @@ signals:
 
 public slots:
 
-    void loadConfig();
-    void saveConfig();
-    void slotOkButtonClicked();
-    void slotCancelButtonClicked();
+    void loadClicked();
+    void saveClicked();
+    void okClicked();
+    void cancelClicked();
 
 };
 
