@@ -5,6 +5,8 @@
 
 #include <linux/videodev2.h>
 
+using namespace std;
+
 class MeteorCaptureState
 {
 
@@ -70,7 +72,26 @@ public:
     bool headless;
 
     // System parameters
-    // Location of JPL ephemeris, Earth topology model, maps etc
+
+    /**
+     * @brief configDirPath
+     */
+    string configDirPath;
+
+    /**
+     * @brief videoDirPath
+     */
+    string videoDirPath;
+
+    /**
+     * @brief refStarCataloguePath
+     */
+    string refStarCataloguePath;
+
+    /**
+     * @brief jplEphemerisPath
+     */
+    string jplEphemerisPath;
 
     // Station parameters
 
@@ -83,6 +104,12 @@ public:
      * \brief Station latitude [decimal degrees]
      */
     double latitude;
+
+    /**
+     * \brief Station altitude [metres]
+     */
+    double altitude;
+
 
 
 

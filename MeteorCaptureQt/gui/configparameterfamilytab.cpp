@@ -53,18 +53,26 @@ bool ConfigParameterFamilyTab::readAndValidate() {
         par->validate(c_entry);
 
         // Check if it passed and incidate in the form if not
-        if(!par->isValid) {
-            // Indicate if an parameter failed validation
-            isValid = false;
-
-            // Indicate on the form by turning borders red
-            edit->setStyleSheet("QLineEdit{border: 2px solid red}");
-            edit->setToolTip(tr(par->message.c_str()));
-        }
-        else {
+        switch(par->isValid) {
+        case VALID: {
             // Clear any red borders for previously invalid parameters
             edit->setStyleSheet("");
             edit->setToolTip(tr(""));
+            break;
+        }
+        case WARNING: {
+            edit->setStyleSheet("QLineEdit{border: 2px solid yellow}");
+            edit->setToolTip(tr(par->message.c_str()));
+            break;
+        }
+        case INVALID: {
+            // Indicate if an parameter failed validation
+            isValid = false;
+            // Indicate on the form by turning borders red
+            edit->setStyleSheet("QLineEdit{border: 2px solid red}");
+            edit->setToolTip(tr(par->message.c_str()));
+            break;
+        }
         }
 
     }

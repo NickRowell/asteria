@@ -15,6 +15,9 @@
 #include <QFileDialog>
 #include <QDebug>
 
+#include <iostream>
+#include <fstream>
+
 #include "config/configstore.h"
 #include "gui/configparameterfamilytab.h"
 
@@ -22,7 +25,7 @@ ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState *
 {
     tabWidget = new QTabWidget;
 
-    store = new ConfigStore();
+    store = new ConfigStore(state);
     tabs = new ConfigParameterFamilyTab *[store->numFamilies];
 
     // Add one tabbed widget per parameter family present in the config
@@ -79,7 +82,45 @@ void ConfigCreationWindow::loadClicked() {
 // Write parameters from the GUI form to disk
 void ConfigCreationWindow::saveClicked() {
 
-    // Do we have a config directory at this point?
+    // Check if ALL the parameter families are valid
+    bool allValid = true;
+
+    // Verify each configparameterfamilytab in turn
+    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+        bool valid = tabs[famOff]->readAndValidate();
+        if(!valid) {
+            allValid = false;
+        }
+    }
+
+    if(allValid) {
+        // Write the parameters to a file in the configuration directory
+
+        // TODO: detect if a trailing slash is needed on the configDirPath
+        string configFilePath = state->configDirPath + "/asteria.config";
+
+        ofstream myfile(configFilePath);
+
+        // Loop over parameter families
+        for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+            // Get pointer to this family
+            ConfigParameterFamily * fam = store->families[famOff];
+
+            string famPrefix = fam->title;
+
+            // Loop over parameters within this family
+            for(unsigned int parOff = 0; parOff < fam->numPar; parOff++) {
+                // Get pointer to this parameter
+                ConfigParameter * par = fam->parameters[parOff];
+
+                myfile << famPrefix << "." << par->key << "=" << par->value << "\n";
+            }
+        }
+        myfile.close();
+    }
+    else {
+        // Indicate with some kind of error message...?
+    }
 
 }
 

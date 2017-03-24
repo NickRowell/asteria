@@ -18,11 +18,9 @@ SOURCES += \
     util/GLutils.cpp \
     infra/acquisitionthread.cpp \
     util/jpgutil.cpp \
-    config/configparameter.cpp \
     config/parameterdouble.cpp \
     config/configparameterfamily.cpp \
     config/configstore.cpp \
-    config/stationparameters.cpp \
     gui/configparameterfamilytab.cpp \
     config/parameterdir.cpp
 

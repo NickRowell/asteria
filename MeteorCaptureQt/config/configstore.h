@@ -5,11 +5,13 @@
 #include "parameterdouble.h"
 #include "configparameterfamily.h"
 
+class MeteorCaptureState;
+
 class ConfigStore {
 
 public:
 
-    ConfigStore();
+    ConfigStore(MeteorCaptureState * state);
 
     ConfigParameterFamily ** families;
     unsigned int numFamilies;
