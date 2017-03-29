@@ -1,6 +1,10 @@
 #ifndef GLMETEORDRAWER_H
 #define GLMETEORDRAWER_H
 
+#include "infra/image.h"
+
+#include <memory>           // shared_ptr
+
 #include <QtGui>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -51,7 +55,7 @@ protected:
 public slots:
 
 //    void newFrame(char *bufferStart);
-    void newFrame(std::vector<char> bufferStart);
+    void newFrame(std::shared_ptr<Image> image);
 };
 
 #endif // GLMETEORDRAWER_H

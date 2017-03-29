@@ -4,6 +4,7 @@
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
 #include <sys/mman.h>           // mmap etc
+#include <memory>               // shared_ptr
 
 #include <fstream>
 #include <iostream>
@@ -376,9 +377,11 @@ void AcquisitionThread::run() {
 
 //            char * decodedImage = new char[state->width * state->height];
 
-            std::vector<char> decodedImage;
-            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, decodedImage);
-            emit acquiredImage(decodedImage);
+            auto image = make_shared<Image>(state->width, state->height);
+
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
+
+            emit acquiredImage(image);
 
 
 //            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);

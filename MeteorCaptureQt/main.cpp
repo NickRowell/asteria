@@ -12,9 +12,7 @@ int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
 
-
-    qRegisterMetaType<std::vector<char>>("vector char");
-
+    qRegisterMetaType<std::shared_ptr<Image>>("std::shared_ptr<Image>");
 
     // TODO: parse application parameters from the command line
 

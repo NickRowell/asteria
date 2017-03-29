@@ -22,7 +22,8 @@ SOURCES += \
     config/configparameterfamily.cpp \
     config/configstore.cpp \
     gui/configparameterfamilytab.cpp \
-    config/parameterdir.cpp
+    config/parameterdir.cpp \
+    infra/image.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -54,7 +55,8 @@ HEADERS += \
     config/systemparameters.h \
     config/cameraparameters.h \
     config/parameterdir.h \
-    infra/vectorchar.h
+    infra/vectorchar.h \
+    infra/image.h
 
 LIBS += -ljpeg
 

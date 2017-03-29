@@ -3,10 +3,12 @@
 
 #include <linux/videodev2.h>
 #include <vector>
+#include <memory>               // shared_ptr
 
 #include <QThread>
 #include <QMutex>
 #include "infra/meteorcapturestate.h"
+#include "infra/image.h"
 
 class AcquisitionThread : public QThread
 {
@@ -19,8 +21,7 @@ public:
     void launch();
 
 signals:
-//    void acquiredImage(char * imageBufferStart);
-    void acquiredImage(std::vector<char> imageBufferStart);
+    void acquiredImage(std::shared_ptr<Image>);
 
 protected:
     void run() Q_DECL_OVERRIDE;

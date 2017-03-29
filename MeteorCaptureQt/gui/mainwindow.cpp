@@ -28,7 +28,7 @@ void MainWindow::slotInit() {
 
     // Connect image acquisition signal to image display slot
 //    connect(acqThread, SIGNAL (acquiredImage(char *)), drawer, SLOT (newFrame(char *)));
-    connect(acqThread, SIGNAL (acquiredImage(std::vector<char>)), drawer, SLOT (newFrame(std::vector<char>)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
 
     acqThread->launch();
 
