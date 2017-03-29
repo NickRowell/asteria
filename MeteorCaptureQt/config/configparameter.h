@@ -25,14 +25,20 @@ class ConfigParameter
 {
 
 protected:
-    ConfigParameter(const string key) : key(key) {
+    ConfigParameter(const string key, const string title, const string units) : key(key), title(title), units(units) {
 
     }
 
 public:
 
-    // String representation of the parameter name
+    // Key used to enumerate the parameter; no spaces etc
     const string key;
+
+    // Descriptive name of the parameter
+    const string title;
+
+    // Descriptive name of the units
+    const string units;
 
     // String representation of the parameter value, from which any valid parameter value was parsed
     string value;

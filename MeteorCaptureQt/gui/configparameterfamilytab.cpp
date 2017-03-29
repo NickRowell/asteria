@@ -10,6 +10,7 @@
 
 ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, QWidget *parent) : QWidget(parent)
 {
+
     QVBoxLayout *mainLayout = new QVBoxLayout;
 
     // Create fields for each parameter
@@ -17,7 +18,8 @@ ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, Q
         ConfigParameter * par = fam->parameters[parOff];
 
         // Create label and line edit for the parameter
-        QLabel *label = new QLabel(tr(par->key.c_str()));
+        string parLabel = par->title + " [" + par->units + "]";
+        QLabel *label = new QLabel(tr(parLabel.c_str()));
         QLineEdit *edit = new QLineEdit();
         edit->setReadOnly(false);
 
@@ -34,11 +36,51 @@ ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, Q
     setLayout(mainLayout);
 }
 
+/**
+ * Read the values of the parameters and write them to the text fields in the GUI,
+ * indicating any error messages.
+ * @brief ConfigParameterFamilyTab::updateForm
+ */
+void ConfigParameterFamilyTab::updateForm() {
+
+    // Iterate over the line edit / parameter links
+    for(unsigned int p=0; p<links.size(); p++) {
+
+        QLineEdit * edit = links[p].first;
+        ConfigParameter * par = links[p].second;
+
+        // Read the value of the parameter and write it to the lineedit field
+        edit->setText(tr(par->value.c_str()));
+
+        // Check if the parameter is valid and incidate in the form if not
+        switch(par->isValid) {
+        case VALID: {
+            // Clear any red borders for previously invalid parameters
+            edit->setStyleSheet("");
+            edit->setToolTip(tr(""));
+            break;
+        }
+        case WARNING: {
+            edit->setStyleSheet("QLineEdit{border: 2px solid yellow}");
+            edit->setToolTip(tr(par->message.c_str()));
+            break;
+        }
+        case INVALID: {
+            // Indicate on the form by turning borders red
+            edit->setStyleSheet("QLineEdit{border: 2px solid red}");
+            edit->setToolTip(tr(par->message.c_str()));
+            break;
+        }
+        }
+
+    }
+}
+
 bool ConfigParameterFamilyTab::readAndValidate() {
 
     bool isValid = true;
 
-    // Iterate over the line edit / parameter links
+    // Read the values enetered in the form and parse them to the parameters
     for(unsigned int p=0; p<links.size(); p++) {
 
         QLineEdit * edit = links[p].first;
@@ -53,29 +95,11 @@ bool ConfigParameterFamilyTab::readAndValidate() {
         par->validate(c_entry);
 
         // Check if it passed and incidate in the form if not
-        switch(par->isValid) {
-        case VALID: {
-            // Clear any red borders for previously invalid parameters
-            edit->setStyleSheet("");
-            edit->setToolTip(tr(""));
-            break;
-        }
-        case WARNING: {
-            edit->setStyleSheet("QLineEdit{border: 2px solid yellow}");
-            edit->setToolTip(tr(par->message.c_str()));
-            break;
-        }
-        case INVALID: {
-            // Indicate if an parameter failed validation
+        if(par->isValid == INVALID) {
             isValid = false;
-            // Indicate on the form by turning borders red
-            edit->setStyleSheet("QLineEdit{border: 2px solid red}");
-            edit->setToolTip(tr(par->message.c_str()));
-            break;
         }
-        }
-
     }
+    updateForm();
 
     return isValid;
 }

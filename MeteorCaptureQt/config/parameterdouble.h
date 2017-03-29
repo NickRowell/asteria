@@ -9,13 +9,13 @@ class ParameterDouble : public ConfigParameter
 
 public:
 
-    ParameterDouble(const string key, double * const data, const double &lower, const double &upper);
+    ParameterDouble(const string key, const string title, const string units, double * const data, const double &lower, const double &upper);
+
+    double * const data;
 
     double lower;
 
     double upper;
-
-    double * const data;
 
     void validate(const string stringRep);
 

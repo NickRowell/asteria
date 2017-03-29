@@ -5,15 +5,31 @@
  *      Author: nrowell
  */
 
-#include "IOUtil.h"
+#include <vector>
+#include <string>
+#include <sstream>
+#include <sys/ioctl.h>
 
-IOUtil::IOUtil() {
-	// TODO Auto-generated constructor stub
-
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
 }
 
-IOUtil::~IOUtil() {
-	// TODO Auto-generated destructor stub
+/**
+ * @brief Tokenise the string
+ * @param s The string
+ * @param delim The token delimiter
+ * @return Vector of string tokens
+ */
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
 }
 
 /**
@@ -21,10 +37,10 @@ IOUtil::~IOUtil() {
  * \param i Integer to convert to a string
  * \return	String containing the converted integer
  */
-string IOUtil::intToString(int i){
-    ostringstream oss;
+std::string intToString(int i){
+    std::ostringstream oss;
     oss << i;
-    string result = oss.str();
+    std::string result = oss.str();
     return result;
 }
 
@@ -38,7 +54,7 @@ string IOUtil::intToString(int i){
  * \param arg Untyped pointer to memory, where the results of the request are written.
  * \return Error flag: 0 for success, -1 indicates error.
  */
-int IOUtil::xioctl (int fd, int request, void *arg) {
+int xioctl (int fd, int request, void *arg) {
 	int r;
 
 	do {

@@ -27,7 +27,7 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
     }
 }
 
-void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, char *decodedImage) {
+void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage) {
 
     unsigned char r, g, b;
     int width, height;
@@ -54,14 +54,12 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, ch
     width = cinfo.output_width;
     height = cinfo.output_height;
 
-    unsigned char * pDummy = new unsigned char [width*height*3];
-
     int row_stride = width * cinfo.output_components;
     // Output row buffer
     JSAMPARRAY pJpegBuffer = (*cinfo.mem->alloc_sarray)
         ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
 
-    char * pDec = decodedImage;
+//    char * pDec = decodedImage;
 
     while (cinfo.output_scanline < cinfo.output_height) {
         (void) jpeg_read_scanlines(&cinfo, pJpegBuffer, 1);
@@ -75,13 +73,11 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, ch
                 g = r;
                 b = r;
             }
-            *(pDummy++) = b;
-            *(pDummy++) = g;
-            *(pDummy++) = r;
 
             // Convert RGB to greyscale
-            *(pDec++) = (r + g + b)/3;
-
+//            *(pDec++) = (r + g + b)/3;
+            char grey = (r + g + b)/3;
+            decodedImage.push_back(grey);
         }
     }
 

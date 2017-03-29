@@ -26,13 +26,16 @@ QSize GLMeteorDrawer::sizeHint() const {
     return QSize(state->width, state->height);
 }
 
-void GLMeteorDrawer::newFrame(char * bufferStart) {
+// TODO: pass in reference to bufferStart to avoid copying the vector
+void GLMeteorDrawer::newFrame(std::vector<char> bufferStart) {
 
      glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
 
      unsigned int width = state->width;
      unsigned int height = state->height;
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferStart);
+
+     char* a = &bufferStart[0];
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
 
     // Post redraw
     update();

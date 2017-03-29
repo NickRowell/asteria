@@ -28,6 +28,8 @@ signals:
 
 public slots:
 
+    void updateForm();
+
     bool readAndValidate();
 
 };

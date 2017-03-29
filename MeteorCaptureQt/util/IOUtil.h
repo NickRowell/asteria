@@ -8,31 +8,13 @@
 #ifndef IOUTIL_H_
 #define IOUTIL_H_
 
-#include <vector>     // provides vector
-#include <string>     // provides string
-#include <utility>    // provides pair
-#include <fcntl.h>    // Provides open(...)
-#include <unistd.h>   // Provides access(...)
-#include <stdio.h>    // Provides perror(...)
-#include <errno.h>    // provides errno
-#include <iostream>
-#include <sstream>
-#include <list>
-#include <sys/ioctl.h>
+#include <vector>
+#include <string>
 
-using namespace std;
+std::vector<std::string> split(const std::string &s, char delim);
 
-class IOUtil {
-public:
-	IOUtil();
-	virtual ~IOUtil();
+std::string intToString(int nb);
 
-	string intToString(int nb);
-
-	int xioctl (int fh, int request, void *arg);
-
-private:
-
-};
+int xioctl (int fh, int request, void *arg);
 
 #endif /* IOUTIL_H_ */

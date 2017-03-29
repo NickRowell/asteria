@@ -16,6 +16,11 @@ public:
     ConfigParameterFamily ** families;
     unsigned int numFamilies;
 
+    void saveToFile(string &path);
+
+    void loadFromFile(string &path);
+
+
 };
 
 #endif // CONFIGSTORE_H

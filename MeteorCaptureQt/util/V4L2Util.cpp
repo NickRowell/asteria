@@ -25,11 +25,9 @@ vector< pair<string,string> > V4L2Util::getCamerasList() {
     bool loop = true;
     int deviceNumber = 0;
 
-    IOUtil ioutil = IOUtil();
-
     do {
 
-        string devicePathStr = "/dev/video" + ioutil.intToString(deviceNumber);
+        string devicePathStr = "/dev/video" + intToString(deviceNumber);
 
         // http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
 
@@ -50,9 +48,10 @@ vector< pair<string,string> > V4L2Util::getCamerasList() {
             }
             else {
 
-                struct v4l2_capability caps = {};
+                struct v4l2_capability caps;
+                memset(&caps, 0, sizeof(caps));
 
-                if (-1 == ioutil.xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+                if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
                     cout << "Fail Querying Capabilities." << endl;
                     perror("Querying Capabilities");
                 }
@@ -94,8 +93,8 @@ void V4L2Util::printPixelFormats(int & fd) {
     vid_fmtdesc.index = 0;
 
     /* Conversion between enumerated type & english */
-    char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
-    char *flags[] = {"uncompressed", "compressed"};
+    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
+    const char *flags[] = {"uncompressed", "compressed"};
 
     /* For each of the supported v4l2_buf_type buffer types */
     for (vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; vid_fmtdesc.type < V4L2_BUF_TYPE_VIDEO_OVERLAY; vid_fmtdesc.type++)
@@ -227,7 +226,6 @@ void V4L2Util::printUserControls(int & fd) {
 void V4L2Util::whatTypesOfStreamingDoesDeviceSupport(int & fd) {
 
 	struct v4l2_requestbuffers req;
-
 	memset(&req, 0, sizeof(req));
 
 	req.count = 4;
@@ -267,13 +265,12 @@ void V4L2Util::whatTypesOfStreamingDoesDeviceSupport(int & fd) {
  */
 bool V4L2Util::getInfos(int & fd) {
 
-    struct v4l2_capability caps = {};
-
-    IOUtil ioutil = IOUtil();
+    struct v4l2_capability caps;
+    memset(&caps, 0, sizeof(caps));
 
     // http://linuxtv.org/downloads/v4l-dvb-apis/vidioc-querycap.html
 
-    if (-1 == ioutil.xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+    if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
         perror("Querying Capabilities");
         return false;
     }
@@ -311,7 +308,7 @@ bool V4L2Util::getInfos(int & fd) {
     cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 
-    if (-1 == ioutil.xioctl (fd, VIDIOC_CROPCAP, &cropcap)) {
+    if (-1 == xioctl (fd, VIDIOC_CROPCAP, &cropcap)) {
         perror("Querying Cropping Capabilities");
         return false;
     }
@@ -326,13 +323,15 @@ bool V4L2Util::getInfos(int & fd) {
 
     int support_grbg10 = 0;
 
-    struct v4l2_fmtdesc fmtdesc = {0};
+    struct v4l2_fmtdesc fmtdesc;
+    memset(&fmtdesc, 0, sizeof(fmtdesc));
+
     fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     char fourcc[5] = {0};
     char c, e;
     printf( "  FORMAT    : CE Desc\n");
 
-    while (0 == ioutil.xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
+    while (0 == xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
 
         strncpy(fourcc, (char *)&fmtdesc.pixelformat, 4);
         if (fmtdesc.pixelformat == V4L2_PIX_FMT_SGRBG10)
@@ -384,8 +383,6 @@ bool V4L2Util::getInfos(int & fd) {
 
 void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
 
-    IOUtil ioutil = IOUtil();
-
     struct v4l2_queryctrl queryctrl;
     memset(&queryctrl, 0, sizeof(queryctrl));
     queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
@@ -431,9 +428,7 @@ void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
 
 bool V4L2Util::createDevice(int id, int &fd) {
 
-    IOUtil ioutil = IOUtil();
-
-    string deviceNameStr = "/dev/video" + ioutil.intToString(id);
+    string deviceNameStr = "/dev/video" + intToString(id);
 
     const char* mDeviceName = deviceNameStr.c_str();
 
@@ -459,11 +454,10 @@ bool V4L2Util::createDevice(int id, int &fd) {
     }
 
     struct v4l2_format mFormat;
-
     memset(&mFormat, 0, sizeof(mFormat));
     mFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     // Preserve original settings as set by v4l2-ctl for example
-    if (-1 == ioutil.xioctl(fd, VIDIOC_G_FMT, &mFormat)){
+    if (-1 == xioctl(fd, VIDIOC_G_FMT, &mFormat)){
     	fprintf(stdout, "Failed to create device\n");
         return false;
     }
@@ -499,8 +493,10 @@ bool V4L2Util::setExposureTime(int & fd, double val){
         // ************************ DISABLE AUTO EXPOSURE *****************************
 
     	struct v4l2_queryctrl queryctrl1;
-        struct v4l2_control control1;
         memset(&queryctrl1, 0, sizeof(queryctrl1));
+
+
+
         queryctrl1.id = V4L2_CID_EXPOSURE_AUTO;
 
         if(-1 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl1)) {
@@ -522,7 +518,8 @@ bool V4L2Util::setExposureTime(int & fd, double val){
 
         }else {
 
-            memset(&control1, 0, sizeof (control1));
+            struct v4l2_control control1;
+            memset(&control1, 0, sizeof(control1));
             control1.id = V4L2_CID_EXPOSURE_AUTO;
             control1.value = V4L2_EXPOSURE_MANUAL;
 

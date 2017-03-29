@@ -19,53 +19,23 @@
 #include <QGridLayout>
 #include <QThread>
 
-
-
-
-
 AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
     : QThread(parent)
 {
     this->state = state;
     abort = false;
-}
-
-AcquisitionThread::~AcquisitionThread()
-{
-    mutex.lock();
-    abort = true;
-    mutex.unlock();
-
-    wait();
-
-    qInfo() << "Deactivating streaming...";
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
-        perror("VIDIOC_STREAMOFF");
-        exit(1);
-    }
-
-    qInfo() << "Closing the camera...";
-    ::close(*(this->state->fd));
-}
-
-void AcquisitionThread::launch() {
-
-    // Lock this object for the duration of this function
-    QMutexLocker locker(&mutex);
-
-    if (!isRunning()) {
-        start(LowPriority);
-    }
-}
 
 
-void AcquisitionThread::run() {
+    bufferinfo = new v4l2_buffer();
+    memset(bufferinfo, 0, sizeof(*bufferinfo));
 
-    mutex.lock();
-    mutex.unlock();
+    format = new v4l2_format();
+    memset(format, 0, sizeof(*format));
 
-//    qInfo() << "Launching camera " << QString::fromStdString(*(state->cameraPath));
+    bufrequest = new v4l2_requestbuffers();
+    memset(bufrequest, 0, sizeof(*bufrequest));
 
+    // Initialise the camera
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -92,8 +62,8 @@ void AcquisitionThread::run() {
     // Only interested in pixel formats for video capture
     vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
-    char *flags[] = {"uncompressed", "compressed"};
+    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
+    const char *flags[] = {"uncompressed", "compressed"};
 
     // Send the VIDIOC_ENUM_FM ioctl and print the results
     while( ioctl(*(this->state->fd), VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 )
@@ -137,7 +107,6 @@ void AcquisitionThread::run() {
         }
     }
 
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //   Determine the available image sizes for the chosen  //
@@ -158,14 +127,11 @@ void AcquisitionThread::run() {
 
             unsigned int width  = framesize.discrete.width;
             unsigned int height = framesize.discrete.height;
-
             qInfo() << "V4L2_FRMSIZE_TYPE_DISCRETE: Width x Height = " << width << " x " << height;
-
             break;
         }
         case V4L2_FRMSIZE_TYPE_STEPWISE: {
             qInfo() << "V4L2_FRMSIZE_TYPE_STEPWISE not supported!";
-
             break;
         }
 
@@ -174,8 +140,8 @@ void AcquisitionThread::run() {
         framesize.index++;
     }
 
-    state->width = 352;
-    state->height = 288;
+    state->width = 1280;
+    state->height = 720;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -183,8 +149,6 @@ void AcquisitionThread::run() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-
-    struct v4l2_format * format = state->format;
     format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     format->fmt.pix.pixelformat = selectedFormat;
     format->fmt.pix.width = state->width;
@@ -203,7 +167,6 @@ void AcquisitionThread::run() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Inform device about buffers to use
-    struct v4l2_requestbuffers * bufrequest = state->bufrequest;
     bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     bufrequest->memory = V4L2_MEMORY_MMAP;
     bufrequest->count = 32;
@@ -222,7 +185,6 @@ void AcquisitionThread::run() {
 
     // Here, the device informs us how much memory is required for the buffers
     // given the image format, frame dimensions and number of buffers.
-    struct v4l2_buffer * bufferinfo = state->bufferinfo;
 
     memset(bufferinfo, 0, sizeof(*bufferinfo));
 
@@ -232,7 +194,7 @@ void AcquisitionThread::run() {
 //	bufferinfo.flags = bufferinfo.flags | V4L2_BUF_FLAG_TIMECODE;
 
     // Array of pointers to the start of each buffer in memory
-    state->buffer_start = new char*[bufrequest->count];
+    buffer_start = new char*[bufrequest->count];
 
     for(unsigned int b = 0; b < bufrequest->count; b++) {
         bufferinfo->index = b;
@@ -242,21 +204,56 @@ void AcquisitionThread::run() {
             exit(1);
         }
 
-//        fprintf(stdout, "bufferinfo.length = %d\nbufferinfo.m.offset = %d\n", bufferinfo.length, bufferinfo.m.offset);
-
         // bufferinfo.length: number of bytes of memory required for the buffer
         // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-        state->buffer_start[b] = (char *)mmap(NULL, bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo->m.offset);
+        buffer_start[b] = (char *)mmap(NULL, bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo->m.offset);
 
-        if(state->buffer_start[b] == MAP_FAILED){
+        if(buffer_start[b] == MAP_FAILED){
             perror("mmap");
             exit(1);
         }
 
-        memset(state->buffer_start[b], 0, bufferinfo->length);
-
-//        qInfo() <<  "Buffer length [bytes]:" << bufferinfo->length;
+        memset(buffer_start[b], 0, bufferinfo->length);
     }
+
+
+}
+
+AcquisitionThread::~AcquisitionThread()
+{
+    mutex.lock();
+    abort = true;
+    mutex.unlock();
+
+    wait();
+
+    qInfo() << "Deactivating streaming...";
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
+        perror("VIDIOC_STREAMOFF");
+        exit(1);
+    }
+
+    qInfo() << "Closing the camera...";
+    ::close(*(this->state->fd));
+
+    delete bufferinfo;
+    delete format;
+    delete bufrequest;
+    delete buffer_start;
+}
+
+void AcquisitionThread::launch() {
+
+    // Lock this object for the duration of this function
+    QMutexLocker locker(&mutex);
+
+    if (!isRunning()) {
+        start(LowPriority);
+    }
+}
+
+
+void AcquisitionThread::run() {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -280,8 +277,6 @@ void AcquisitionThread::run() {
 
         // Index into circular buffer
         unsigned int j = i % bufrequest->count;
-
-//        qInfo() << "buffer index = " << j;
 
         bufferinfo->index = j;
 
@@ -352,11 +347,12 @@ void AcquisitionThread::run() {
 //            exit(1);
 //        }
 
+
         switch(format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
 
             // Notify attached listeners that a new frame is available
-            emit acquiredImage(state->buffer_start[j]);
+//            emit acquiredImage(buffer_start[j]);
 
 //            std::ofstream out(filename);
 //            // Raw PGMs:
@@ -376,18 +372,24 @@ void AcquisitionThread::run() {
         }
         case V4L2_PIX_FMT_MJPEG: {
             // Convert the JPEG image to greyscale
-            char * decodedImage = new char[state->width * state->height];
-            JpgUtil::convertJpeg((unsigned char *)state->buffer_start[j], bufferinfo->bytesused, decodedImage);
+
+
+//            char * decodedImage = new char[state->width * state->height];
+
+            std::vector<char> decodedImage;
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, decodedImage);
             emit acquiredImage(decodedImage);
+
+
 //            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
             break;
         }
         case V4L2_PIX_FMT_YUYV: {
             // Convert the YUYV (luminance + chrominance) image to greyscale
             char * decodedImage = new char[state->width * state->height];
-            JpgUtil::convertYuyv422((unsigned char *)state->buffer_start[j], bufferinfo->bytesused, decodedImage);
+            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], bufferinfo->bytesused, decodedImage);
 
-            emit acquiredImage(decodedImage);
+//            emit acquiredImage(decodedImage);
             break;
         }
 

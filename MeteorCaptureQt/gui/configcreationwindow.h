@@ -26,8 +26,6 @@ private:
     QTabWidget *tabWidget;
     QDialogButtonBox *buttonBox;
 
-
-
 signals:
     void ok();
     void cancel();

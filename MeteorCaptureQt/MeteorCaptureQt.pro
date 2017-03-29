@@ -53,7 +53,8 @@ HEADERS += \
     gui/configparameterfamilytab.h \
     config/systemparameters.h \
     config/cameraparameters.h \
-    config/parameterdir.h
+    config/parameterdir.h \
+    infra/vectorchar.h
 
 LIBS += -ljpeg
 

@@ -50,7 +50,8 @@ protected:
 
 public slots:
 
-    void newFrame(char *bufferStart);
+//    void newFrame(char *bufferStart);
+    void newFrame(std::vector<char> bufferStart);
 };
 
 #endif // GLMETEORDRAWER_H

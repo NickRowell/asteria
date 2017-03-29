@@ -12,12 +12,13 @@ int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
 
-//    QSurfaceFormat format;
-//    format.setDepthBufferSize(24);
-//    QSurfaceFormat::setDefaultFormat(format);
+
+    qRegisterMetaType<std::vector<char>>("vector char");
+
+
+    // TODO: parse application parameters from the command line
 
     MeteorCaptureState * state = new MeteorCaptureState();
-
 
     CameraSelectionWindow camWin(0, state);
 
@@ -32,9 +33,6 @@ int main(int argc, char **argv)
     QObject::connect(&configWin, SIGNAL (cancel()), &camWin, SLOT (show()));
     // Implements advancing from config window to main window
     QObject::connect(&configWin, SIGNAL (ok()), &mainWin, SLOT (slotInit()));
-
-    // Brings up config creation window if user optsa to create new one
-
 
     camWin.show();
 

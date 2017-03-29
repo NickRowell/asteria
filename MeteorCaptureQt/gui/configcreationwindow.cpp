@@ -15,9 +15,6 @@
 #include <QFileDialog>
 #include <QDebug>
 
-#include <iostream>
-#include <fstream>
-
 #include "config/configstore.h"
 #include "gui/configparameterfamilytab.h"
 
@@ -65,18 +62,15 @@ ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState *
 // Read files in the config directory, pick out the parameters and load them into the GUI form
 void ConfigCreationWindow::loadClicked() {
 
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select config directory"),
-                                                    "",
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+    QString path = QFileDialog::getOpenFileName(this, tr("Select asteria.config file"), "", tr("Config Files (*.config)"));
 
-    qInfo() << "Got directory " << dir;
+    string pathStr = path.toUtf8().constData();
 
-    // Load files from config directory. These are likely to be:
-    //
-    // 1) Main config file, containing key-value pairs
-    // 2) Calibration history data, for running calibrations
-    // 3) Other data files e.g. Earth geoid data, JPL ephemeris, maps, etc
+    store->loadFromFile(pathStr);
+
+    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+        tabs[famOff]->updateForm();
+    }
 }
 
 // Write parameters from the GUI form to disk
@@ -95,33 +89,10 @@ void ConfigCreationWindow::saveClicked() {
 
     if(allValid) {
         // Write the parameters to a file in the configuration directory
-
         // TODO: detect if a trailing slash is needed on the configDirPath
         string configFilePath = state->configDirPath + "/asteria.config";
-
-        ofstream myfile(configFilePath);
-
-        // Loop over parameter families
-        for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
-            // Get pointer to this family
-            ConfigParameterFamily * fam = store->families[famOff];
-
-            string famPrefix = fam->title;
-
-            // Loop over parameters within this family
-            for(unsigned int parOff = 0; parOff < fam->numPar; parOff++) {
-                // Get pointer to this parameter
-                ConfigParameter * par = fam->parameters[parOff];
-
-                myfile << famPrefix << "." << par->key << "=" << par->value << "\n";
-            }
-        }
-        myfile.close();
+        store->saveToFile(configFilePath);
     }
-    else {
-        // Indicate with some kind of error message...?
-    }
-
 }
 
 // Read parameters from the GUI, verify them and store them in the state
@@ -142,9 +113,6 @@ void ConfigCreationWindow::okClicked() {
         // Verify config and move on to main window
         hide();
         emit ok();
-    }
-    else {
-        // Indicate with some kind of error message...?
     }
 }
 
