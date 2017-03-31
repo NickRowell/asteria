@@ -132,6 +132,10 @@ void V4L2Util::printPixelFormats(int & fd) {
  */
 long V4L2Util::getEpochTimeShift() {
 
+    // This might be useful:
+//    time_t timer;
+//    tm * gmt = gmtime (&timer);
+
 	// Records time of day, to microsecond accuracy
 	struct timeval epochtime;
 

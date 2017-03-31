@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>          // IOCTL etc
 #include <sys/mman.h>           // mmap etc
 #include <memory>               // shared_ptr
+#include <sstream>              // ostringstream
 
 #include <fstream>
 #include <iostream>
@@ -25,7 +26,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 {
     this->state = state;
     abort = false;
-
 
     bufferinfo = new v4l2_buffer();
     memset(bufferinfo, 0, sizeof(*bufferinfo));
@@ -192,8 +192,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     bufferinfo->memory = V4L2_MEMORY_MMAP;
 
-//	bufferinfo.flags = bufferinfo.flags | V4L2_BUF_FLAG_TIMECODE;
-
     // Array of pointers to the start of each buffer in memory
     buffer_start = new char*[bufrequest->count];
 
@@ -297,37 +295,84 @@ void AcquisitionThread::run() {
         // The image is ready to be read; it is stored in the buffer with index j,
         // which is mapped into application address space at buffer_start[j]
 
+
+
+
+
         // Retrieve the timestamp and frame index for this image
-        bufferinfo->timestamp;  // A struct timeval
-        bufferinfo->timecode;   // A struct v4l2_timecode
-        bufferinfo->sequence;   // __u32 recording the sequence count of this frame
 
-        time_t timer;
-        tm * gmt = gmtime (&timer);
+        qInfo() << "Sequence  = " << bufferinfo->sequence;
+        qInfo() << "Timestamp = " << bufferinfo->timestamp.tv_sec << " [s] " << bufferinfo->timestamp.tv_usec << " [usec]";
 
-//        qInfo() << "Sequence  = " << bufferinfo->sequence;
-//        qInfo() << "Timestamp = " << bufferinfo->timestamp.tv_sec << " [s] " << bufferinfo->timestamp.tv_usec << " [usec]";
+        // Current system clock time (since startup/hibernation) in microseconds
+        long temp_us = 1000000 * bufferinfo->timestamp.tv_sec + (long) round(  bufferinfo->timestamp.tv_usec);
+        // Microseconds after 1970-01-01T00:00:00Z
+        long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
-//		cout << "Timecode: " << endl;
-//		cout << "  frames  = " << bufferinfo.timecode.frames << endl;
-//		cout << "  hours   = " << bufferinfo.timecode.hours << endl;
-//		cout << "  minutes = " << bufferinfo.timecode.minutes << endl;
-//		cout << "  seconds = " << bufferinfo.timecode.seconds << endl;
+        // Split into whole seconds and remainder microseconds
+        long epochTimeStamp_s = epochTimeStamp_us / 1000000;
+        long epochTimeStamp_us_remainder = epochTimeStamp_us % 1000000;
 
-        // Microseconds of the current time of day
-//        long temp_ms = 1000000 * bufferinfo.timestamp.tv_sec + (long) round(  bufferinfo.timestamp.tv_usec);
-//        // Microseconds after 1970-01-01T00:00:00Z
-//        long epochTimeStamp_us = temp_ms +  epochTimeDiffUs;
+        // Convert the seconds part to time_t
+        time_t tt = static_cast<time_t>(epochTimeStamp_s);
 
-//        long US_PER_DAY = 24l * 60l * 60l * 1000000l;
-//        long days = epochTimeStamp_us / US_PER_DAY;
-//        long years = days / 365;
-//        long daysPastTheYear = days % years;
+        // Use standard library function(s) to convert this to human readable date/time
+        struct tm * ptm = gmtime ( &tt );
 
-//        printf( "The frame's timestamp in epoch ms is: %ld \n", epochTimeStamp_us);
-//        printf( "Years/Days =  %ld / %ld \n", years, daysPastTheYear);
+        // seconds after the minute	[0-61]*
+        // * tm_sec is generally 0-59. The extra range is to accommodate for leap seconds in certain systems.
+        int tm_sec = ptm->tm_sec;
+        // minutes after the hour	0-59
+        int tm_min = ptm->tm_min;
+        // hours since midnight	[0-23]
+        int tm_hour = ptm->tm_hour;
+        // day of the month	[1-31]
+        int tm_mday = ptm->tm_mday;
+        // months since January	[0-11]
+        int tm_mon = ptm->tm_mon;
+        // years since 1900; convert to years since AD 0
+        int tm_year = ptm->tm_year + 1900;
+
+        // Construct date string
+        std::ostringstream strs;
+        strs << tm_year << "/" << tm_mon << "/" << tm_mday << "-" << tm_hour << ":" << tm_min << ":" << tm_sec << "." << epochTimeStamp_us_remainder;
+        qInfo() << strs.str().c_str();
+
+        auto image = make_shared<Image>(state->width, state->height);
+
+        image->epochTimeUs = epochTimeStamp_us;
+
+        switch(format->fmt.pix.pixelformat) {
+        case V4L2_PIX_FMT_GREY: {
+            // Read the raw greyscale pixels to the image object
+            char * pBuf = buffer_start[j];
+            unsigned int nPix = state->width * state->height;
+            for(unsigned int p=0; p<nPix; p++) {
+                image->pixelData.push_back(*(pBuf++));
+            }
+            break;
+        }
+        case V4L2_PIX_FMT_MJPEG: {
+            // Convert the JPEG image to greyscale
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
+            break;
+        }
+        case V4L2_PIX_FMT_YUYV: {
+            // Convert the YUYV (luminance + chrominance) image to greyscale
+            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
+            break;
+        }
+
+        }
+
+        // Notify attached listeners that a new frame is available
+        emit acquiredImage(image);
 
 
+
+
+
+        // Saving images to file:
 
         // Write the image data out to a JPEG file
 //        int imgFileHandle;
@@ -348,57 +393,28 @@ void AcquisitionThread::run() {
 //            exit(1);
 //        }
 
-
-        switch(format->fmt.pix.pixelformat) {
-        case V4L2_PIX_FMT_GREY: {
-
-            // Notify attached listeners that a new frame is available
-//            emit acquiredImage(buffer_start[j]);
-
-//            std::ofstream out(filename);
-//            // Raw PGMs:
-//            out << "P5\n" << "640" << " 480" << " 255\n";
-//            for(unsigned int k=0; k<480; k++) {
-//                for(unsigned int l=0; l<640; l++) {
-//                    unsigned int offset = k*640 + l;
-//                    // Pointer to the pixel data
-//                    char * pPix = (char *)(bufStart+offset);
-//                    // Cast to a char
-//                    char pix = *pPix;
-//                    out << pix;
-//                }
-//            }
-//            out.close();
-            break;
-        }
-        case V4L2_PIX_FMT_MJPEG: {
-            // Convert the JPEG image to greyscale
+        // PGM (grey image)
+        //            std::ofstream out(filename);
+        //            // Raw PGMs:
+        //            out << "P5\n" << "640" << " 480" << " 255\n";
+        //            for(unsigned int k=0; k<480; k++) {
+        //                for(unsigned int l=0; l<640; l++) {
+        //                    unsigned int offset = k*640 + l;
+        //                    // Pointer to the pixel data
+        //                    char * pPix = (char *)(bufStart+offset);
+        //                    // Cast to a char
+        //                    char pix = *pPix;
+        //                    out << pix;
+        //                }
+        //            }
+        //            out.close();
 
 
-//            char * decodedImage = new char[state->width * state->height];
-
-            auto image = make_shared<Image>(state->width, state->height);
-
-            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
-
-            emit acquiredImage(image);
-
-
-//            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
-            break;
-        }
-        case V4L2_PIX_FMT_YUYV: {
-            // Convert the YUYV (luminance + chrominance) image to greyscale
-            char * decodedImage = new char[state->width * state->height];
-            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], bufferinfo->bytesused, decodedImage);
-
-//            emit acquiredImage(decodedImage);
-            break;
-        }
-
-        }
+        // JPEG (write the raw buffer data to file rather than the converted greyscale image)
+        //            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
 
 //        ::close(imgFileHandle);
+
     }
 
 }

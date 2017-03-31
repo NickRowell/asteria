@@ -5,13 +5,10 @@ JpgUtil::JpgUtil()
 
 }
 
-void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize, char *decodedImage) {
+void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage) {
 
     // Pointer to data in input image buffer
     unsigned char * pBuf = buffer;
-
-    // Pointer to data in output image buffer
-    char * pOut = decodedImage;
 
     // Pixels are encoded in groups of four bytes
     for(unsigned int p=0; p<insize; p += 4) {
@@ -22,8 +19,8 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
         char cb = *(pBuf++);
 
         // Discard the colour information, or use it somehow?
-        *(pOut++) = y1;
-        *(pOut++) = y2;
+        decodedImage.push_back(y1);
+        decodedImage.push_back(y2);
     }
 }
 

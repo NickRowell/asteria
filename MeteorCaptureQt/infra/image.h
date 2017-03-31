@@ -19,6 +19,13 @@ public:
     unsigned int width;
     unsigned int height;
 
+    /**
+     * @brief epochTimeUs
+     * Records the epoch time in microseconds, i.e. the time elapsed since 1970-01-01T00:00:00Z,
+     * of the time the first byte of image data was captured.
+     */
+    long epochTimeUs;
+
 
 
 

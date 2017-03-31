@@ -5,6 +5,7 @@
 #include "gui/configcreationwindow.h"
 #include "gui/mainwindow.h"
 #include "infra/meteorcapturestate.h"
+#include "util/V4L2Util.h"
 
 using namespace std;
 
@@ -16,7 +17,14 @@ int main(int argc, char **argv)
 
     // TODO: parse application parameters from the command line
 
+
+    // Get the time difference between time of day and the frame timestamp. This needs
+    // to be recomputed whenever the computer hibernates.
+    long epochTimeDiffUs = V4L2Util::getEpochTimeShift();
+
     MeteorCaptureState * state = new MeteorCaptureState();
+
+    state->epochTimeDiffUs = epochTimeDiffUs;
 
     CameraSelectionWindow camWin(0, state);
 

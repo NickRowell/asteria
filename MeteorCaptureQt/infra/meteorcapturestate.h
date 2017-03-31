@@ -14,6 +14,14 @@ public:
     // either by user selection or automated selection of default camera.
 
     /**
+     * @brief epochTimeDiffUs
+     * Time difference between system clock time (since startup/hibernation) and the
+     * current epoch time. Used to convert image time codes to UTC.
+     */
+    long epochTimeDiffUs;
+
+
+    /**
      * \brief Path to the camera device file
      */
     std::string * cameraPath;

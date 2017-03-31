@@ -10,7 +10,6 @@ SOURCES += \
     main.cpp \
     util/IOUtil.cpp \
     util/V4L2Util.cpp \
-    MeteorCapture.cpp \
     gui/cameraselectionwindow.cpp \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \

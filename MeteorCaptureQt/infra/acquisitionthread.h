@@ -32,6 +32,7 @@ private:
 
     /**
      * \brief Information about the video buffer(s) in use.
+     * See https://www.linuxtv.org/downloads/legacy/video4linux/API/V4L2_API/spec/ch03s05.html
      */
     struct v4l2_buffer * bufferinfo;
 
