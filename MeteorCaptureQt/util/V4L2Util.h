@@ -52,7 +52,7 @@ public:
 
     static void printPixelFormats(int & fd);
 
-    static long getEpochTimeShift();
+    static long long getEpochTimeShift();
 
 
 

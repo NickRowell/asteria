@@ -305,13 +305,13 @@ void AcquisitionThread::run() {
         qInfo() << "Timestamp = " << bufferinfo->timestamp.tv_sec << " [s] " << bufferinfo->timestamp.tv_usec << " [usec]";
 
         // Current system clock time (since startup/hibernation) in microseconds
-        long temp_us = 1000000 * bufferinfo->timestamp.tv_sec + (long) round(  bufferinfo->timestamp.tv_usec);
+        long long temp_us = 1000000LL * bufferinfo->timestamp.tv_sec + (long long) round(  bufferinfo->timestamp.tv_usec);
         // Microseconds after 1970-01-01T00:00:00Z
-        long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
+        long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
         // Split into whole seconds and remainder microseconds
-        long epochTimeStamp_s = epochTimeStamp_us / 1000000;
-        long epochTimeStamp_us_remainder = epochTimeStamp_us % 1000000;
+        long long epochTimeStamp_s = epochTimeStamp_us / 1000000LL;
+        long long epochTimeStamp_us_remainder = epochTimeStamp_us % 1000000LL;
 
         // Convert the seconds part to time_t
         time_t tt = static_cast<time_t>(epochTimeStamp_s);

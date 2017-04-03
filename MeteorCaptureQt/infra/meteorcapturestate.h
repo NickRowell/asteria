@@ -18,7 +18,7 @@ public:
      * Time difference between system clock time (since startup/hibernation) and the
      * current epoch time. Used to convert image time codes to UTC.
      */
-    long epochTimeDiffUs;
+    long long epochTimeDiffUs;
 
 
     /**

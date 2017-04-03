@@ -130,7 +130,7 @@ void V4L2Util::printPixelFormats(int & fd) {
  * \return The time difference in microseconds between the clock time (records time since bootup)
  * and the current time of day.
  */
-long V4L2Util::getEpochTimeShift() {
+long long V4L2Util::getEpochTimeShift() {
 
     // This might be useful:
 //    time_t timer;
@@ -145,8 +145,8 @@ long V4L2Util::getEpochTimeShift() {
 	gettimeofday(&epochtime, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &vsTime);
 
-	long uptime_us = vsTime.tv_sec* 1000000 + (long)  round( vsTime.tv_nsec/ 1000.0);
-	long epoch_us =  epochtime.tv_sec * 1000000  + (long) round( epochtime.tv_usec);
+    long long uptime_us = vsTime.tv_sec* 1000000LL + (long long)  round( vsTime.tv_nsec/ 1000.0);
+    long long epoch_us =  epochtime.tv_sec * 1000000LL  + (long long) round( epochtime.tv_usec);
 	return epoch_us - uptime_us;
 }
 

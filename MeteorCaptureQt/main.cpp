@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
     // Get the time difference between time of day and the frame timestamp. This needs
     // to be recomputed whenever the computer hibernates.
-    long epochTimeDiffUs = V4L2Util::getEpochTimeShift();
+    long long epochTimeDiffUs = V4L2Util::getEpochTimeShift();
 
     MeteorCaptureState * state = new MeteorCaptureState();
 
