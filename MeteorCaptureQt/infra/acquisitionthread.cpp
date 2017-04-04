@@ -394,20 +394,20 @@ void AcquisitionThread::run() {
 //        }
 
         // PGM (grey image)
-        //            std::ofstream out(filename);
-        //            // Raw PGMs:
-        //            out << "P5\n" << "640" << " 480" << " 255\n";
-        //            for(unsigned int k=0; k<480; k++) {
-        //                for(unsigned int l=0; l<640; l++) {
-        //                    unsigned int offset = k*640 + l;
-        //                    // Pointer to the pixel data
-        //                    char * pPix = (char *)(bufStart+offset);
-        //                    // Cast to a char
-        //                    char pix = *pPix;
-        //                    out << pix;
-        //                }
-        //            }
-        //            out.close();
+//        std::ofstream out(filename);
+//        // Raw PGMs:
+//        out << "P5\n" << state->width << " " << state->height << " 255\n";
+//        for(unsigned int k=0; k<state->height; k++) {
+//            for(unsigned int l=0; l<state->width; l++) {
+//                unsigned int offset = k*state->width + l;
+//                // Pointer to the pixel data
+//                char * pPix = (char *)(buffer_start[j]+offset);
+//                // Cast to a char
+//                char pix = *pPix;
+//                out << pix;
+//            }
+//        }
+//        out.close();
 
 
         // JPEG (write the raw buffer data to file rather than the converted greyscale image)

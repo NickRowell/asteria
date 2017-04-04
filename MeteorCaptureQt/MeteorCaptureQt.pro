@@ -54,7 +54,6 @@ HEADERS += \
     config/systemparameters.h \
     config/cameraparameters.h \
     config/parameterdir.h \
-    infra/vectorchar.h \
     infra/image.h
 
 LIBS += -ljpeg
