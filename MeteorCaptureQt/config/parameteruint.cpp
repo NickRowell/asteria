@@ -1,23 +1,23 @@
-#include "parameterdouble.h"
+#include "parameteruint.h"
 
 #include <iostream>
 #include <sstream>
 #include <QDebug>
 
-ParameterDouble::ParameterDouble(const string key, const string title, const string units, const ParameterValidator * validator, double * const data)
+ParameterUint::ParameterUint(const string key, const string title, const string units, const ParameterValidator * validator, unsigned int * const data)
     : ConfigParameterBase(key, title, units, validator), data(data)
 {
 
 }
 
-void ParameterDouble::parseAndValidate(const string stringRep) {
+void ParameterUint::parseAndValidate(const string stringRep) {
 
     value = stringRep;
 
-    // First check that the string can be parsed to a double
-    double parsed;
+    // First check that the string can be parsed to an int
+    unsigned int parsed;
     try {
-        parsed = std::stod(stringRep);
+        parsed = std::stoi(stringRep);
     }
     catch(std::exception& e) {
         isValid = INVALID;

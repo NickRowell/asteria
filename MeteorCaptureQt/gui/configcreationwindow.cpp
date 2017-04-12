@@ -59,6 +59,17 @@ ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState *
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), rect));
 }
 
+ConfigCreationWindow::~ConfigCreationWindow() {
+
+    // Delete the ConfigParameterFamilyTabs
+    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
+        delete tabs[famOff];
+    }
+
+    // Delete the ConfigStore
+    delete store;
+}
+
 // Read files in the config directory, pick out the parameters and load them into the GUI form
 void ConfigCreationWindow::loadClicked() {
 

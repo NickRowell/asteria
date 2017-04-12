@@ -13,13 +13,15 @@ public:
 
     ConfigStore(MeteorCaptureState * state);
 
-    ConfigParameterFamily ** families;
+    ~ConfigStore();
+
     unsigned int numFamilies;
+
+    ConfigParameterFamily ** families;
 
     void saveToFile(string &path);
 
     void loadFromFile(string &path);
-
 
 };
 

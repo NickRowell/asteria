@@ -27,15 +27,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     this->state = state;
     abort = false;
 
-    bufferinfo = new v4l2_buffer();
-    memset(bufferinfo, 0, sizeof(*bufferinfo));
-
-    format = new v4l2_format();
-    memset(format, 0, sizeof(*format));
-
-    bufrequest = new v4l2_requestbuffers();
-    memset(bufrequest, 0, sizeof(*bufrequest));
-
     // Initialise the camera
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -44,18 +35,8 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Pixel formats supported by the software, in order of preference
-    // V4L2_PIX_FMT_GREY - Watec camera
-    // V4L2_PIX_FMT_MJPEG - Many (all?) webcams
-//    unsigned int preferredFormats[] = {V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_MJPEG};
-    unsigned int preferredFormats[] = {V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_MJPEG};
-    unsigned int preferredFormatsN = 2;
-
     // Pixel formats provided by the camera
     std::vector< unsigned int > supportedFormats;
-
-    // Chosen format
-    unsigned int selectedFormat;
 
     struct v4l2_fmtdesc vid_fmtdesc;
     memset(&vid_fmtdesc, 0, sizeof(vid_fmtdesc));
@@ -90,16 +71,16 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
     // TODO: handle the case where none of the provided formats are supported
     // From the provided formats, pick the one that is preferred
-    for(unsigned int f=0; f < preferredFormatsN; f++) {
+    for(unsigned int f=0; f < state->preferredFormatsN; f++) {
 
-        unsigned int preferredFormat = preferredFormats[f];
+        unsigned int preferredFormat = state->preferredFormats[f];
 
         // Is the corresponding preferred format provided by the camera?
         if(std::find(supportedFormats.begin(), supportedFormats.end(), preferredFormat) != supportedFormats.end()) {
-            selectedFormat = preferredFormat;
+            state->selectedFormat = preferredFormat;
             QString fmt;
-            fmt.sprintf("%c%c%c%c", selectedFormat & 0xFF, (selectedFormat >> 8) & 0xFF,
-                        (selectedFormat >> 16) & 0xFF, (selectedFormat >> 24) & 0xFF);
+            fmt.sprintf("%c%c%c%c", state->selectedFormat & 0xFF, (state->selectedFormat >> 8) & 0xFF,
+                        (state->selectedFormat >> 16) & 0xFF, (state->selectedFormat >> 24) & 0xFF);
             qInfo() << QString("Selected format: %1").arg(fmt);
             break;
         }
@@ -117,7 +98,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
     struct v4l2_frmsizeenum framesize;
     memset(&framesize, 0, sizeof(framesize));
-    framesize.pixel_format = selectedFormat;
+    framesize.pixel_format = state->selectedFormat;
     framesize.index = 0;
 
     while( ioctl(*(this->state->fd), VIDIOC_ENUM_FRAMESIZES, &framesize ) == 0 )
@@ -141,21 +122,18 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
         framesize.index++;
     }
 
-    state->width = 1280;
-    state->height = 720;
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
-    //        Set the image format for the camera            //
+    //      Set the image size & format for the camera       //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    format->fmt.pix.pixelformat = selectedFormat;
-    format->fmt.pix.width = state->width;
-    format->fmt.pix.height = state->height;
+    state->format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    state->format->fmt.pix.pixelformat = state->selectedFormat;
+    state->format->fmt.pix.width = state->width;
+    state->format->fmt.pix.height = state->height;
 
-    if(ioctl(*(this->state->fd), VIDIOC_S_FMT, format) < 0) {
+    if(ioctl(*(this->state->fd), VIDIOC_S_FMT, state->format) < 0) {
         perror("VIDIOC_S_FMT");
         ::close(*(this->state->fd));
         exit(1);
@@ -168,11 +146,11 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Inform device about buffers to use
-    bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    bufrequest->memory = V4L2_MEMORY_MMAP;
-    bufrequest->count = 32;
+    state->bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    state->bufrequest->memory = V4L2_MEMORY_MMAP;
+    state->bufrequest->count = 32;
 
-    if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, bufrequest) < 0){
+    if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, state->bufrequest) < 0){
         perror("VIDIOC_REQBUFS");
         ::close(*(this->state->fd));
         exit(1);
@@ -186,33 +164,30 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
     // Here, the device informs us how much memory is required for the buffers
     // given the image format, frame dimensions and number of buffers.
-
-    memset(bufferinfo, 0, sizeof(*bufferinfo));
-
-    bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    bufferinfo->memory = V4L2_MEMORY_MMAP;
+    state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
     // Array of pointers to the start of each buffer in memory
-    buffer_start = new char*[bufrequest->count];
+    buffer_start = new char*[state->bufrequest->count];
 
-    for(unsigned int b = 0; b < bufrequest->count; b++) {
-        bufferinfo->index = b;
+    for(unsigned int b = 0; b < state->bufrequest->count; b++) {
+        state->bufferinfo->index = b;
 
-        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, bufferinfo) < 0){
+        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QUERYBUF");
             exit(1);
         }
 
         // bufferinfo.length: number of bytes of memory required for the buffer
         // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-        buffer_start[b] = (char *)mmap(NULL, bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo->m.offset);
+        buffer_start[b] = (char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
 
         if(buffer_start[b] == MAP_FAILED){
             perror("mmap");
             exit(1);
         }
 
-        memset(buffer_start[b], 0, bufferinfo->length);
+        memset(buffer_start[b], 0, state->bufferinfo->length);
     }
 
 
@@ -227,7 +202,7 @@ AcquisitionThread::~AcquisitionThread()
     wait();
 
     qInfo() << "Deactivating streaming...";
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMOFF");
         exit(1);
     }
@@ -235,9 +210,6 @@ AcquisitionThread::~AcquisitionThread()
     qInfo() << "Closing the camera...";
     ::close(*(this->state->fd));
 
-    delete bufferinfo;
-    delete format;
-    delete bufrequest;
     delete buffer_start;
 }
 
@@ -260,12 +232,10 @@ void AcquisitionThread::run() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &(bufferinfo->type)) < 0){
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMON");
         exit(1);
     }
-
-    //////////////////////////////////// TO OPERATE METHOD:
 
     // Write frames into circular buffer in device memory
     for(unsigned long i = 0; ; i++) {
@@ -275,19 +245,19 @@ void AcquisitionThread::run() {
         }
 
         // Index into circular buffer
-        unsigned int j = i % bufrequest->count;
+        unsigned int j = i % state->bufrequest->count;
 
-        bufferinfo->index = j;
+        state->bufferinfo->index = j;
 
         // Put the buffer in the incoming queue.
-        if(ioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){
+        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }
 
         // The buffer's waiting in the outgoing queue.
-        bufferinfo->flags = V4L2_BUF_FLAG_TIMECODE;
-        if(ioctl(*(this->state->fd), VIDIOC_DQBUF, bufferinfo) < 0){
+        state->bufferinfo->flags = V4L2_BUF_FLAG_TIMECODE;
+        if(ioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }
@@ -295,17 +265,13 @@ void AcquisitionThread::run() {
         // The image is ready to be read; it is stored in the buffer with index j,
         // which is mapped into application address space at buffer_start[j]
 
-
-
-
-
         // Retrieve the timestamp and frame index for this image
 
-        qInfo() << "Sequence  = " << bufferinfo->sequence;
-        qInfo() << "Timestamp = " << bufferinfo->timestamp.tv_sec << " [s] " << bufferinfo->timestamp.tv_usec << " [usec]";
+        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
+        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
 
         // Current system clock time (since startup/hibernation) in microseconds
-        long long temp_us = 1000000LL * bufferinfo->timestamp.tv_sec + (long long) round(  bufferinfo->timestamp.tv_usec);
+        long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
         // Microseconds after 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
@@ -342,7 +308,7 @@ void AcquisitionThread::run() {
 
         image->epochTimeUs = epochTimeStamp_us;
 
-        switch(format->fmt.pix.pixelformat) {
+        switch(state->format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
             // Read the raw greyscale pixels to the image object
             char * pBuf = buffer_start[j];
@@ -354,12 +320,12 @@ void AcquisitionThread::run() {
         }
         case V4L2_PIX_FMT_MJPEG: {
             // Convert the JPEG image to greyscale
-            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->pixelData);
             break;
         }
         case V4L2_PIX_FMT_YUYV: {
             // Convert the YUYV (luminance + chrominance) image to greyscale
-            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->pixelData);
+            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->pixelData);
             break;
         }
 
@@ -367,10 +333,6 @@ void AcquisitionThread::run() {
 
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
-
-
-
-
 
         // Saving images to file:
 

@@ -15,7 +15,7 @@ ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, Q
 
     // Create fields for each parameter
     for(unsigned int parOff = 0; parOff < fam->numPar; parOff++) {
-        ConfigParameter * par = fam->parameters[parOff];
+        ConfigParameterBase * par = fam->parameters[parOff];
 
         // Create label and line edit for the parameter
         string parLabel = par->title + " [" + par->units + "]";
@@ -23,7 +23,7 @@ ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, Q
         QLineEdit *edit = new QLineEdit();
         edit->setReadOnly(false);
 
-        std::pair< QLineEdit *, ConfigParameter * > c;
+        std::pair< QLineEdit *, ConfigParameterBase * > c;
         c.first = edit;
         c.second = par;
         links.push_back(c);
@@ -47,7 +47,7 @@ void ConfigParameterFamilyTab::updateForm() {
     for(unsigned int p=0; p<links.size(); p++) {
 
         QLineEdit * edit = links[p].first;
-        ConfigParameter * par = links[p].second;
+        ConfigParameterBase * par = links[p].second;
 
         // Read the value of the parameter and write it to the lineedit field
         edit->setText(tr(par->value.c_str()));
@@ -84,7 +84,7 @@ bool ConfigParameterFamilyTab::readAndValidate() {
     for(unsigned int p=0; p<links.size(); p++) {
 
         QLineEdit * edit = links[p].first;
-        ConfigParameter * par = links[p].second;
+        ConfigParameterBase * par = links[p].second;
 
         // Read the string entered into the line edit and convert to const char *
         QString entry = links[p].first->text();
@@ -92,7 +92,7 @@ bool ConfigParameterFamilyTab::readAndValidate() {
         const char *c_entry = ba.data();
 
         // Pass it to the parameter for validation and assignment
-        par->validate(c_entry);
+        par->parseAndValidate(c_entry);
 
         // Check if it passed and incidate in the form if not
         if(par->isValid == INVALID) {

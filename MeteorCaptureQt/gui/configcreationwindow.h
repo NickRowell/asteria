@@ -15,6 +15,7 @@ class ConfigCreationWindow : public QDialog
     Q_OBJECT
 public:
     explicit ConfigCreationWindow(QWidget *parent = 0, MeteorCaptureState * state = 0);
+    ~ConfigCreationWindow();
 
 private:
 

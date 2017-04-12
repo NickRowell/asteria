@@ -21,7 +21,7 @@ private:
      * @brief Used to maintain link between the line entry fields (that we use to read/write parameters) and the
      * parameters in memory.
      */
-    std::vector< std::pair< QLineEdit *, ConfigParameter * > > links;
+    std::vector< std::pair< QLineEdit *, ConfigParameterBase * > > links;
 
 signals:
 

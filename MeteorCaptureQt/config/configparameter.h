@@ -1,7 +1,10 @@
 #ifndef CONFIGPARAMETER_H
 #define CONFIGPARAMETER_H
 
+#include "config/validate.h"
+
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -15,17 +18,14 @@ using namespace std;
 enum ParameterValidity{VALID, INVALID, WARNING};
 
 /**
- * @brief The ConfigParameter class
- * Base class for all configuration parameter types. Each subclass must provide an implementation
- * of the validate(...) method and provide meaningful error messages if it fails to parse a
- * value from the string. Each subclass must also contain a field that stores the parsed, converted
- * value of the parameter.
+ * @brief The ConfigParameterBase class
+ * Non-templated base class so we can use vectors of pointers to ConfigParameterBase
  */
-class ConfigParameter
+class ConfigParameterBase
 {
 
 protected:
-    ConfigParameter(const string key, const string title, const string units) : key(key), title(title), units(units) {
+    ConfigParameterBase(const string key, const string title, const string units, const ParameterValidator * validator) : key(key), title(title), units(units), validator(validator) {
 
     }
 
@@ -40,6 +40,9 @@ public:
     // Descriptive name of the units
     const string units;
 
+    // Validator for the parameter value
+    const ParameterValidator * validator;
+
     // String representation of the parameter value, from which any valid parameter value was parsed
     string value;
 
@@ -50,7 +53,8 @@ public:
     string message;
 
     // Abstract validation method that all parameters must override
-    virtual void validate(const string stringRep) =0;
+    // The =0 syntax makes this a 'pure virtual' function that MUST be overridden in derived classes.
+    virtual void parseAndValidate(const string stringRep) =0;
 };
 
 #endif // CONFIGPARAMETER_H

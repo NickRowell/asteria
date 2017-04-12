@@ -3,23 +3,18 @@
 
 #include "configparameter.h"
 
-class ParameterDir : public ConfigParameter
+class ParameterDir : public ConfigParameterBase
 {
 
 public:
 
-    ParameterDir(const string key, const string title, const string units, string * const data, const bool &requireWritePermission,
-                 const bool &requireExists, const bool &createIfNotExists);
+    ParameterDir(const string key, const string title, const string units, const ParameterValidator * validator, string * const data);
 
+    // Pointer to the corresponding parameter in the state object, which is set whenever the parameter is
+    // read from the GUI/config file and validated successfully
     string * const data;
 
-    bool requireWritePermission;
-
-    bool requireExists;
-
-    bool createIfNotExists;
-
-    void validate(const string path);
+    void parseAndValidate(const string path);
 
 };
 

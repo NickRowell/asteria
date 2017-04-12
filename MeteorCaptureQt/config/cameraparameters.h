@@ -2,18 +2,22 @@
 #define CAMERAPARAMETERS_H
 
 #include "config/configparameterfamily.h"
+#include "config/parameteruintarray.h"
 #include "infra/meteorcapturestate.h"
+
+#include <QDebug>
 
 class CameraParameters : public ConfigParameterFamily {
 
 public:
 
-    CameraParameters(MeteorCaptureState * state) : ConfigParameterFamily("Camera", 3) {
+    CameraParameters(MeteorCaptureState * state) : ConfigParameterFamily("Camera", 1) {
 
-        parameters = new ConfigParameter*[numPar];
+        parameters = new ConfigParameterBase*[numPar];
+        validators = new ParameterValidator*[numPar];
 
+        // Image size
         // Lens focal length
-        // Image size (should this be set programatically depending on the selected camera?)
         // Aperture size
         // Projection matrix
         // Azimuth
@@ -22,11 +26,14 @@ public:
         // Gain (?)
         // Exposure time (?)
 
-        parameters[0] = new ParameterDouble("longitude", "Longitude", "deg", &(state->longitude), 0.0, 360.0);
-        parameters[1] = new ParameterDouble("latitude", "Latitude", "deg", &(state->latitude), -90.0, 90.0);
-        parameters[2] = new ParameterDouble("altitude", "Altitude", "m", &(state->altitude), -100.0, 5000.0);
-    }
+        // Create validators for each parameter
+        validators[0] = new ValidateImageSize(state);
 
+        unsigned int * vals[2] = {&(state->width), &(state->height)};
+
+        // Create parameters
+        parameters[0] = new ParameterUintArray("image_width_height", "Image Width and Height", "pixels", validators[0], 2u, vals);
+    }
 };
 
 #endif

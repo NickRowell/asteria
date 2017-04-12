@@ -20,6 +20,13 @@ ConfigStore::ConfigStore(MeteorCaptureState *state) {
     families[2] = new CameraParameters(state);
 }
 
+ConfigStore::~ConfigStore() {
+    for(unsigned int famOff = 0; famOff < numFamilies; famOff++) {
+        delete families[famOff];
+    }
+    delete [] families;
+}
+
 void ConfigStore::saveToFile(string &path) {
 
     ofstream myfile(path);
@@ -30,15 +37,19 @@ void ConfigStore::saveToFile(string &path) {
         // Get pointer to this family
         ConfigParameterFamily * fam = families[famOff];
 
+        myfile << "# " << fam->title << " Parameters\n";
+
         string famPrefix = fam->title;
 
         // Loop over parameters within this family
         for(unsigned int parOff = 0; parOff < fam->numPar; parOff++) {
             // Get pointer to this parameter
-            ConfigParameter * par = fam->parameters[parOff];
+            ConfigParameterBase * par = fam->parameters[parOff];
             // Write to file
             myfile << famPrefix << "." << par->key << "=" << par->value << "\n";
         }
+
+        myfile << "\n";
     }
     myfile.close();
 }
@@ -89,7 +100,7 @@ void ConfigStore::loadFromFile(string &path) {
                         }
                         if(fam != NULL) {
                             // Found the family; look up the parameter
-                            ConfigParameter * par = NULL;
+                            ConfigParameterBase * par = NULL;
                             for(unsigned int parOff = 0; parOff < fam->numPar; parOff++) {
                                 if(fam->parameters[parOff]->key.compare(parameterName) == 0) {
                                     par = fam->parameters[parOff];
@@ -98,7 +109,7 @@ void ConfigStore::loadFromFile(string &path) {
                             }
                             if(par != NULL) {
                                 // Got the parameter, got the value...
-                                par->validate(value);
+                                par->parseAndValidate(value);
                             }
                             else {
                                 // Found parameter family but not the parameter
