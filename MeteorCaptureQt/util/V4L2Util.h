@@ -9,12 +9,16 @@
 #define V4L2UTIL_H_
 
 
+#include <QString>
+#include <QDebug>
+
 #include <time.h>
 #include <math.h>
 
 #include <vector>     // provides vector
 #include <string>     // provides string
 #include <utility>    // provides pair
+#include <algorithm>            // std::find(...)
 
 // See http://stackoverflow.com/questions/14003466/how-can-i-read-and-write-from-files-using-the-headers-fcntl-h-and-unistd-h
 // See https://linux.die.net/man/3/open
@@ -33,9 +37,10 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
+#include <linux/videodev2.h>
+
 #include "IOUtil.h"
 
-#include <linux/videodev2.h>
 
 // Mean I can use vector rather tha std::vector etc.
 using namespace std;
@@ -48,13 +53,15 @@ public:
 
 	virtual ~V4L2Util();
 
-    static vector< pair< string, string > > getCamerasList();
+    static vector< pair< string, string > > getAllV4LCameras();
 
-    static void printPixelFormats(int & fd);
+    static vector< pair< string, string > > getSupportedV4LCameras(const unsigned int * supportedFmts, const unsigned int supportedFmtsN);
+
+    static __u32 getPreferredPixelFormat(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN);
+
+    static string getFourCC(__u32 format);
 
     static long long getEpochTimeShift();
-
-
 
 
 

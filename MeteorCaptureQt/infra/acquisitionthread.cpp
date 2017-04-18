@@ -35,59 +35,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Pixel formats provided by the camera
-    std::vector< unsigned int > supportedFormats;
-
-    struct v4l2_fmtdesc vid_fmtdesc;
-    memset(&vid_fmtdesc, 0, sizeof(vid_fmtdesc));
-    vid_fmtdesc.index = 0;
-    // Only interested in pixel formats for video capture
-    vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
-    const char *flags[] = {"uncompressed", "compressed"};
-
-    // Send the VIDIOC_ENUM_FM ioctl and print the results
-    while( ioctl(*(this->state->fd), VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 )
-    {
-        supportedFormats.push_back(vid_fmtdesc.pixelformat);
-
-        // We got a video format/codec back
-        qInfo() << QString("VIDIOC_ENUM_FMT(%1, %2)").arg(QString::number(vid_fmtdesc.index), buf_types[vid_fmtdesc.type-1]);
-        qInfo() << QString("  index       : %1").arg(QString::number(vid_fmtdesc.index));
-        qInfo() << QString("  type        : %1").arg(buf_types[vid_fmtdesc.type-1]);
-        qInfo() << QString("  flags       : %1").arg(flags[vid_fmtdesc.flags]);
-        QString qDesc;
-        qDesc.sprintf("  description : %s", vid_fmtdesc.description);
-        qInfo() << qDesc;
-        QString fmt;
-        fmt.sprintf("%c%c%c%c",vid_fmtdesc.pixelformat & 0xFF, (vid_fmtdesc.pixelformat >> 8) & 0xFF,
-                    (vid_fmtdesc.pixelformat >> 16) & 0xFF, (vid_fmtdesc.pixelformat >> 24) & 0xFF);
-        qInfo() << QString("%1").arg(fmt);
-
-        // Increment the format descriptor index
-        vid_fmtdesc.index++;
-    }
-
-    // TODO: handle the case where none of the provided formats are supported
-    // From the provided formats, pick the one that is preferred
-    for(unsigned int f=0; f < state->preferredFormatsN; f++) {
-
-        unsigned int preferredFormat = state->preferredFormats[f];
-
-        // Is the corresponding preferred format provided by the camera?
-        if(std::find(supportedFormats.begin(), supportedFormats.end(), preferredFormat) != supportedFormats.end()) {
-            state->selectedFormat = preferredFormat;
-            QString fmt;
-            fmt.sprintf("%c%c%c%c", state->selectedFormat & 0xFF, (state->selectedFormat >> 8) & 0xFF,
-                        (state->selectedFormat >> 16) & 0xFF, (state->selectedFormat >> 24) & 0xFF);
-            qInfo() << QString("Selected format: %1").arg(fmt);
-            break;
-        }
-        else {
-            // Preferred format is not supported
-        }
-    }
+    // Already configured
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -96,31 +44,33 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    struct v4l2_frmsizeenum framesize;
-    memset(&framesize, 0, sizeof(framesize));
-    framesize.pixel_format = state->selectedFormat;
-    framesize.index = 0;
+    // Already configured
 
-    while( ioctl(*(this->state->fd), VIDIOC_ENUM_FRAMESIZES, &framesize ) == 0 )
-    {
-        // TODO: what are the implications of the different types?
-        switch(framesize.type) {
-        case V4L2_FRMSIZE_TYPE_DISCRETE: {
+//    struct v4l2_frmsizeenum framesize;
+//    memset(&framesize, 0, sizeof(framesize));
+//    framesize.pixel_format = state->selectedFormat;
+//    framesize.index = 0;
 
-            unsigned int width  = framesize.discrete.width;
-            unsigned int height = framesize.discrete.height;
-            qInfo() << "V4L2_FRMSIZE_TYPE_DISCRETE: Width x Height = " << width << " x " << height;
-            break;
-        }
-        case V4L2_FRMSIZE_TYPE_STEPWISE: {
-            qInfo() << "V4L2_FRMSIZE_TYPE_STEPWISE not supported!";
-            break;
-        }
+//    while( ioctl(*(this->state->fd), VIDIOC_ENUM_FRAMESIZES, &framesize ) == 0 )
+//    {
+//        // TODO: what are the implications of the different types?
+//        switch(framesize.type) {
+//        case V4L2_FRMSIZE_TYPE_DISCRETE: {
 
-        }
+//            unsigned int width  = framesize.discrete.width;
+//            unsigned int height = framesize.discrete.height;
+//            qInfo() << "V4L2_FRMSIZE_TYPE_DISCRETE: Width x Height = " << width << " x " << height;
+//            break;
+//        }
+//        case V4L2_FRMSIZE_TYPE_STEPWISE: {
+//            qInfo() << "V4L2_FRMSIZE_TYPE_STEPWISE not supported!";
+//            break;
+//        }
 
-        framesize.index++;
-    }
+//        }
+
+//        framesize.index++;
+//    }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

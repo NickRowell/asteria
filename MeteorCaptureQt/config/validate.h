@@ -196,7 +196,7 @@ public:
             exit(1);
         }
 
-        if(state->format->fmt.pix.width != width ||state->format->fmt.pix.height != height ) {
+        if(state->format->fmt.pix.width != width || state->format->fmt.pix.height != height ) {
             // Driver couldn't support requested image width
             strs << "Closest support image width and height is \'" << state->format->fmt.pix.width << " " << state->format->fmt.pix.height << "\'";
             return false;

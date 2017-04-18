@@ -13,6 +13,14 @@ class MeteorCaptureState
 
 public:
 
+    // Application parameters (read from command line, affect behaviour of application)
+    // e.g. run headless
+    //      config directory location
+    /**
+     * \brief Boolean flag to indicate if we're running without a GUI.
+     */
+    int headless = 0;
+
     // State associated with the operation and handling of the camera
 
     // Pixel formats supported by the software, in order of preference
@@ -41,7 +49,15 @@ public:
      */
     struct v4l2_requestbuffers * bufrequest;
 
+    /**
+     * \brief Path to the camera device file
+     */
+    std::string * cameraPath;
 
+    /**
+     * \brief Open file descriptor on the camera device
+     */
+    int * fd;
 
 
     // Cannot be loaded from config file: must be created programmatically,
@@ -54,17 +70,6 @@ public:
      */
     long long epochTimeDiffUs;
 
-
-    /**
-     * \brief Path to the camera device file
-     */
-    std::string * cameraPath;
-
-    /**
-     * \brief Open file descriptor on the camera device
-     */
-    int * fd;
-
     /**
      * \brief The image width
      */
@@ -75,14 +80,15 @@ public:
      */
     unsigned int height;
 
-
-    // Application parameters (read from command line, affect behaviour of application)
-    // e.g. run headless
-    //      config directory location
     /**
-     * \brief Boolean flag to indicate if we're running without a GUI.
+     * \brief Camera azimuthal angle [decimal degrees]
      */
-    bool headless;
+    double azimuth;
+
+    /**
+     * \brief Camera elevation angle [decimal degrees]
+     */
+    double elevation;
 
     // System parameters
 

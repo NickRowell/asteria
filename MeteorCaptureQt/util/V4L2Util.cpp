@@ -18,7 +18,7 @@ V4L2Util::~V4L2Util() {
  * contains the device path (e.g. /dev/video1) and a string containing
  * the name of the camera.
  */
-vector< pair<string,string> > V4L2Util::getCamerasList() {
+vector< pair<string,string> > V4L2Util::getAllV4LCameras() {
 
     vector< pair<string,string> > camerasList;
 
@@ -80,44 +80,104 @@ vector< pair<string,string> > V4L2Util::getCamerasList() {
     return camerasList;
 }
 
+
 /**
- * Queries the given video device and prints the available pixel formats for video capture, output and overlay.
  *
- * \param fd
- *  Open file descriptor on the video device to be queried.
  */
-void V4L2Util::printPixelFormats(int & fd) {
+vector< pair<string,string> > V4L2Util::getSupportedV4LCameras(const unsigned int * supportedFmts, const unsigned int supportedFmtsN) {
+
+    vector< pair<string,string> > allCamerasList = V4L2Util::getAllV4LCameras();
+
+    vector< pair<string,string> > supportedCamerasList;
+
+    for(unsigned int p=0; p<allCamerasList.size(); p++) {
+
+        pair<string,string> camera = allCamerasList[p];
+
+        // Open file desriptor on the camera
+        int fd = open(camera.first.c_str(), O_RDWR);
+
+        // Determine if the camera provides one of the supported image formats
+        __u32 format = getPreferredPixelFormat(fd, supportedFmts, supportedFmtsN);
+
+        if(format != 0) {
+
+            // The camera does provide one of the supported pixel formats
+            supportedCamerasList.push_back(camera);
+        }
+
+        // Close file descriptor
+        ::close(fd);
+    }
+
+    return supportedCamerasList;
+}
+
+/**
+ * Translate the pixel format integer to four character code
+ * @brief V4L2Util::getFourCC
+ * @param format
+ * @return
+ */
+string V4L2Util::getFourCC(__u32 format) {
+    char buff[10];
+    snprintf(buff, sizeof(buff), "%c%c%c%c", format & 0xFF, (format >> 8) & 0xFF, (format >> 16) & 0xFF, (format >> 24) & 0xFF);
+    std::string buffAsStdStr = buff;
+    return buffAsStdStr;
+}
+
+/**
+ * Queries the pixel formats provided by the camera and returns the preferred one, being the one
+ * that appears earliest in the list of supportedFmts.
+ */
+__u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN) {
+
+    // Pixel formats provided by the camera
+    std::vector< unsigned int > availableFormats;
 
     struct v4l2_fmtdesc vid_fmtdesc;
     memset(&vid_fmtdesc, 0, sizeof(vid_fmtdesc));
     vid_fmtdesc.index = 0;
+    // Only interested in pixel formats for video capture
+    vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    /* Conversion between enumerated type & english */
-    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
-    const char *flags[] = {"uncompressed", "compressed"};
+//    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
+//    const char *flags[] = {"uncompressed", "compressed"};
 
-    /* For each of the supported v4l2_buf_type buffer types */
-    for (vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; vid_fmtdesc.type < V4L2_BUF_TYPE_VIDEO_OVERLAY; vid_fmtdesc.type++)
+    // Get list of all the available pixel formats
+    while( ioctl(fd, VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 )
     {
-        /* Send the VIDIOC_ENUM_FM ioctl and print the results */
-        while( ioctl(fd, VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 )
-        {
-            /* We got a video format/codec back */
-            fprintf(stdout,"VIDIOC_ENUM_FMT(%d, %s)\n", vid_fmtdesc.index, buf_types[vid_fmtdesc.type-1]);
-            fprintf(stdout, "  index        :%d\n", vid_fmtdesc.index);
-            fprintf(stdout, "  type         :%s\n", buf_types[vid_fmtdesc.type-1]);
-            fprintf(stdout, "  flags        :%s\n", flags[vid_fmtdesc.flags]);
-            fprintf(stdout, "  description  :%s\n", vid_fmtdesc.description);
+        // We got a video format/codec back
+//        qInfo() << QString("VIDIOC_ENUM_FMT(%1, %2)").arg(QString::number(vid_fmtdesc.index), buf_types[vid_fmtdesc.type-1]);
+//        qInfo() << QString("  index       : %1").arg(QString::number(vid_fmtdesc.index));
+//        qInfo() << QString("  type        : %1").arg(buf_types[vid_fmtdesc.type-1]);
+//        qInfo() << QString("  flags       : %1").arg(flags[vid_fmtdesc.flags]);
+//        QString qDesc;
+//        qDesc.sprintf("  description : %s", vid_fmtdesc.description);
+//        qInfo() << qDesc;
+//        QString fmt;
+//        fmt.sprintf("%c%c%c%c",vid_fmtdesc.pixelformat & 0xFF, (vid_fmtdesc.pixelformat >> 8) & 0xFF,
+//                    (vid_fmtdesc.pixelformat >> 16) & 0xFF, (vid_fmtdesc.pixelformat >> 24) & 0xFF);
+//        qInfo() << QString("%1").arg(fmt);
 
-            /* Convert the pixelformat attributes from FourCC into 'human readable' format */
-            fprintf(stdout, "  pixelformat  :%c%c%c%c\n",
-                            vid_fmtdesc.pixelformat & 0xFF, (vid_fmtdesc.pixelformat >> 8) & 0xFF,
-                            (vid_fmtdesc.pixelformat >> 16) & 0xFF, (vid_fmtdesc.pixelformat >> 24) & 0xFF);
+        availableFormats.push_back(vid_fmtdesc.pixelformat);
+        // Increment the format descriptor index
+        vid_fmtdesc.index++;
+    }
 
-            /* Increment the index */
-            vid_fmtdesc.index++;
+    // From the available formats pick the one that is preferred
+    for(unsigned int f=0; f < supportedFmtsN; f++) {
+
+        unsigned int preferredFormat = supportedFmts[f];
+
+        // Is the corresponding preferred format provided by the camera?
+        if(std::find(availableFormats.begin(), availableFormats.end(), preferredFormat) != availableFormats.end()) {
+            return preferredFormat;
         }
     }
+
+    // The camera does not provide any supported pixel formats
+    return 0;
 }
 
 /**

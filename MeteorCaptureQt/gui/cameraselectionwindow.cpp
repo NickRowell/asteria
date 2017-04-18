@@ -18,8 +18,8 @@ CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState
 {
     this->state = state;
 
-    // Query the available cameras
-    cameras = V4L2Util::getCamerasList();
+    // Query the supported cameras
+    cameras = V4L2Util::getSupportedV4LCameras(state->preferredFormats, state->preferredFormatsN);
 
     if(cameras.size() == 0) {
         // Not found any cameras! Can't proceed.
@@ -74,10 +74,15 @@ void CameraSelectionWindow::slotCameraButtonClicked()
 
     // Copy path to the camera device
     state->cameraPath = new string(camera.first);
+
     // Open the camera device and store the file descriptor to the state
     state->fd = new int(open(camera.first.c_str(), O_RDWR));
 
+    // Set the pixel format
+    state->selectedFormat = V4L2Util::getPreferredPixelFormat(*(state->fd), state->preferredFormats, state->preferredFormatsN);
+
     qInfo() << "Selected camera = " << QString::fromStdString(camera.second);
+    qInfo() << "Selected pixel format = " << QString::fromStdString(V4L2Util::getFourCC(state->selectedFormat));
 
     hide();
     emit cameraSelected(camera.first);
