@@ -13,6 +13,12 @@ class MeteorCaptureState
 
 public:
 
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                    Application parameters                    //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
     // Application parameters (read from command line, affect behaviour of application)
     // e.g. run headless
     //      config directory location
@@ -70,6 +76,12 @@ public:
      */
     long long epochTimeDiffUs;
 
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                      Camera parameters                       //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
     /**
      * \brief The image width
      */
@@ -90,7 +102,11 @@ public:
      */
     double elevation;
 
-    // System parameters
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                      System parameters                       //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
      * @brief configDirPath
@@ -112,7 +128,11 @@ public:
      */
     string jplEphemerisPath;
 
-    // Station parameters
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                      Station parameters                      //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
      * \brief Station longitude [decimal degrees]
@@ -129,11 +149,16 @@ public:
      */
     double altitude;
 
-    // Camera parameters
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                     Detection parameters                     //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Detection parameters
-
-    // Analysis parameters
+    /**
+     * @brief Number of frames to buffer for head of each detection
+     */
+    unsigned int detection_head;
 
 
     MeteorCaptureState() {

@@ -22,10 +22,7 @@
 #include <QThread>
 
 AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
-    : QThread(parent)
-{
-    this->state = state;
-    abort = false;
+    : QThread(parent), state(state), ringBuffer(state->detection_head), abort(false) {
 
     // Initialise the camera
 
@@ -140,7 +137,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
         memset(buffer_start[b], 0, state->bufferinfo->length);
     }
 
-
 }
 
 AcquisitionThread::~AcquisitionThread()
@@ -169,7 +165,7 @@ void AcquisitionThread::launch() {
     QMutexLocker locker(&mutex);
 
     if (!isRunning()) {
-        start(LowPriority);
+        start(NormalPriority);
     }
 }
 
@@ -254,7 +250,7 @@ void AcquisitionThread::run() {
         strs << tm_year << "/" << tm_mon << "/" << tm_mday << "-" << tm_hour << ":" << tm_min << ":" << tm_sec << "." << epochTimeStamp_us_remainder;
         qInfo() << strs.str().c_str();
 
-        auto image = make_shared<Image>(state->width, state->height);
+        std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
 
         image->epochTimeUs = epochTimeStamp_us;
 
@@ -281,8 +277,52 @@ void AcquisitionThread::run() {
 
         }
 
+        // Retrieve the previous image
+        std::shared_ptr<Image> const& prev = ringBuffer.back();
+
+        if(prev) {
+            // Got a previous image
+            // TODO: implement event detection algorithm
+
+            int nChangedPixels = 0;
+            int threshold = 50;
+
+            unsigned int nPix = state->width * state->height;
+            for(unsigned int p=0; p<nPix; p++) {
+
+                char newPixel = image->pixelData[p];
+                char oldPixel = prev->pixelData[p];
+
+                if(abs(newPixel - oldPixel) > threshold) {
+                    nChangedPixels++;
+                }
+
+            }
+
+            qInfo() << "Number of changed pixels = " << nChangedPixels;
+
+        }
+
+        // Insert new image to circular buffer
+        ringBuffer.push(image);
+
+
+        // TODO: implement DETECTING/RECORDING states
+
+        // TODO: pass accumulated frames to instance of AnalysisThread on termination of event;
+        //       reset the circular buffer.
+
+        // Parameters for detection:
+        //  - size of tail/head margins surrounding event
+        //  - maximum length of a single recording
+        //  - parameters of event triggering [pixel change threshold, number of pixels]
+        //  - hot pixel map
+        //  - star field / real-time mask
+        //  - ...?
+
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
+
 
         // Saving images to file:
 

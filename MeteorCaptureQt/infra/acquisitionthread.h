@@ -7,8 +7,10 @@
 
 #include <QThread>
 #include <QMutex>
+
 #include "infra/meteorcapturestate.h"
 #include "infra/image.h"
+#include "infra/ringbuffer.h"
 
 class AcquisitionThread : public QThread
 {
@@ -35,6 +37,11 @@ private:
      */
     char ** buffer_start;
 
+    /**
+     * @brief ringBuffer
+     * Used to buffer the acquired frames so that we have some footage from before an event
+     */
+    RingBuffer ringBuffer;
 
     QMutex mutex;
 };

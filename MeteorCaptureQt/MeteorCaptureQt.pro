@@ -24,7 +24,9 @@ SOURCES += \
     config/parameterdir.cpp \
     infra/image.cpp \
     config/parameteruint.cpp \
-    config/parameteruintarray.cpp
+    config/parameteruintarray.cpp \
+    infra/analysisthread.cpp \
+    infra/ringbuffer.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -59,7 +61,10 @@ HEADERS += \
     infra/image.h \
     config/parameteruint.h \
     config/validate.h \
-    config/parameteruintarray.h
+    config/parameteruintarray.h \
+    infra/analysisthread.h \
+    infra/ringbuffer.h \
+    config/detectionparameters.h
 
 LIBS += -ljpeg
 

@@ -3,6 +3,7 @@
 #include "config/systemparameters.h"
 #include "config/stationparameters.h"
 #include "config/cameraparameters.h"
+#include "config/detectionparameters.h"
 #include "infra/meteorcapturestate.h"
 #include "util/IOUtil.h"
 
@@ -13,11 +14,12 @@
 #include <QDebug>
 
 ConfigStore::ConfigStore(MeteorCaptureState *state) {
-    numFamilies = 3;
+    numFamilies = 4;
     families = new ConfigParameterFamily*[numFamilies];
     families[0] = new SystemParameters(state);
     families[1] = new StationParameters(state);
     families[2] = new CameraParameters(state);
+    families[3] = new DetectionParameters(state);
 }
 
 ConfigStore::~ConfigStore() {

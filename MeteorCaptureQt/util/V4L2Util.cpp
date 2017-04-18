@@ -192,10 +192,6 @@ __u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supported
  */
 long long V4L2Util::getEpochTimeShift() {
 
-    // This might be useful:
-//    time_t timer;
-//    tm * gmt = gmtime (&timer);
-
 	// Records time of day, to microsecond accuracy
 	struct timeval epochtime;
 

@@ -21,7 +21,7 @@ void ParameterDouble::parseAndValidate(const string stringRep) {
     }
     catch(std::exception& e) {
         isValid = INVALID;
-        message = "Couldn't parse "+this->key+" from string " +stringRep;
+        message = "Couldn't parse "+this->key+" from string \'" + stringRep + "\'";
         return;
     }
 
