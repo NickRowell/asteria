@@ -43,6 +43,13 @@ public:
         }
     }
 
+    void clear() {
+        buffer.clear();
+        first = 0;
+        last = -1;
+        sz = 0;
+    }
+
     std::shared_ptr<Image> back() {
         if(empty()) {
             return std::shared_ptr<Image>();
@@ -54,6 +61,27 @@ public:
     {
         auto p = ( first + pos ) % buffer.size() ;
         return buffer[p];
+    }
+
+    std::vector<std::shared_ptr<Image>> unroll() {
+
+        std::vector<std::shared_ptr<Image>> unrolled;
+
+        if( first < last ) {
+            for( std::size_t i = first ; i < last ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+        }
+        else
+        {
+            for( std::size_t i = first ; i < buffer.size() ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+            for( std::size_t i = 0 ; i < last ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+        }
+        return unrolled;
     }
 
 //    std::ostream& print( std::ostream& stm = std::cout ) const

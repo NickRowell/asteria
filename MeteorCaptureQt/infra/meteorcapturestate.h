@@ -156,9 +156,16 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * @brief Number of frames to buffer for head of each detection
+     * @brief Number of frames to buffer for head of each detection, i.e.
+     * before the event started.
      */
     unsigned int detection_head;
+
+    /**
+     * @brief Number of frames to buffer for tail of each detection, i.e.
+     * after the event has ceased.
+     */
+    unsigned int detection_tail;
 
     /**
      * @brief Difference between the digital levels of a pixel between frames that indicate

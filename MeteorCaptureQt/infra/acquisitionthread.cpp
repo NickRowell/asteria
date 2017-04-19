@@ -22,7 +22,11 @@
 #include <QThread>
 
 AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
-    : QThread(parent), state(state), ringBuffer(state->detection_head), abort(false) {
+    : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
+
+
+    acqState = IDLE;
+
 
     // Initialise the camera
 
@@ -183,6 +187,8 @@ void AcquisitionThread::run() {
         exit(1);
     }
 
+    acqState = DETECTING;
+
     // Write frames into circular buffer in device memory
     for(unsigned long i = 0; ; i++) {
 
@@ -278,11 +284,20 @@ void AcquisitionThread::run() {
         }
 
         // Retrieve the previous image
-        std::shared_ptr<Image> prev = ringBuffer.back();
+        std::shared_ptr<Image> prev = detectionHeadBuffer.back();
+
+        // Determine if an event has occurred between current frame and previous
+        bool event = false;
 
         if(prev) {
+
             // Got a previous image
-            // TODO: implement event detection algorithm
+
+            // Parameters for detection:
+            //  - maximum length of a single recording
+            //  - hot pixel map
+            //  - star field / real-time mask
+            //  - ...?
 
             int nChangedPixels = 0;
 
@@ -302,30 +317,60 @@ void AcquisitionThread::run() {
                 }
             }
 
-//            qInfo() << "Number of changed pixels = " << nChangedPixels;
-
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
-                qInfo() << "EVENT!";
+                event = true;
+                qInfo() << "EVENT! " << strs.str().c_str();
             }
-
         }
 
-        // Insert new image to circular buffer
-        ringBuffer.push(image);
+        // We always accumulate the new images in the ring buffer regardless of whether
+        // we're currently recording an event. This supports two events in rapid succession.
+        detectionHeadBuffer.push(image);
 
+        if(acqState == IDLE) {
+            // Do nothing
+        }
+        else if(acqState == DETECTING) {
+            if(event) {
+                // We're detecting and an event occurred - transition to recording mode
+                // and start accumulating images in the detection tail buffer
+                qInfo() << "Transitioned to RECORDING";
+                acqState = RECORDING;
+                // Copy the detection head buffer contents to the event frames buffer
+                std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
+                eventFrames.insert(eventFrames.end(), detectionHeadFrames.begin(), detectionHeadFrames.end());
+            }
+        }
+        else if(acqState == RECORDING) {
 
-        // TODO: implement DETECTING/RECORDING states
+            // Add the image to the event frames buffer
+            eventFrames.push_back(image);
 
-        // TODO: pass accumulated frames to instance of AnalysisThread on termination of event;
-        //       reset the circular buffer.
+            if(event) {
+                // We're recordinging and an event occurred - reset the counter
+                nFramesSinceLastTrigger = 0;
+            }
+            else {
+                // Event did not occur - increment the counter
+                nFramesSinceLastTrigger++;
+            }
 
-        // Parameters for detection:
-        //  - size of tail/head margins surrounding event
-        //  - maximum length of a single recording
-        //  - parameters of event triggering [pixel change threshold, number of pixels]
-        //  - hot pixel map
-        //  - star field / real-time mask
-        //  - ...?
+            // Check if enough frames have passed since last trigger to stop the recording
+            if(nFramesSinceLastTrigger > state->detection_tail) {
+                // Stop the recording; send the images to an analysis thread instance;
+                // reset the buffers and counters.
+                acqState = DETECTING;
+                nFramesSinceLastTrigger = 0;
+                qInfo() << "Transitioned to DETECTING";
+
+                // TODO: send the frames to an analysis thread instance
+                qInfo() << "Got " << eventFrames.size() << " frames from last event";
+
+                // Clear the event frame buffer
+                eventFrames.clear();
+            }
+        }
+
 
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
