@@ -5,7 +5,7 @@ JpgUtil::JpgUtil()
 
 }
 
-void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage) {
+void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage) {
 
     // Pointer to data in input image buffer
     unsigned char * pBuf = buffer;
@@ -24,7 +24,7 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
     }
 }
 
-void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage) {
+void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage) {
 
     unsigned char r, g, b;
     int width, height;

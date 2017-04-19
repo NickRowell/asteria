@@ -15,9 +15,9 @@ public:
     JpgUtil();
 
 //    static void convertJpeg(unsigned char * buffer, const unsigned long insize, char * decodedImage);
-    static void convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage);
+    static void convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage);
 
-    static void convertYuyv422(unsigned char * buffer, const unsigned long insize, std::vector<char> &decodedImage);
+    static void convertYuyv422(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage);
 };
 
 #endif // JPGUTIL_H

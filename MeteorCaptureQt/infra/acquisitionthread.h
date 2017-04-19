@@ -35,7 +35,7 @@ private:
     /**
      * \brief Array of pointers to the start of each image buffer in memory
      */
-    char ** buffer_start;
+    unsigned char ** buffer_start;
 
     /**
      * @brief ringBuffer

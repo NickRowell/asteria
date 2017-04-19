@@ -115,7 +115,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
     // Array of pointers to the start of each buffer in memory
-    buffer_start = new char*[state->bufrequest->count];
+    buffer_start = new unsigned char*[state->bufrequest->count];
 
     for(unsigned int b = 0; b < state->bufrequest->count; b++) {
         state->bufferinfo->index = b;
@@ -127,7 +127,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
         // bufferinfo.length: number of bytes of memory required for the buffer
         // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-        buffer_start[b] = (char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
+        buffer_start[b] = (unsigned char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
 
         if(buffer_start[b] == MAP_FAILED){
             perror("mmap");
@@ -213,8 +213,8 @@ void AcquisitionThread::run() {
 
         // Retrieve the timestamp and frame index for this image
 
-        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
-        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
+//        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
+//        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
 
         // Current system clock time (since startup/hibernation) in microseconds
         long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
@@ -248,7 +248,7 @@ void AcquisitionThread::run() {
         // Construct date string
         std::ostringstream strs;
         strs << tm_year << "/" << tm_mon << "/" << tm_mday << "-" << tm_hour << ":" << tm_min << ":" << tm_sec << "." << epochTimeStamp_us_remainder;
-        qInfo() << strs.str().c_str();
+//        qInfo() << strs.str().c_str();
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
 
@@ -257,7 +257,7 @@ void AcquisitionThread::run() {
         switch(state->format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
             // Read the raw greyscale pixels to the image object
-            char * pBuf = buffer_start[j];
+            unsigned char * pBuf = buffer_start[j];
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
                 image->pixelData.push_back(*(pBuf++));
@@ -285,21 +285,28 @@ void AcquisitionThread::run() {
             // TODO: implement event detection algorithm
 
             int nChangedPixels = 0;
-            int threshold = 50;
 
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
 
-                char newPixel = image->pixelData[p];
-                char oldPixel = prev->pixelData[p];
+                unsigned char newPixel = image->pixelData[p];
+                unsigned char oldPixel = prev->pixelData[p];
 
-                if(abs(newPixel - oldPixel) > threshold) {
+                if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
-                }
 
+                    // Coordinates of changed pixel
+                    // TODO: verify this - are the pixels packed by row?
+                    unsigned int x = p % state->width;
+                    unsigned int y = p / state->width;
+                }
             }
 
-            qInfo() << "Number of changed pixels = " << nChangedPixels;
+//            qInfo() << "Number of changed pixels = " << nChangedPixels;
+
+            if(nChangedPixels > state->n_changed_pixels_for_trigger) {
+                qInfo() << "EVENT!";
+            }
 
         }
 

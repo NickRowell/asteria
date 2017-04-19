@@ -160,6 +160,19 @@ public:
      */
     unsigned int detection_head;
 
+    /**
+     * @brief Difference between the digital levels of a pixel between frames that indicate
+     * a significant change, i.e. one that counts towards an event trigger.
+     */
+    unsigned int pixel_difference_threshold;
+
+    /**
+     * @brief Number of significantly changed pixels required to trigger an event detection.
+     */
+    unsigned int n_changed_pixels_for_trigger;
+
+
+
 
     MeteorCaptureState() {
         bufferinfo = new v4l2_buffer();

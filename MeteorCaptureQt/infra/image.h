@@ -14,7 +14,7 @@ public:
     ~Image();
 
 
-    std::vector<char> pixelData;
+    std::vector<unsigned char> pixelData;
 
     unsigned int width;
     unsigned int height;

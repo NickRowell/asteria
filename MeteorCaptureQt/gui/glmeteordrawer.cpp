@@ -34,7 +34,7 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
      unsigned int width = state->width;
      unsigned int height = state->height;
 
-     char* a = &(image->pixelData[0]);
+     unsigned char* a = &(image->pixelData[0]);
      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
 
     // Post redraw

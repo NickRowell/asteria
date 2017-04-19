@@ -11,16 +11,22 @@ class DetectionParameters : public ConfigParameterFamily {
 
 public:
 
-    DetectionParameters(MeteorCaptureState * state) : ConfigParameterFamily("Detection", 1) {
+    DetectionParameters(MeteorCaptureState * state) : ConfigParameterFamily("Detection", 3) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];
 
         // Create validators for each parameter
         validators[0] = new ValidateWithinLimits<unsigned int>(0u, 100u);
+        validators[1] = new ValidateWithinLimits<unsigned int>(1u, 255u);
+        validators[2] = new ValidateWithinLimits<unsigned int>(1u, 1000u);
 
         // Create parameters
         parameters[0] = new ParameterUint("detection_head", "Detection head", "frames", validators[0], &(state->detection_head));
+        parameters[1] = new ParameterUint("pixel_difference_threshold", "Pixel difference threshold", "ADU", validators[1], &(state->pixel_difference_threshold));
+        parameters[2] = new ParameterUint("n_changed_pixels_for_trigger", "Number of changed pixels that triggers an event", "pixels", validators[2], &(state->n_changed_pixels_for_trigger));
+
+
 
     }
 };
