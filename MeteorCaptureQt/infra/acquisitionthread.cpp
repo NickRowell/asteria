@@ -278,7 +278,7 @@ void AcquisitionThread::run() {
         }
 
         // Retrieve the previous image
-        std::shared_ptr<Image> const& prev = ringBuffer.back();
+        std::shared_ptr<Image> prev = ringBuffer.back();
 
         if(prev) {
             // Got a previous image

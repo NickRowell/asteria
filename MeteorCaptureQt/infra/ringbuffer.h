@@ -43,9 +43,9 @@ public:
         }
     }
 
-    std::shared_ptr<Image> const& back() {
+    std::shared_ptr<Image> back() {
         if(empty()) {
-            return nullptr;
+            return std::shared_ptr<Image>();
         }
         return buffer[last];
     }
