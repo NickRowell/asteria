@@ -208,7 +208,6 @@ void AcquisitionThread::run() {
         }
 
         // The buffer's waiting in the outgoing queue.
-        state->bufferinfo->flags = V4L2_BUF_FLAG_TIMECODE;
         if(ioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
@@ -219,7 +218,7 @@ void AcquisitionThread::run() {
 
         // Retrieve the timestamp and frame index for this image
 
-//        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
+        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
 //        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
 
         // Current system clock time (since startup/hibernation) in microseconds
@@ -338,8 +337,8 @@ void AcquisitionThread::run() {
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: send the frames to an analysis thread instance
-                AnalysisThread analysisThread(this, this->state, eventFrames);
-                analysisThread.launch();
+//                AnalysisThread analysisThread(this, this->state, eventFrames);
+//                analysisThread.launch();
 
                 // Clear the event frame buffer
                 eventFrames.clear();

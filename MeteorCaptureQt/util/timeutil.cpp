@@ -7,7 +7,15 @@ TimeUtil::TimeUtil()
 
 }
 
-// Microseconds after 1970-01-01T00:00:00Z
+/**
+ * @brief TimeUtil::convertToUtcString
+ * @param epochTimeStamp_us
+ *  Microseconds after 1970-01-01T00:00:00Z
+ *
+ * NOTE: T is just a literal to separate the date from the time. Z means zero-hour offset (also 'Zulu time'), i.e. UTC.
+ *
+ * @return
+ */
 std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
 
     // Split into whole seconds and remainder microseconds
@@ -36,7 +44,32 @@ std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
 
     // Construct date string
     std::ostringstream strs;
-    strs << tm_year << "-" << tm_mon << "-" << tm_mday << "--" << tm_hour << ":" << tm_min << ":" << tm_sec << "." << epochTimeStamp_us_remainder;
+
+    // Zero-padded month
+    char monStr [2];
+    sprintf (monStr, "%02d", tm_mon);
+
+    // Zero-padded day
+    char dayStr [2];
+    sprintf (dayStr, "%02d", tm_mday);
+
+    // Zero-padded hour
+    char hourStr [2];
+    sprintf (hourStr, "%02d", tm_hour);
+
+    // Zero-padded minute
+    char minStr [2];
+    sprintf (minStr, "%02d", tm_min);
+
+    // Zero-padded second
+    char secStr [2];
+    sprintf (secStr, "%02d", tm_sec);
+
+    // Zero-padded microseconds remainder
+    char usecStr [6];
+    sprintf (usecStr, "%06d", epochTimeStamp_us_remainder);
+
+    strs << tm_year << "-" << monStr << "-" << dayStr << "T" << hourStr << ":" << minStr << ":" << secStr << "." << usecStr << "Z";
 
     return strs.str();
 }
