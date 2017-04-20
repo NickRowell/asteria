@@ -1,5 +1,7 @@
-#include "acquisitionthread.h"
+#include "infra/acquisitionthread.h"
+#include "infra/analysisthread.h"
 #include "util/jpgutil.h"
+#include "util/timeutil.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -24,9 +26,7 @@
 AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
     : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
 
-
     acqState = IDLE;
-
 
     // Initialise the camera
 
@@ -227,34 +227,7 @@ void AcquisitionThread::run() {
         // Microseconds after 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
-        // Split into whole seconds and remainder microseconds
-        long long epochTimeStamp_s = epochTimeStamp_us / 1000000LL;
-        long long epochTimeStamp_us_remainder = epochTimeStamp_us % 1000000LL;
-
-        // Convert the seconds part to time_t
-        time_t tt = static_cast<time_t>(epochTimeStamp_s);
-
-        // Use standard library function(s) to convert this to human readable date/time
-        struct tm * ptm = gmtime ( &tt );
-
-        // seconds after the minute	[0-61]*
-        // * tm_sec is generally 0-59. The extra range is to accommodate for leap seconds in certain systems.
-        int tm_sec = ptm->tm_sec;
-        // minutes after the hour	0-59
-        int tm_min = ptm->tm_min;
-        // hours since midnight	[0-23]
-        int tm_hour = ptm->tm_hour;
-        // day of the month	[1-31]
-        int tm_mday = ptm->tm_mday;
-        // months since January	[0-11]
-        int tm_mon = ptm->tm_mon;
-        // years since 1900; convert to years since AD 0
-        int tm_year = ptm->tm_year + 1900;
-
-        // Construct date string
-        std::ostringstream strs;
-        strs << tm_year << "/" << tm_mon << "/" << tm_mday << "-" << tm_hour << ":" << tm_min << ":" << tm_sec << "." << epochTimeStamp_us_remainder;
-//        qInfo() << strs.str().c_str();
+        string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
 
@@ -319,7 +292,7 @@ void AcquisitionThread::run() {
 
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
                 event = true;
-                qInfo() << "EVENT! " << strs.str().c_str();
+                qInfo() << "EVENT! " << utc.c_str();
             }
         }
 
@@ -362,9 +335,11 @@ void AcquisitionThread::run() {
                 acqState = DETECTING;
                 nFramesSinceLastTrigger = 0;
                 qInfo() << "Transitioned to DETECTING";
+                qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: send the frames to an analysis thread instance
-                qInfo() << "Got " << eventFrames.size() << " frames from last event";
+                AnalysisThread analysisThread(this, this->state, eventFrames);
+                analysisThread.launch();
 
                 // Clear the event frame buffer
                 eventFrames.clear();

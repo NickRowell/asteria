@@ -36,7 +36,9 @@ protected:
     void run() Q_DECL_OVERRIDE;
 
 private:
+
     MeteorCaptureState * state;
+
     bool abort;
 
     /**

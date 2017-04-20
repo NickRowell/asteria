@@ -26,7 +26,8 @@ SOURCES += \
     config/parameteruint.cpp \
     config/parameteruintarray.cpp \
     infra/analysisthread.cpp \
-    infra/ringbuffer.cpp
+    infra/ringbuffer.cpp \
+    util/timeutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -64,7 +65,8 @@ HEADERS += \
     config/parameteruintarray.h \
     infra/analysisthread.h \
     infra/ringbuffer.h \
-    config/detectionparameters.h
+    config/detectionparameters.h \
+    util/timeutil.h
 
 LIBS += -ljpeg
 
