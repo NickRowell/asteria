@@ -180,32 +180,6 @@ __u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supported
     return 0;
 }
 
-/**
- * Get the time difference in microseconds between the clock time (records time since bootup)
- * and the epoch time (i.e. current time of day). This is useful for referencing the recorded time of video frames
- * to UTC. Note that this must be recomputed whenever the computer hibernates.
- *
- * See http://stackoverflow.com/questions/10266451/where-does-v4l2-buffer-timestamp-value-starts-counting
- *
- * \return The time difference in microseconds between the clock time (records time since bootup)
- * and the current time of day.
- */
-long long V4L2Util::getEpochTimeShift() {
-
-	// Records time of day, to microsecond accuracy
-	struct timeval epochtime;
-
-	// Records time since bootup, to nanosecond accuracy
-	struct timespec  vsTime;
-
-	gettimeofday(&epochtime, NULL);
-	clock_gettime(CLOCK_MONOTONIC, &vsTime);
-
-    long long uptime_us = vsTime.tv_sec* 1000000LL + (long long)  round( vsTime.tv_nsec/ 1000.0);
-    long long epoch_us =  epochtime.tv_sec * 1000000LL  + (long long) round( epochtime.tv_usec);
-	return epoch_us - uptime_us;
-}
-
 
 
 

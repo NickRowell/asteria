@@ -1,19 +1,7 @@
-/*
- * V4L2Util.h
- *
- *  Created on: 26 Dec 2016
- *      Author: nrowell
- */
-
 #ifndef V4L2UTIL_H_
 #define V4L2UTIL_H_
 
-
-#include <QString>
-#include <QDebug>
-
-#include <time.h>
-#include <math.h>
+#include "IOUtil.h"
 
 #include <vector>     // provides vector
 #include <string>     // provides string
@@ -39,8 +27,8 @@
 
 #include <linux/videodev2.h>
 
-#include "IOUtil.h"
-
+#include <QString>
+#include <QDebug>
 
 // Mean I can use vector rather tha std::vector etc.
 using namespace std;
@@ -61,7 +49,6 @@ public:
 
     static string getFourCC(__u32 format);
 
-    static long long getEpochTimeShift();
 
 
 

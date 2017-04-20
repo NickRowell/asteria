@@ -1,3 +1,9 @@
+#include "gui/cameraselectionwindow.h"
+#include "gui/configcreationwindow.h"
+#include "gui/mainwindow.h"
+#include "infra/meteorcapturestate.h"
+#include "util/timeutil.h"
+
 #include <QApplication>
 #include <QSurfaceFormat>
 
@@ -5,11 +11,7 @@
 
 #include <getopt.h>
 
-#include "gui/cameraselectionwindow.h"
-#include "gui/configcreationwindow.h"
-#include "gui/mainwindow.h"
-#include "infra/meteorcapturestate.h"
-#include "util/V4L2Util.h"
+
 
 using namespace std;
 
@@ -21,7 +23,7 @@ int main(int argc, char **argv)
 
     // Get the time difference between time of day and the frame timestamp. This needs
     // to be recomputed whenever the computer hibernates.
-    long long epochTimeDiffUs = V4L2Util::getEpochTimeShift();
+    long long epochTimeDiffUs = TimeUtil::getEpochTimeShift();
 
     // Initialise the state object
     MeteorCaptureState * state = new MeteorCaptureState();

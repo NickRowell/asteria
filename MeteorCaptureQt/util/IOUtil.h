@@ -1,10 +1,3 @@
-/*
- * IOUtil.h
- *
- *  Created on: 26 Dec 2016
- *      Author: nrowell
- */
-
 #ifndef IOUTIL_H_
 #define IOUTIL_H_
 

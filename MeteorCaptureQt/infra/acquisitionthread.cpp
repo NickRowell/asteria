@@ -190,9 +190,22 @@ void AcquisitionThread::run() {
     acqState = DETECTING;
 
     // Write frames into circular buffer in device memory
+
+    // TMP: counter for number of frames received from camera
+    int n = 0;
+    // Timestamp - difference used to determine average FPS
+    long long startUs = TimeUtil::getUpTime();
+
     for(unsigned long i = 0; ; i++) {
 
         if(abort) {
+            long long endUs = TimeUtil::getUpTime();
+            long long dUs = endUs - startUs;
+            float secs = ((float)dUs) / 1000000.0f;
+            // Number of frames per second on average
+            float fps = n / secs;
+            qInfo() << "Seconds of up time = " << secs;
+            qInfo() << "Average FPS = " << fps;
             return;
         }
 
@@ -213,6 +226,8 @@ void AcquisitionThread::run() {
             exit(1);
         }
 
+        n++;
+
         // The image is ready to be read; it is stored in the buffer with index j,
         // which is mapped into application address space at buffer_start[j]
 
@@ -221,9 +236,9 @@ void AcquisitionThread::run() {
         qInfo() << "Sequence  = " << state->bufferinfo->sequence;
 //        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
 
-        // Current system clock time (since startup/hibernation) in microseconds
+        // System clock time (since startup/hibernation) of time first byte of data was captured [microseconds]
         long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
-        // Microseconds after 1970-01-01T00:00:00Z
+        // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
         string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
