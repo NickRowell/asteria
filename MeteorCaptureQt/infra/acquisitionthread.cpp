@@ -192,7 +192,7 @@ void AcquisitionThread::run() {
     // Write frames into circular buffer in device memory
 
     // TMP: counter for number of frames received from camera
-    int n = 0;
+    int frameCounter = 0;
     // Timestamp - difference used to determine average FPS
     long long startUs = TimeUtil::getUpTime();
 
@@ -203,7 +203,7 @@ void AcquisitionThread::run() {
             long long dUs = endUs - startUs;
             float secs = ((float)dUs) / 1000000.0f;
             // Number of frames per second on average
-            float fps = n / secs;
+            float fps = frameCounter / secs;
             qInfo() << "Seconds of up time = " << secs;
             qInfo() << "Average FPS = " << fps;
             return;
@@ -226,7 +226,7 @@ void AcquisitionThread::run() {
             exit(1);
         }
 
-        n++;
+        frameCounter++;
 
         // The image is ready to be read; it is stored in the buffer with index j,
         // which is mapped into application address space at buffer_start[j]
