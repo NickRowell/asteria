@@ -83,28 +83,34 @@ std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
     std::ostringstream strs;
 
     // Zero-padded month
-    char monStr [2];
-    sprintf (monStr, "%02d", tm_mon);
+    char monArr [10];
+    sprintf (monArr, "%02d", tm_mon);
+    std::string monStr(monArr);
 
     // Zero-padded day
-    char dayStr [2];
-    sprintf (dayStr, "%02d", tm_mday);
+    char dayArr [10];
+    sprintf (dayArr, "%02d", tm_mday);
+    std::string dayStr(dayArr);
 
     // Zero-padded hour
-    char hourStr [2];
-    sprintf (hourStr, "%02d", tm_hour);
+    char hourArr [10];
+    sprintf (hourArr, "%02d", tm_hour);
+    std::string hourStr(hourArr);
 
     // Zero-padded minute
-    char minStr [2];
-    sprintf (minStr, "%02d", tm_min);
+    char minArr [10];
+    sprintf (minArr, "%02d", tm_min);
+    std::string minStr(minArr);
 
     // Zero-padded second
-    char secStr [2];
-    sprintf (secStr, "%02d", tm_sec);
+    char secArr [10];
+    sprintf (secArr, "%02d", tm_sec);
+    std::string secStr(secArr);
 
     // Zero-padded microseconds remainder
-    char usecStr [6];
-    sprintf (usecStr, "%06d", epochTimeStamp_us_remainder);
+    char usecArr [10];
+    sprintf (usecArr, "%06lld", epochTimeStamp_us_remainder);
+    std::string usecStr(usecArr);
 
     strs << tm_year << "-" << monStr << "-" << dayStr << "T" << hourStr << ":" << minStr << ":" << secStr << "." << usecStr << "Z";
 
