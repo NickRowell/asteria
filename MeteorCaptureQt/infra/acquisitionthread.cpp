@@ -28,51 +28,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
     acqState = IDLE;
 
-    // Initialise the camera
-
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-    //                                                       //
-    //    Determine available pixel formats and pick one     //
-    //                                                       //
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    // Already configured
-
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-    //                                                       //
-    //   Determine the available image sizes for the chosen  //
-    //   pixel format and pick one                           //
-    //                                                       //
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    // Already configured
-
-//    struct v4l2_frmsizeenum framesize;
-//    memset(&framesize, 0, sizeof(framesize));
-//    framesize.pixel_format = state->selectedFormat;
-//    framesize.index = 0;
-
-//    while( ioctl(*(this->state->fd), VIDIOC_ENUM_FRAMESIZES, &framesize ) == 0 )
-//    {
-//        // TODO: what are the implications of the different types?
-//        switch(framesize.type) {
-//        case V4L2_FRMSIZE_TYPE_DISCRETE: {
-
-//            unsigned int width  = framesize.discrete.width;
-//            unsigned int height = framesize.discrete.height;
-//            qInfo() << "V4L2_FRMSIZE_TYPE_DISCRETE: Width x Height = " << width << " x " << height;
-//            break;
-//        }
-//        case V4L2_FRMSIZE_TYPE_STEPWISE: {
-//            qInfo() << "V4L2_FRMSIZE_TYPE_STEPWISE not supported!";
-//            break;
-//        }
-
-//        }
-
-//        framesize.index++;
-//    }
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //      Set the image size & format for the camera       //
@@ -182,14 +137,21 @@ void AcquisitionThread::run() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    // Add all buffers to the incoming queue
+    for(unsigned long i = 0; i<state->bufrequest->count; i++) {
+        state->bufferinfo->index = i;
+        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+            perror("VIDIOC_QBUF");
+            exit(1);
+        }
+    }
+
     if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMON");
         exit(1);
     }
 
     acqState = DETECTING;
-
-    // Write frames into circular buffer in device memory
 
     // TMP: counter for number of frames received from camera
     int frameCounter = 0;
@@ -214,15 +176,9 @@ void AcquisitionThread::run() {
 
         state->bufferinfo->index = j;
 
-        // Put the buffer in the incoming queue.
-        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
-            perror("VIDIOC_QBUF");
-            exit(1);
-        }
-
-        // The buffer's waiting in the outgoing queue.
+        // Wait for this buffer to be dequeued then retrieve the image
         if(ioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
-            perror("VIDIOC_QBUF");
+            perror("VIDIOC_DQBUF");
             exit(1);
         }
 
@@ -235,6 +191,8 @@ void AcquisitionThread::run() {
 
         qInfo() << "Sequence  = " << state->bufferinfo->sequence;
 //        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
+
+#if 1
 
         // System clock time (since startup/hibernation) of time first byte of data was captured [microseconds]
         long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
@@ -268,6 +226,12 @@ void AcquisitionThread::run() {
             break;
         }
 
+        }
+
+        // Re-enqueue the buffer now we've extracted all the image data
+        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+            perror("VIDIOC_QBUF");
+            exit(1);
         }
 
         // Retrieve the previous image
@@ -352,7 +316,7 @@ void AcquisitionThread::run() {
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: send the frames to an analysis thread instance
-//                AnalysisThread analysisThread(this, this->state, eventFrames);
+//                AnalysisThread analysisThread(NULL, this->state, eventFrames);
 //                analysisThread.launch();
 
                 // Clear the event frame buffer
@@ -360,55 +324,10 @@ void AcquisitionThread::run() {
             }
         }
 
-
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
-
-
-        // Saving images to file:
-
-        // Write the image data out to a JPEG file
-//        int imgFileHandle;
-//        char filename [100];
-
-//        switch(format->fmt.pix.pixelformat) {
-//        case V4L2_PIX_FMT_GREY:
-//            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.pgm", i, j);
-//            break;
-//        case V4L2_PIX_FMT_MJPEG:
-//            sprintf(filename, "/home/nick/Temp/myimage_%lu_%u.jpeg", i, j);
-//            break;
-//        }
-
-
-//        if((imgFileHandle = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
-//            perror("open");
-//            exit(1);
-//        }
-
-        // PGM (grey image)
-//        std::ofstream out(filename);
-//        // Raw PGMs:
-//        out << "P5\n" << state->width << " " << state->height << " 255\n";
-//        for(unsigned int k=0; k<state->height; k++) {
-//            for(unsigned int l=0; l<state->width; l++) {
-//                unsigned int offset = k*state->width + l;
-//                // Pointer to the pixel data
-//                char * pPix = (char *)(buffer_start[j]+offset);
-//                // Cast to a char
-//                char pix = *pPix;
-//                out << pix;
-//            }
-//        }
-//        out.close();
-
-
-        // JPEG (write the raw buffer data to file rather than the converted greyscale image)
-        //            write(imgFileHandle, state->buffer_start[j], bufferinfo->length);
-
-//        ::close(imgFileHandle);
+#endif
 
     }
 
 }
-
