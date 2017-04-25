@@ -5,7 +5,7 @@ Image::Image() {
 }
 
 Image::Image(const Image& copyme) : width(copyme.width), height(copyme.height) {
-    pixelData = copyme.pixelData;
+    rawImage = copyme.rawImage;
     epochTimeUs = copyme.epochTimeUs;
 }
 

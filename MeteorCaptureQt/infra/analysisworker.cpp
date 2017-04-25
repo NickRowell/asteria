@@ -40,11 +40,6 @@ void AnalysisWorker::process() {
 
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
 
-        for(unsigned int j=0; j<100000; j++) {
-            j += 1;
-            j -= 1;
-        }
-
         Image &image = *eventFrames[i];
 
         // Write the image data out to a file
@@ -67,7 +62,7 @@ void AnalysisWorker::process() {
         for(unsigned int k=0; k<state->height; k++) {
             for(unsigned int l=0; l<state->width; l++) {
                 unsigned int offset = k*state->width + l;
-                unsigned char pix = image.pixelData[offset];
+                unsigned char pix = image.rawImage[offset];
                 out << pix;
             }
         }

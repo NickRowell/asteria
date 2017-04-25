@@ -33,8 +33,14 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
      unsigned int width = state->width;
      unsigned int height = state->height;
 
-     unsigned char* a = &(image->pixelData[0]);
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
+     // For displaying the greyscale image:
+//     unsigned char* a = &(image->rawImage[0]);
+//     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
+
+     unsigned char* a = &(image->annotatedImage[0]);
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
+
+
 
     // Post redraw
     update();
@@ -111,7 +117,11 @@ void GLMeteorDrawer::initializeGL()
 
     unsigned int width = state->width;
     unsigned int height = state->height;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+
+    // For displaying greyscale image from a texture:
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+    // For displaying RGB annotated image from a texture:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     qInfo() << "Finished initialising GL";
 }

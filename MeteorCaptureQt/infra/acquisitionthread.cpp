@@ -211,21 +211,32 @@ void AcquisitionThread::run() {
             unsigned char * pBuf = buffer_start[j];
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
-                image->pixelData.push_back(*(pBuf++));
+                image->rawImage.push_back(*(pBuf++));
             }
             break;
         }
         case V4L2_PIX_FMT_MJPEG: {
             // Convert the JPEG image to greyscale
-            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->pixelData);
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
             break;
         }
         case V4L2_PIX_FMT_YUYV: {
             // Convert the YUYV (luminance + chrominance) image to greyscale
-            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->pixelData);
+            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
             break;
         }
 
+        }
+
+        // Write the grey pixels to the annotated image
+        if(!state->headless) {
+            unsigned int nPix = state->width * state->height;
+            for(unsigned int p=0; p<nPix; p++) {
+                unsigned char pixel = image->rawImage[p];
+                image->annotatedImage.push_back(pixel);
+                image->annotatedImage.push_back(pixel);
+                image->annotatedImage.push_back(pixel);
+            }
         }
 
         // Re-enqueue the buffer now we've extracted all the image data
@@ -255,8 +266,8 @@ void AcquisitionThread::run() {
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
 
-                unsigned char newPixel = image->pixelData[p];
-                unsigned char oldPixel = prev->pixelData[p];
+                unsigned char newPixel = image->rawImage[p];
+                unsigned char oldPixel = prev->rawImage[p];
 
                 if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
@@ -265,6 +276,13 @@ void AcquisitionThread::run() {
                     // TODO: verify this - are the pixels packed by row?
                     unsigned int x = p % state->width;
                     unsigned int y = p / state->width;
+
+                    // Indicate the changed pixel in the annotated image
+                    if(!state->headless) {
+                        image->annotatedImage[3*p + 0] = (unsigned char)0;
+                        image->annotatedImage[3*p + 1] = (unsigned char)0;
+                        image->annotatedImage[3*p + 2] = (unsigned char)255;
+                    }
                 }
             }
 

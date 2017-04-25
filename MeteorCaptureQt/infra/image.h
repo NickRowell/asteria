@@ -13,7 +13,12 @@ public:
     Image(unsigned int width, unsigned int height);
     ~Image();
 
-    std::vector<unsigned char> pixelData;
+    // Raw (greyscale) image data for analysis
+    std::vector<unsigned char> rawImage;
+
+    // Optional RGB version of the image with annotations, for display.
+    // Not to be computed if it's not being displayed in real time.
+    std::vector<unsigned char> annotatedImage;
 
     unsigned int width;
     unsigned int height;
