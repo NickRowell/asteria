@@ -1,5 +1,5 @@
 #include "infra/acquisitionthread.h"
-#include "infra/analysisthread.h"
+#include "infra/analysisworker.h"
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
 
@@ -298,7 +298,7 @@ void AcquisitionThread::run() {
             eventFrames.push_back(image);
 
             if(event) {
-                // We're recordinging and an event occurred - reset the counter
+                // We're recording and an event occurred - reset the counter
                 nFramesSinceLastTrigger = 0;
             }
             else {
@@ -315,9 +315,15 @@ void AcquisitionThread::run() {
                 qInfo() << "Transitioned to DETECTING";
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
-                // TODO: send the frames to an analysis thread instance
-//                AnalysisThread analysisThread(NULL, this->state, eventFrames);
-//                analysisThread.launch();
+                // TODO: store running analysis threads in a threadpool so can limit their number
+                QThread* thread = new QThread;
+                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
+                worker->moveToThread(thread);
+                connect(thread, SIGNAL(started()), worker, SLOT(process()));
+                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
+                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+                thread->start();
 
                 // Clear the event frame buffer
                 eventFrames.clear();

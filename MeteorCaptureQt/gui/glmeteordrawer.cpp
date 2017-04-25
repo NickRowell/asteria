@@ -26,7 +26,6 @@ QSize GLMeteorDrawer::sizeHint() const {
     return QSize(state->width, state->height);
 }
 
-// TODO: pass in reference to bufferStart to avoid copying the vector
 void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
 
      glBindTexture(GL_TEXTURE_2D, VideoImageTexture);

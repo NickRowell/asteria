@@ -1,9 +1,10 @@
-#include "analysisthread.h"
+#include "analysisworker.h"
 #include "util/timeutil.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
+#include <sys/stat.h>
 
 #include <QDebug>
 #include <QString>
@@ -11,34 +12,15 @@
 #include <QGridLayout>
 #include <QThread>
 
-AnalysisThread::AnalysisThread(QObject *parent, MeteorCaptureState * state, std::vector<std::shared_ptr<Image>> eventFrames)
-    : QThread(parent), state(state), eventFrames(eventFrames), abort(false) {
-
-
-}
-
-AnalysisThread::~AnalysisThread()
-{
-    mutex.lock();
-    abort = true;
-    mutex.unlock();
-
-    wait();
+AnalysisWorker::AnalysisWorker(QObject *parent, MeteorCaptureState * state, std::vector<std::shared_ptr<Image>> eventFrames)
+    : QObject(parent), state(state), eventFrames(eventFrames) {
 
 }
 
-void AnalysisThread::launch() {
-
-    // Lock this object for the duration of this function
-    QMutexLocker locker(&mutex);
-
-    if (!isRunning()) {
-        start(NormalPriority);
-    }
+AnalysisWorker::~AnalysisWorker() {
 }
 
-
-void AnalysisThread::run() {
+void AnalysisWorker::process() {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -48,7 +30,20 @@ void AnalysisThread::run() {
 
     qInfo() << "Analysis thread; iterating over " << eventFrames.size() << " images";
 
+    // Create new directory to store results for this clip
+    string path = state->videoDirPath + "/" + TimeUtil::convertToUtcString(eventFrames[0u]->epochTimeUs);
+    int status = mkdir(path.c_str(), S_IRWXU);
+    if(status == -1) {
+        qInfo() << "Could not create directory " << path.c_str();
+        return;
+    }
+
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
+
+        for(unsigned int j=0; j<100000; j++) {
+            j += 1;
+            j -= 1;
+        }
 
         Image &image = *eventFrames[i];
 
@@ -58,7 +53,7 @@ void AnalysisThread::run() {
 
         string utc = TimeUtil::convertToUtcString(image.epochTimeUs);
 
-        sprintf(filename, "/home/nrowell/Temp/%s.pgm", utc.c_str());
+        sprintf(filename, "%s/%s.pgm", path.c_str(), utc.c_str());
 
         if((imgFileHandle = open(filename, O_WRONLY | O_CREAT, 0660)) < 0){
             perror("open");
@@ -80,6 +75,7 @@ void AnalysisThread::run() {
 
     }
 
-
+    // All done - emit signal
+    emit finished();
 }
 
