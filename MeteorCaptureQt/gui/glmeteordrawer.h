@@ -42,6 +42,8 @@ private:
     QOpenGLShaderProgram * program;
     QOpenGLBuffer vbo;
 
+    std::string timestamp;
+
 protected:
 
     void initializeGL() Q_DECL_OVERRIDE;

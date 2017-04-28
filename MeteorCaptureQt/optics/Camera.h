@@ -1,14 +1,3 @@
-/*
- * Camera.h
- *
- * Camera class will store all the calibration fields of the camera and provide functions
- * to project/deproject vectors/points etc.
- *
- *
- *  Created on: 16 Dec 2016
- *      Author: nrowell
- */
-
 #ifndef CAMERA_H_
 #define CAMERA_H_
 

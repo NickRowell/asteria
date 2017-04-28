@@ -1,5 +1,6 @@
 #include "gui/glmeteordrawer.h"
 #include "infra/meteorcapturestate.h"
+#include "util/timeutil.h"
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
@@ -7,6 +8,9 @@
 // Includes for open, close, lseek, ...
 #include <fcntl.h>
 #include <unistd.h>
+#include <GL/freeglut.h>
+#include <GL/glu.h>
+#include <FTGL/ftgl.h>
 
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
@@ -28,19 +32,20 @@ QSize GLMeteorDrawer::sizeHint() const {
 
 void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
 
-     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
 
-     unsigned int width = state->width;
-     unsigned int height = state->height;
+    unsigned int width = state->width;
+    unsigned int height = state->height;
 
-     // For displaying the greyscale image:
+    // For displaying the greyscale image:
 //     unsigned char* a = &(image->rawImage[0]);
 //     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
 
-     unsigned char* a = &(image->annotatedImage[0]);
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
+    // For displaying the RGB annotated image:
+    unsigned char* a = &(image->annotatedImage[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
 
-
+    timestamp = TimeUtil::convertToUtcString(image->epochTimeUs);
 
     // Post redraw
     update();
@@ -50,8 +55,11 @@ void GLMeteorDrawer::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    // Initialise GLUT
+    char *myargv [1];
+    int myargc=1;
+    myargv [0]=strdup ("Myappname");
+    glutInit(&myargc, myargv);
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char * vsrc =
@@ -87,6 +95,7 @@ void GLMeteorDrawer::initializeGL()
     program->link();
     program->bind();
     program->setUniformValue("texture", 0);
+    program->release();
 
     // Contains position and texture coordinates for each of four vertices, in
     // CLIP SPACE coordinates so that we don't need to apply any transformations
@@ -123,6 +132,18 @@ void GLMeteorDrawer::initializeGL()
     // For displaying RGB annotated image from a texture:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
+    // Set identity modelview and projection matrices. These are only relevant for rendering the
+    // bitmapped timestamp into the image, for which the raster position is transformed and projected
+    // into window coordinates using these.
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glMatrixMode( GL_PROJECTION );
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D( 0, state->width, 0, state->height );
+
     qInfo() << "Finished initialising GL";
 }
 
@@ -133,17 +154,29 @@ void GLMeteorDrawer::resizeGL(int w, int h)
 
 void GLMeteorDrawer::paintGL()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    program->bind();
     program->enableAttributeArray(PositionAttributeIndex);
     program->enableAttributeArray(TexCoordAttributeIndex);
     program->setAttributeBuffer(PositionAttributeIndex, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     program->setAttributeBuffer(TexCoordAttributeIndex, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
-    // Bind the texture then render it onto screen-aligned quad
+//     Bind the texture then render it onto screen-aligned quad
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    program->disableAttributeArray(PositionAttributeIndex);
+    program->disableAttributeArray(TexCoordAttributeIndex);
+    program->release();
+
+    // Timestamp using GLUT:
+    glRasterPos2i(20, 20);
+    glColor3f(0, 0.75, 0);
+    const unsigned char* us = reinterpret_cast<const unsigned char*>(timestamp.c_str());
+    glutBitmapString(GLUT_BITMAP_HELVETICA_12, us);
 }
 
 int GLMeteorDrawer::printOpenGLError() {

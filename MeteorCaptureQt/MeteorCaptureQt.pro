@@ -39,9 +39,9 @@ HEADERS += \
     math/vec4.h \
     optics/GeometricOpticsModel.h \
     optics/PinholeCameraWithRadialDistortion.h \
+    optics/Camera.h \
     util/IOUtil.h \
     util/V4L2Util.h \
-    Camera.h \
     gui/cameraselectionwindow.h \
     infra/meteorcapturestate.h \
     gui/configcreationwindow.h \
@@ -66,9 +66,14 @@ HEADERS += \
     infra/ringbuffer.h \
     config/detectionparameters.h \
     util/timeutil.h \
-    infra/analysisworker.h
+    infra/analysisworker.h \
+    optics/Camera.h
 
-LIBS += -ljpeg
+LIBS += -ljpeg \
+        -lGLU \
+        -lglut
+
+INCLUDEPATH += /usr/include/freetype2/
 
 CONFIG += c++11
 
