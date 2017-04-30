@@ -70,8 +70,10 @@ HEADERS += \
     optics/Camera.h
 
 LIBS += -ljpeg \
-        -lGLU \
-        -lglut
+        -lftgl \
+        -lfreetype \
+        -lGLU
+#        -lglut
 
 INCLUDEPATH += /usr/include/freetype2/
 

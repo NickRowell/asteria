@@ -58,6 +58,7 @@ std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
     // Split into whole seconds and remainder microseconds
     long long epochTimeStamp_s = epochTimeStamp_us / 1000000LL;
     long long epochTimeStamp_us_remainder = epochTimeStamp_us % 1000000LL;
+    int epochTimeStamp_ms_remainder = epochTimeStamp_us_remainder / 1000;
 
     // Convert the seconds part to time_t
     time_t tt = static_cast<time_t>(epochTimeStamp_s);
@@ -109,7 +110,7 @@ std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
 
     // Zero-padded microseconds remainder
     char usecArr [10];
-    sprintf (usecArr, "%06lld", epochTimeStamp_us_remainder);
+    sprintf (usecArr, "%03d", epochTimeStamp_ms_remainder);
     std::string usecStr(usecArr);
 
     strs << tm_year << "-" << monStr << "-" << dayStr << "T" << hourStr << ":" << minStr << ":" << secStr << "." << usecStr << "Z";

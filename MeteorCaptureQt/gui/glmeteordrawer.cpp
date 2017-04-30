@@ -8,7 +8,7 @@
 // Includes for open, close, lseek, ...
 #include <fcntl.h>
 #include <unistd.h>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 #include <GL/glu.h>
 #include <FTGL/ftgl.h>
 
@@ -54,12 +54,6 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
 void GLMeteorDrawer::initializeGL()
 {
     initializeOpenGLFunctions();
-
-    // Initialise GLUT
-    char *myargv [1];
-    int myargc=1;
-    myargv [0]=strdup ("Myappname");
-    glutInit(&myargc, myargv);
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char * vsrc =
@@ -172,11 +166,25 @@ void GLMeteorDrawer::paintGL()
     program->disableAttributeArray(TexCoordAttributeIndex);
     program->release();
 
-    // Timestamp using GLUT:
-    glRasterPos2i(20, 20);
+    // Timestamp using FTGL:
+    FTExtrudeFont font("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");
+
+    // If something went wrong, bail out.
+    if(font.Error()) {
+        qInfo() << "Error loading font!";
+        return;
+    }
+
+    font.Depth(0.0f);
+    font.Outset(0, 1);
+    font.FaceSize(16);
+
+    // Render inside
     glColor3f(0, 0.75, 0);
-    const unsigned char* us = reinterpret_cast<const unsigned char*>(timestamp.c_str());
-    glutBitmapString(GLUT_BITMAP_HELVETICA_12, us);
+    font.Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_FRONT);
+    // Render outline
+    glColor3f(0, 0, 0);
+    font.Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_SIDE);
 }
 
 int GLMeteorDrawer::printOpenGLError() {
