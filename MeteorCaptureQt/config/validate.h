@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <iostream>
-
+#include <fstream>
 /**
  * Base class for general purpose parameter value checker and validation utility classes.
  */
@@ -62,13 +62,23 @@ public:
     }
 };
 
-class ValidateDirectory : public ParameterValidator {
+/**
+ * @brief The ValidatePath class
+ * Used to check and validate file and directory paths.
+ */
+class ValidatePath : public ParameterValidator {
 
 public:
-    ValidateDirectory(const bool &requireWritePermission, const bool &requireExists, const bool &createIfNotExists)
-        : requireWritePermission(requireWritePermission), requireExists(requireExists), createIfNotExists(createIfNotExists) {
+    ValidatePath(const bool &isFile, const bool &requireWritePermission, const bool &requireExists, const bool &createIfNotExists)
+        : isFile(isFile), requireWritePermission(requireWritePermission), requireExists(requireExists), createIfNotExists(createIfNotExists) {
 
     }
+
+    /**
+     * @brief isFile
+     * true means we're handling a file path, false means we're handling a directory path.
+     */
+    bool isFile;
 
     bool requireWritePermission;
 
@@ -81,50 +91,64 @@ public:
         const std::string * tmp = static_cast<const std::string *>(pvalue);
 
         // Copy path to variable we can modify
-        std::string path(*tmp);
+        string path = *tmp;
 
-        // First, check if directory exists
+        string lab = isFile ? "File" : "Directory";
+        string labLc = isFile ? "file" : "directory";
+
+        // First, check if path exists
         struct stat info;
 
         if( stat( path.c_str(), &info ) != 0 ) {
-            // Directory does not exist
+            // Path does not exist
             if(requireExists) {
-                strs << "Directory \"" << path << "\" does not exist!";
+                strs << lab << " \"" << path << "\" does not exist!";
                 return false;
             }
             else if (createIfNotExists) {
-                // Directory does not exist and we'll attempt to create it
-
+                // Path does not exist and we'll now attempt to create it.
                 // Extract the path of the parent directory:
-                // 1) Remove any trailing slash from the pathname
-                while(path.rbegin() != path.rend() && *path.rbegin() == '/') {
-                    path.pop_back();
+
+                // 1) If we're creating a directory then as a precaution remove any trailing slash from the pathname
+                if(!isFile) {
+                    while(path.rbegin() != path.rend() && *path.rbegin() == '/') {
+                        path.pop_back();
+                    }
                 }
                 // 2) Remove the last path element to leave the parent directory path
                 std::string parent = path.substr(0, path.find_last_of("/"));
 
+                // 3) Check if parent exists and we can write to it
                 struct stat parentinfo;
-                // Check if parent exists and we can write to it
                 if(stat( parent.c_str(), &parentinfo ) != 0 ) {
                     // Parent directory doesn't exist! Can't do anything
-                    strs << "Cannot create directory \"" << path << "\" in non-existent parent directory \"" << parent << "\"";
+                    strs << "Cannot create " << labLc << " \"" << path << "\" in non-existent parent directory \"" << parent << "\"";
                     return false;
                 }
                 else if( parentinfo.st_mode & S_IFDIR )  {
                     // Parent exists and is a directory. Check if we can create the child, and create it if so.
                     if (access(parent.c_str(), R_OK | W_OK) == 0) {
-                        // Create the folder!
-                        // https://techoverflow.net/2013/04/05/how-to-use-mkdir-from-sysstat-h/
-                        // User gets read, write & execute permission; group members and other get nothing.
-                        int status = mkdir(path.c_str(), S_IRWXU);
-                        if(status == -1) {
-                            strs << "Could not create directory " << path;
-                            return false;
+
+                        if(isFile) {
+                            // Create the file!
+                            std::ofstream outfile (path.c_str());
+                            outfile << "# Created by Asteria" << std::endl;
+                            outfile.close();
+                        }
+                        else {
+                            // Create the folder!
+                            // https://techoverflow.net/2013/04/05/how-to-use-mkdir-from-sysstat-h/
+                            // User gets read, write & execute permission; group members and other get nothing.
+                            int status = mkdir(path.c_str(), S_IRWXU);
+                            if(status == -1) {
+                                strs << "Could not create directory " << path;
+                                return false;
+                            }
                         }
                     }
                     else {
                         // Don't have write access on parent folder
-                        strs << "Cannot create directory \"" << path << "\" in write protected parent directory \"" << parent << "\"";
+                        strs << "Cannot create " << labLc << " \"" << path << "\" in write protected parent directory \"" << parent << "\"";
                         return false;
                     }
                 }
@@ -135,30 +159,56 @@ public:
                 }
             }
             else {
-                // Directory doesn't exist, and we're not going to try to create it. Leave it to the user
-                // to create the directory if desired.
-                strs << "Directory \"" << path << "\" doesn't exist, and we're not going to try and create it programmatically";
+                // Path doesn't exist, and we're not going to try to create it. Leave it to the user
+                // to create the file/directory if desired.
+                strs << lab << " \"" << path << "\" doesn't exist, and we're not going to try and create it programmatically";
                 return false;
             }
         }
         else if( info.st_mode & S_IFDIR )  {
-            // Exists and is a directory. Insist that we always have read access.
+            // Exists and is a directory.
+            if(isFile) {
+                // But we want a file!
+                strs << "Path \"" << path << "\" is a directory!";
+                return false;
+            }
+
+            // Insist that we always have read access.
             if (access(path.c_str(), R_OK) != 0) {
-                // Don't have read access on parent folder
                 strs << "No read access to \"" << path << "\"";
                 return false;
             }
 
             // Additionally require write access if that's specified
             if (access(path.c_str(), W_OK) != 0 && requireWritePermission) {
-                // Don't have write access on parent folder
                 strs << "No write access to \"" << path << "\"";
                 return false;
             }
         }
+        else if( S_ISREG(info.st_mode)) {
+            // Exists and is a regular file.
+            if(!isFile) {
+                // But we want a directory!
+                strs << "Path \"" << path << "\" is a regular file!";
+                return false;
+            }
+
+            // Insist that we always have read access.
+            if (access(path.c_str(), R_OK) != 0) {
+                strs << "No read access to \"" << path << "\"";
+                return false;
+            }
+
+            // Additionally require write access if that's specified
+            if (access(path.c_str(), W_OK) != 0 && requireWritePermission) {
+                strs << "No write access to \"" << path << "\"";
+                return false;
+            }
+        }
+
         else {
-            // Exists and is not a directory
-            strs << "Pathname \"" << path << "\" is not a directory!";
+            // Exists and is not a directory or regualr file
+            strs << "Pathname \"" << path << "\" is not a " << labLc;
             return false;
         }
 

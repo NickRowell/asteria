@@ -27,7 +27,8 @@ SOURCES += \
     config/parameteruintarray.cpp \
     infra/ringbuffer.cpp \
     util/timeutil.cpp \
-    infra/analysisworker.cpp
+    infra/analysisworker.cpp \
+    infra/meteorcapturestate.cpp
 
 HEADERS += \
     math/mat2x2.h \

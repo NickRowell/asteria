@@ -19,7 +19,7 @@ CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState
     this->state = state;
 
     // Query the supported cameras
-    cameras = V4L2Util::getSupportedV4LCameras(state->preferredFormats, state->preferredFormatsN);
+    cameras = V4L2Util::getSupportedV4LCameras(MeteorCaptureState::preferredFormats, MeteorCaptureState::preferredFormatsN);
 
     if(cameras.size() == 0) {
         // Not found any cameras! Can't proceed.

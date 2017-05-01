@@ -13,6 +13,17 @@ class MeteorCaptureState
 
 public:
 
+    // Global variables. See .cpp for details of each.
+    static const unsigned int preferredFormats[];
+    static const unsigned int preferredFormatsN;
+
+    /**
+     * @brief MeteorCaptureState
+     */
+    MeteorCaptureState();
+
+    ~MeteorCaptureState();
+
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                              //
     //                    Application parameters                    //
@@ -26,15 +37,6 @@ public:
      * \brief Boolean flag to indicate if we're running without a GUI.
      */
     int headless = 0;
-
-    // State associated with the operation and handling of the camera
-
-    // Pixel formats supported by the software, in order of preference
-    // V4L2_PIX_FMT_GREY - Watec camera
-    // V4L2_PIX_FMT_MJPEG - Many (all?) webcams
-    //    unsigned int preferredFormats[] = {V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_MJPEG};
-    const unsigned int preferredFormats[2] = {V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_MJPEG};
-    const unsigned int preferredFormatsN = 2;
 
     // Chosen pixel format
     unsigned int selectedFormat;
@@ -178,25 +180,6 @@ public:
      */
     unsigned int n_changed_pixels_for_trigger;
 
-
-
-
-    MeteorCaptureState() {
-        bufferinfo = new v4l2_buffer();
-        memset(bufferinfo, 0, sizeof(*bufferinfo));
-
-        format = new v4l2_format();
-        memset(format, 0, sizeof(*format));
-
-        bufrequest = new v4l2_requestbuffers();
-        memset(bufrequest, 0, sizeof(*bufrequest));
-    }
-
-    ~MeteorCaptureState() {
-        delete bufferinfo;
-        delete format;
-        delete bufrequest;
-    }
 };
 
 #endif // METEORCAPTURESTATE_H
