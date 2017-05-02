@@ -18,7 +18,7 @@ public:
 
     // Optional RGB version of the image with annotations, for display.
     // Not to be computed if it's not being displayed in real time.
-    std::vector<unsigned char> annotatedImage;
+    std::vector<unsigned int> annotatedImage;
 
     unsigned int width;
     unsigned int height;

@@ -233,9 +233,8 @@ void AcquisitionThread::run() {
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
                 unsigned char pixel = image->rawImage[p];
-                image->annotatedImage.push_back(pixel);
-                image->annotatedImage.push_back(pixel);
-                image->annotatedImage.push_back(pixel);
+                unsigned int pix32bit = (pixel << 24) + (pixel << 16) + (pixel << 8) + (255 << 0);
+                image->annotatedImage.push_back(pix32bit);
             }
         }
 
@@ -279,9 +278,7 @@ void AcquisitionThread::run() {
 
                     // Indicate the changed pixel in the annotated image
                     if(!state->headless) {
-                        image->annotatedImage[3*p + 0] = (unsigned char)0;
-                        image->annotatedImage[3*p + 1] = (unsigned char)0;
-                        image->annotatedImage[3*p + 2] = (unsigned char)255;
+                        image->annotatedImage[p] = 0x0000FFFF;
                     }
                 }
             }

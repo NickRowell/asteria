@@ -28,7 +28,8 @@ SOURCES += \
     infra/ringbuffer.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
-    infra/meteorcapturestate.cpp
+    infra/meteorcapturestate.cpp \
+    infra/referencestar.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -68,7 +69,8 @@ HEADERS += \
     config/detectionparameters.h \
     util/timeutil.h \
     infra/analysisworker.h \
-    optics/Camera.h
+    optics/Camera.h \
+    infra/referencestar.h
 
 LIBS += -ljpeg \
         -lftgl \

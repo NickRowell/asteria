@@ -8,7 +8,6 @@
 // Includes for open, close, lseek, ...
 #include <fcntl.h>
 #include <unistd.h>
-//#include <GL/freeglut.h>
 #include <GL/glu.h>
 #include <FTGL/ftgl.h>
 
@@ -42,8 +41,12 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
 //     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
 
     // For displaying the RGB annotated image:
-    unsigned char* a = &(image->annotatedImage[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
+//    unsigned char* a = &(image->annotatedImage[0]);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
+
+    // For displaying the RGBA annotated image with 32bit pixels:
+    unsigned int* a = &(image->annotatedImage[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, a);
 
     timestamp = TimeUtil::convertToUtcString(image->epochTimeUs);
 
@@ -123,8 +126,12 @@ void GLMeteorDrawer::initializeGL()
 
     // For displaying greyscale image from a texture:
 //    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+
     // For displaying RGB annotated image from a texture:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    // For displaying RGB annotated image from a texture, 32bit pixels:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
 
     // Set identity modelview and projection matrices. These are only relevant for rendering the
     // bitmapped timestamp into the image, for which the raster position is transformed and projected
