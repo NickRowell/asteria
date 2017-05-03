@@ -24,10 +24,14 @@ MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindo
 
 void MainWindow::slotInit() {
 
+    // Other initialisation to perform:
+    // 1) Load the reference star catalogue
+    // 2) Load ephemeris file (?)
+
+
     acqThread = new AcquisitionThread(this, state);
 
     // Connect image acquisition signal to image display slot
-//    connect(acqThread, SIGNAL (acquiredImage(char *)), drawer, SLOT (newFrame(char *)));
     connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
 
     acqThread->launch();

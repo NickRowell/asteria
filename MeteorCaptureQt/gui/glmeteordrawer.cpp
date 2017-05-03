@@ -9,13 +9,24 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <GL/glu.h>
-#include <FTGL/ftgl.h>
 
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
 
 GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, MeteorCaptureState *state)
     : QOpenGLWidget(parent), state(state), program(0) {
+
+    font = new FTExtrudeFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");
+
+    if(font->Error()) {
+        qInfo() << "Error loading font!";
+        delete font;
+    }
+    else {
+        font->Depth(0.0f);
+        font->Outset(0, 1);
+        font->FaceSize(16);
+    }
 }
 
 GLMeteorDrawer::~GLMeteorDrawer() {
@@ -23,6 +34,7 @@ GLMeteorDrawer::~GLMeteorDrawer() {
     vbo.destroy();
     delete program;
     doneCurrent();
+
 }
 
 QSize GLMeteorDrawer::sizeHint() const {
@@ -174,24 +186,14 @@ void GLMeteorDrawer::paintGL()
     program->release();
 
     // Timestamp using FTGL:
-    FTExtrudeFont font("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");
-
-    // If something went wrong, bail out.
-    if(font.Error()) {
-        qInfo() << "Error loading font!";
-        return;
+    if(font) {
+        // Render inside
+        glColor3f(0, 0.75, 0);
+        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_FRONT);
+        // Render outline
+        glColor3f(0, 0, 0);
+        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_SIDE);
     }
-
-    font.Depth(0.0f);
-    font.Outset(0, 1);
-    font.FaceSize(16);
-
-    // Render inside
-    glColor3f(0, 0.75, 0);
-    font.Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_FRONT);
-    // Render outline
-    glColor3f(0, 0, 0);
-    font.Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_SIDE);
 }
 
 int GLMeteorDrawer::printOpenGLError() {

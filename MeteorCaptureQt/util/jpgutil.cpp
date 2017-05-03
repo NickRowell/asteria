@@ -10,6 +10,8 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
     // Pointer to data in input image buffer
     unsigned char * pBuf = buffer;
 
+    unsigned int pix = 0;
+
     // Pixels are encoded in groups of four bytes
     for(unsigned int p=0; p<insize; p += 4) {
 
@@ -19,8 +21,8 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
         char cb = *(pBuf++);
 
         // Discard the colour information, or use it somehow?
-        decodedImage.push_back(y1);
-        decodedImage.push_back(y2);
+        decodedImage[pix++] = y1;
+        decodedImage[pix++] = y2;
     }
 }
 
@@ -56,7 +58,7 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, st
     JSAMPARRAY pJpegBuffer = (*cinfo.mem->alloc_sarray)
         ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
 
-//    char * pDec = decodedImage;
+    unsigned int pix = 0;
 
     while (cinfo.output_scanline < cinfo.output_height) {
         (void) jpeg_read_scanlines(&cinfo, pJpegBuffer, 1);
@@ -72,9 +74,8 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, st
             }
 
             // Convert RGB to greyscale
-//            *(pDec++) = (r + g + b)/3;
             char grey = (r + g + b)/3;
-            decodedImage.push_back(grey);
+            decodedImage[pix++] = grey;
         }
     }
 

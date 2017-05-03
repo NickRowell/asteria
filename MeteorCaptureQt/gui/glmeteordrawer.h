@@ -4,7 +4,7 @@
 #include "infra/image.h"
 
 #include <memory>           // shared_ptr
-
+#include <FTGL/ftgl.h>
 #include <QtGui>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -34,15 +34,24 @@ public:
     void setClearColor(const QColor &color);
 
 private:
+
+    // The MeteorCaptureState object
     MeteorCaptureState * state;
 
     // Handle to GL texture object used to store video frame
     GLuint VideoImageTexture;
 
+    // Shader program used to render textured quad
     QOpenGLShaderProgram * program;
+
+    // Vertex buffer to store quad for rendering image as a texture
     QOpenGLBuffer vbo;
 
+    // Timestamp string of current image
     std::string timestamp;
+
+    // Font used to render timestamp
+    FTExtrudeFont * font;
 
 protected:
 

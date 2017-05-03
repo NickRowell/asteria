@@ -211,7 +211,7 @@ void AcquisitionThread::run() {
             unsigned char * pBuf = buffer_start[j];
             unsigned int nPix = state->width * state->height;
             for(unsigned int p=0; p<nPix; p++) {
-                image->rawImage.push_back(*(pBuf++));
+                image->rawImage[p] = *(pBuf++);
             }
             break;
         }
@@ -234,7 +234,7 @@ void AcquisitionThread::run() {
             for(unsigned int p=0; p<nPix; p++) {
                 unsigned char pixel = image->rawImage[p];
                 unsigned int pix32bit = (pixel << 24) + (pixel << 16) + (pixel << 8) + (255 << 0);
-                image->annotatedImage.push_back(pix32bit);
+                image->annotatedImage[p] = (pix32bit);
             }
         }
 
@@ -331,14 +331,14 @@ void AcquisitionThread::run() {
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: store running analysis threads in a threadpool so can limit their number
-                QThread* thread = new QThread;
-                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
-                worker->moveToThread(thread);
-                connect(thread, SIGNAL(started()), worker, SLOT(process()));
-                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
-                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-                thread->start();
+//                QThread* thread = new QThread;
+//                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
+//                worker->moveToThread(thread);
+//                connect(thread, SIGNAL(started()), worker, SLOT(process()));
+//                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
+//                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+//                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+//                thread->start();
 
                 // Clear the event frame buffer
                 eventFrames.clear();

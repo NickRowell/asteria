@@ -16,7 +16,7 @@ public:
     // Raw (greyscale) image data for analysis
     std::vector<unsigned char> rawImage;
 
-    // Optional RGB version of the image with annotations, for display.
+    // Optional RGBA version of the image with annotations, for display.
     // Not to be computed if it's not being displayed in real time.
     std::vector<unsigned int> annotatedImage;
 
@@ -29,9 +29,6 @@ public:
      * of the time the first byte of image data was captured.
      */
     long long epochTimeUs;
-
-
-
 
 };
 
