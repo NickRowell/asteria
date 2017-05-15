@@ -153,21 +153,17 @@ void AcquisitionThread::run() {
 
     acqState = DETECTING;
 
-    // TMP: counter for number of frames received from camera
-    int frameCounter = 0;
-    // Timestamp - difference used to determine average FPS
-    long long startUs = TimeUtil::getUpTime();
+    // Monitor the FPS using a ringbuffer to buffer the image capture times and get a moving average
+    RingBuffer<long long> frameCaptureTimes(1000u);
+    double fps = 0.0;
+    // Monitor dropped FPS: more tricky as we don't know the capture times of the dropped frames
+    unsigned int droppedFramesCounter = 0;
+    unsigned int totalFramesCounter = 0;
+    unsigned int lastFrameSequence = 0;
 
     for(unsigned long i = 0; ; i++) {
 
         if(abort) {
-            long long endUs = TimeUtil::getUpTime();
-            long long dUs = endUs - startUs;
-            float secs = ((float)dUs) / 1000000.0f;
-            // Number of frames per second on average
-            float fps = frameCounter / secs;
-            qInfo() << "Seconds of up time = " << secs;
-            qInfo() << "Average FPS = " << fps;
             return;
         }
 
@@ -182,15 +178,8 @@ void AcquisitionThread::run() {
             exit(1);
         }
 
-        frameCounter++;
-
         // The image is ready to be read; it is stored in the buffer with index j,
         // which is mapped into application address space at buffer_start[j]
-
-        // Retrieve the timestamp and frame index for this image
-
-        qInfo() << "Sequence  = " << state->bufferinfo->sequence;
-//        qInfo() << "Timestamp = " << state->bufferinfo->timestamp.tv_sec << " [s] " << state->bufferinfo->timestamp.tv_usec << " [usec]";
 
 #if 1
 
@@ -199,11 +188,28 @@ void AcquisitionThread::run() {
         // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
+        // Monitor FPS and dropped FPS, skipping the first 2 frames as these seem to often have incorrect sequence numbers and/or time stamps
+        if(i > 1) {
+            // Difference of more than 1 between consecutive frames indicates that frame(s) have been dropped
+            droppedFramesCounter += state->bufferinfo->sequence - (lastFrameSequence + 1);
+            totalFramesCounter += state->bufferinfo->sequence - lastFrameSequence;
+            frameCaptureTimes.push(epochTimeStamp_us);
+            double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
+            fps = (frameCaptureTimes.size()-1) / timeDiffSec;
+            qInfo() << "FPS  = " << fps;
+            qInfo() << "Dropped frames = " << droppedFramesCounter;
+            qInfo() << "Total frames = " << totalFramesCounter;
+        }
+        lastFrameSequence = state->bufferinfo->sequence;
+
         string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
 
         image->epochTimeUs = epochTimeStamp_us;
+        image->fps = fps;
+        image->droppedFrames = droppedFramesCounter;
+        image->totalFrames = totalFramesCounter;
 
         switch(state->format->fmt.pix.pixelformat) {
         case V4L2_PIX_FMT_GREY: {
@@ -331,14 +337,15 @@ void AcquisitionThread::run() {
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: store running analysis threads in a threadpool so can limit their number
-//                QThread* thread = new QThread;
-//                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
-//                worker->moveToThread(thread);
-//                connect(thread, SIGNAL(started()), worker, SLOT(process()));
-//                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
-//                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-//                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-//                thread->start();
+                // OR: use one single analysis thread, and queue up analysis jobs for serial processing
+                QThread* thread = new QThread;
+                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
+                worker->moveToThread(thread);
+                connect(thread, SIGNAL(started()), worker, SLOT(process()));
+                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
+                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+                thread->start();
 
                 // Clear the event frame buffer
                 eventFrames.clear();

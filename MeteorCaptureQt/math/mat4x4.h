@@ -1,39 +1,10 @@
-/*
- * Name:
- *   mat4x4.h
- *
- * Purpose:
- *   Represents a 4-by-4 matrix.
- *
- * Description:
- *   Used to represent GL model view matrix.
- * 
- * Notes:
- *   
- * Language:
- *   ANSI C++
- *
- * Author:
- *   Nick Rowell (nickrowell@computing.dundee.ac.uk)
- *   {add_authors_here}
- *
- * History:
- *   {add_changes_here}
- *
- * Future work:
- *   {add_suggestions_here}
- *
- * Bugs:
- *   {add_new_bugs_here}
- */
-
 #ifndef MAT4X4_H
 #define	MAT4X4_H
 
 #include <iostream>
 
-#include "../math/mat3x3.h"
-#include "../math/vec4.h"
+#include "math/mat3x3.h"
+#include "math/vec4.h"
 
 template < typename T >
 class Mat4x4
@@ -74,12 +45,14 @@ public:
         for(unsigned int i=0; i<16; i++)
             els[i] = copy.els[i];
     }
+
+    T get(const int &r, const int &c) const {
+        return els[r*4 + c];
+    }
     
-    
-    
-    T get(const int &r, const int &c) const { return els[r*4 + c];}
-    
-    T * getPtr(){ return els;}
+    T * getPtr() {
+        return els;
+    }
     
     /**
      * Extract upper left 3x3 matrix, usually interpreted as a rotation matrix.
@@ -222,9 +195,6 @@ public:
                          elsR[3], elsR[4], elsR[5], -RT.y,
                          elsR[6], elsR[7], elsR[8], -RT.z,
                              0.0,     0.0,     0.0,   1.0);
-        
-        
-        
     }
     
     
@@ -254,11 +224,7 @@ public:
                         els[8]*B.x  + els[9]*B.y  + els[10]*B.z + els[11],
                         els[12]*B.x + els[13]*B.y + els[14]*B.z + els[15]);
     }
-    
-    
-    
-    
-    
+
     friend std::ostream& operator<<(std::ostream& os, const Mat4x4& mat)
     {
         os << mat.els[0]  << ' ' << mat.els[1]  << ' ' << mat.els[2]  << ' ' << mat.els[3]  << ' ' << '\n'
@@ -273,6 +239,4 @@ public:
     
 };
 
-
-
-#endif	/* MAT3X3_H */
+#endif	/* MAT4X4_H */

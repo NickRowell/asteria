@@ -33,7 +33,7 @@
 
 #include <iostream>
 
-#include "../math/vec2.h"
+#include "math/vec2.h"
 
 template < typename T >
 class Mat2x2

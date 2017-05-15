@@ -25,11 +25,11 @@ SOURCES += \
     infra/image.cpp \
     config/parameteruint.cpp \
     config/parameteruintarray.cpp \
-    infra/ringbuffer.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
     infra/meteorcapturestate.cpp \
-    infra/referencestar.cpp
+    infra/referencestar.cpp \
+    gui/videodirnavigator.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -70,7 +70,8 @@ HEADERS += \
     util/timeutil.h \
     infra/analysisworker.h \
     optics/Camera.h \
-    infra/referencestar.h
+    infra/referencestar.h \
+    gui/videodirnavigator.h
 
 LIBS += -ljpeg \
         -lftgl \

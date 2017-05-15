@@ -9,25 +9,67 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QDebug>
 #include <QString>
 #include <QCloseEvent>
 #include <QGridLayout>
 #include <QThread>
+#include <QFileSystemModel>
+#include <QTreeView>
 
 
 MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindow(parent), state(state)
 {
+    // Build GUI components
     drawer = new GLMeteorDrawer(this, this->state);
-    this->setCentralWidget(drawer);
+    tree = new QTreeView(this);
+
+    // Arrange layout
+    central = new QWidget(this);
+
+    QHBoxLayout *mainLayout = new QHBoxLayout;
+    mainLayout->addWidget(tree);
+    mainLayout->addStretch(1);
+    mainLayout->addWidget(drawer);
+    mainLayout->addStretch(1);
+    central->setLayout(mainLayout);
+
+    this->setCentralWidget(central);
+
 }
 
 void MainWindow::slotInit() {
 
-    // Other initialisation to perform:
+    // Initialisation to perform:
     // 1) Load the reference star catalogue
-    // 2) Load ephemeris file (?)
+    // 2) Load the video directory contents into the viewer
+    // 3) Create the acquisition thread and start it
+    // ?) Load ephemeris file
 
+    std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
+
+    qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
+
+    QFileSystemModel *model = new QFileSystemModel;
+    model->setRootPath(QDir::currentPath());
+    model->setReadOnly(true);
+
+    tree->setModel(model);
+    tree->setRootIndex(model->index(QString::fromUtf8(state->videoDirPath.c_str())));
+    tree->hideColumn(1);  // Hide 'Size'
+    tree->hideColumn(2);  // Hide 'Type'
+    tree->hideColumn(3);  // Hide 'Date Modified'
+    tree->resizeColumnToContents(0);
+    tree->setFixedWidth(250);
+    this->adjustSize();
+
+    // Rectangle aligned with the screen, for use in centering the widget
+    const QRect rect = qApp->desktop()->availableGeometry();
+    this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), rect));
+
+    qInfo() << "Initialised video directory model at " << model->rootPath();
 
     acqThread = new AcquisitionThread(this, state);
 

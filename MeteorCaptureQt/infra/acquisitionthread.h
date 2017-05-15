@@ -51,7 +51,7 @@ private:
      * Used to buffer the acquired frames so that we have some footage from before an event.
      * This is the 'detection head' footage.
      */
-    RingBuffer detectionHeadBuffer;
+    RingBuffer<std::shared_ptr<Image>> detectionHeadBuffer;
 
     /**
      * @brief eventFrames

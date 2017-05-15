@@ -2,6 +2,7 @@
 #define TIMEUTIL_H
 
 #include <string>
+#include <vector>
 #include <time.h>
 #include <math.h>
 #include <sys/time.h>
@@ -17,7 +18,7 @@ public:
 
     static std::string convertToUtcString(long long epochTimeStamp_us);
 
-
+    static void convertYearMonthDayHourMinSecUsecString(long long epochTimeStamp_us, std::vector<std::string>& str);
 };
 
 #endif // TIMEUTIL_H

@@ -1,8 +1,10 @@
 #ifndef METEORCAPTURESTATE_H
 #define METEORCAPTURESTATE_H
 
+#include "infra/referencestar.h"
 #include <linux/videodev2.h>
-#include <string>               // provides string
+#include <string>
+#include <vector>
 #include <cstring>              // memset
 
 using namespace std;
@@ -124,6 +126,11 @@ public:
      * @brief refStarCataloguePath
      */
     string refStarCataloguePath;
+
+    /**
+     * @brief refStarCatalogue
+     */
+    std::vector<ReferenceStar> refStarCatalogue;
 
     /**
      * @brief jplEphemerisPath

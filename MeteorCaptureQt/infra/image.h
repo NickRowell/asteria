@@ -30,6 +30,11 @@ public:
      */
     long long epochTimeUs;
 
+    // Some statistics of the image acquisition at the time the image was captured
+    double fps;
+    unsigned int droppedFrames;
+    unsigned int totalFrames;
+
 };
 
 #endif // IMAGE_H

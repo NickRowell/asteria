@@ -30,10 +30,10 @@
 #ifndef QUAT_H
 #define	QUAT_H
 
-#include <math.h>       /* sqrt */
-#include "../math/mat3x3.h"
-#include "../math/mat4x4.h"
-#include "../math/vec3.h"
+#include <math.h>
+#include "math/mat3x3.h"
+#include "math/mat4x4.h"
+#include "math/vec3.h"
 
 template <typename T>
 class Quat
@@ -134,7 +134,9 @@ public:
      * This can be checked intermittently if desired with this method.
      * @return sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3)
      */
-    T norm() const { return (T)sqrt(re*re + im.norm2());};
+    T norm() const {
+        return (T)sqrt(re*re + im.norm2());
+    }
 
 
     /** Normalise the Quaternion in place. */

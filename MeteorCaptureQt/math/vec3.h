@@ -36,7 +36,7 @@ template < typename T >
 class Vec3
 {
     // Defines tolerance on detection of parallel vectors
-    static const double PARALLEL_THRESHOLD = 0.0001 * (M_PI/180.0);
+    static const constexpr double PARALLEL_THRESHOLD = 0.0001 * (M_PI/180.0);
     
 public:
     
@@ -62,40 +62,42 @@ public:
     T operator*(const Vec3<T> &b) const { return x*b.x + y*b.y + z*b.z;}
     
     /** Cross product */
-    Vec3<T> operator^(const Vec3<T> &b) const 
-    { 
+    Vec3<T> operator^(const Vec3<T> &b) const {
         return Vec3<T>((y * b.z - z * b.y),
                        (z * b.x - x * b.z),
                        (x * b.y - y * b.x));
     }
-    
-    
-    /** Equality assignment operator */
-    Vec3<T> &operator=(const Vec3<T> &rhs)
-    {
+
+    /**
+     * Equality assignment operator
+     */
+    Vec3<T> &operator=(const Vec3<T> &rhs) {
         x = rhs.x;
         y = rhs.y;
         z = rhs.z;
         return *this;
     }
-    
-    
-    
-    
+
     /**
      * Get magnitude of this vector, squared.
      * @return 
      */
-    T norm2() const { return x*x + y*y + z*z;}
-    
-    
-    
+    T norm2() const {
+        return x*x + y*y + z*z;
+    }
+
     /**
      * Get magnitude of this vector.
      * @return 
      */
-    T norm() const { return (T)sqrt(norm2());}
-    Vec3<T> normalise() const { return (*this)/norm();}
+    T norm() const {
+        return (T)sqrt(norm2());
+    }
+
+
+    Vec3<T> normalise() const {
+        return (*this)/norm();
+    }
     
     /**
      * Tests if this (non-unit) vector is parallel to the given (non-unit) vector.
@@ -103,8 +105,7 @@ public:
      * @param that
      * @return 
      */
-    bool isParallelTo(const Vec3 &that) const
-    {
+    bool isParallelTo(const Vec3 &that) const {
         // Vector lengths
         T thisNorm = this->norm();
         T thatNorm = that.norm();
@@ -128,14 +129,12 @@ public:
      * @param r2        Vertex 3
      * @return          Surface normal for triangle formed by the three vectors
      */
-    static Vec3<T> getClockwiseSurfaceNormal(const Vec3<T> &r0, const Vec3<T> &r1, const Vec3<T> &r2)
-    {
+    static Vec3<T> getClockwiseSurfaceNormal(const Vec3<T> &r0, const Vec3<T> &r1, const Vec3<T> &r2) {
+
         // Vector from v0 to v1
         Vec3<T> a(r1-r0);
-//        double[] a = {r1.x-r0.x, r1.y-r0.y, r1.z-r0.z};
         // Vector from v0 to v2
         Vec3<T> b(r2-r0);
-//        double[] b = {r2.x-r0.x, r2.y-r0.y, r2.z-r0.z};
         
         // Cross product a x b gives normal direction
         Vec3<T> n = a^b;
@@ -144,8 +143,7 @@ public:
     }
     
     
-    friend std::ostream& operator<<(std::ostream& os, const Vec3& vec3)
-    {
+    friend std::ostream& operator<<(std::ostream& os, const Vec3& vec3) {
         os << vec3.x  << ' ' << vec3.y << ' ' << vec3.z << '\n';
         
         // Return a reference to the original ostream so that we can chain

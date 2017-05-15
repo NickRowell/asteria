@@ -9,6 +9,8 @@ class GLMeteorDrawer;
 class QCamera;
 class QCloseEvent;
 
+QT_FORWARD_DECLARE_CLASS(QTreeView)
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -17,8 +19,13 @@ public:
     explicit MainWindow(QWidget *parent = 0, MeteorCaptureState * state = 0);
 
 private:
+
     MeteorCaptureState * state;
     GLMeteorDrawer *drawer;
+    QTreeView *tree;
+
+    // Main container widget for all GUI elements
+    QWidget * central;
 
     AcquisitionThread *acqThread;
 

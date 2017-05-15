@@ -61,6 +61,9 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, a);
 
     timestamp = TimeUtil::convertToUtcString(image->epochTimeUs);
+    fps = image->fps;
+    droppedFrames = image->droppedFrames;
+    totalFrames = image->totalFrames;
 
     // Post redraw
     update();
@@ -189,10 +192,30 @@ void GLMeteorDrawer::paintGL()
     if(font) {
         // Render inside
         glColor3f(0, 0.75, 0);
-        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_FRONT);
+        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(10, 10), FTPoint(1, 0), FTGL::RENDER_FRONT);
         // Render outline
         glColor3f(0, 0, 0);
-        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(20, 20), FTPoint(1, 0), FTGL::RENDER_SIDE);
+        font->Render(timestamp.c_str(), timestamp.size(), FTPoint(10, 10), FTPoint(1, 0), FTGL::RENDER_SIDE);
+
+        // Render FPS string
+        char fpsArr [100];
+        unsigned int length = sprintf (fpsArr, "FPS = %5.3f", fps);
+        glColor3f(0, 0.75, 0);
+        font->Render(fpsArr, length, FTPoint(10, 40), FTPoint(1, 0), FTGL::RENDER_FRONT);
+        glColor3f(0, 0, 0);
+        font->Render(fpsArr, length, FTPoint(10, 40), FTPoint(1, 0), FTGL::RENDER_SIDE);
+
+        // Render dropped frames stats
+        char dFpsArr [100];
+        length = sprintf (dFpsArr, "Dropped frames = %5d / %5d", droppedFrames, totalFrames);
+        glColor3f(0, 0.75, 0);
+        font->Render(dFpsArr, length, FTPoint(10, 25), FTPoint(1, 0), FTGL::RENDER_FRONT);
+        glColor3f(0, 0, 0);
+        font->Render(dFpsArr, length, FTPoint(10, 25), FTPoint(1, 0), FTGL::RENDER_SIDE);
+
+
+
+
     }
 }
 

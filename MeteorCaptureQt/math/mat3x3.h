@@ -38,7 +38,7 @@
 #ifndef MAT3X3_H
 #define	MAT3X3_H
 
-#include "../math/vec3.h"
+#include "math/vec3.h"
 
 template < typename T >
 class Mat3x3
@@ -50,8 +50,7 @@ private:
     
 public:
     
-    Mat3x3()
-    {
+    Mat3x3() {
         // Initialise all elements to zero
         T * fptr = els;
         *(fptr++) = 0; *(fptr++) = 0; *(fptr++) = 0;
@@ -61,8 +60,7 @@ public:
     
     Mat3x3(const T &x00, const T &x01, const T &x02,
            const T &x10, const T &x11, const T &x12,
-           const T &x20, const T &x21, const T &x22)
-    {
+           const T &x20, const T &x21, const T &x22) {
         // Initialise elements to specified values
         T * fptr = els;
         *(fptr++) = x00; *(fptr++) = x01; *(fptr++) = x02;
@@ -89,11 +87,14 @@ public:
     }
     
     
-    T get(const int &r, const int &c) const { return els[r*3 + c];}
+    T get(const int &r, const int &c) const {
+        return els[r*3 + c];
+    }
     
-    T * getPtr(){ return els;}
-    
-    
+    T * getPtr() {
+        return els;
+    }
+
     /**
      * Get transpose of this Mat3x3. This is useful because OpenGL uses a
      * column-packed format for matrices.
@@ -105,16 +106,13 @@ public:
                          els[1],els[4],els[7],
                          els[2],els[5],els[8]);
     }
-    
-    
-    
+
     /**
      * Right multiply this matrix with another matrix.
      * @param B
      * @return 
      */
-    Mat3x3<T> operator*(const Mat3x3<T> &B) const
-    {
+    Mat3x3<T> operator*(const Mat3x3<T> &B) const {
         return Mat3x3<T>(
              els[0]*B.els[0] + els[1]*B.els[3] + els[2]*B.els[6],
              els[0]*B.els[1] + els[1]*B.els[4] + els[2]*B.els[7],
@@ -225,11 +223,7 @@ public:
         // Projection matrix
         return Mat3x3<T>(fx,0,px,0,fy,py,0,0,1);
     }
-    
-    
-    
+
 };
-
-
 
 #endif	/* MAT3X3_H */

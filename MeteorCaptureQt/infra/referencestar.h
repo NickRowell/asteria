@@ -1,11 +1,23 @@
 #ifndef REFERENCESTAR_H
 #define REFERENCESTAR_H
 
+#include <string>
+#include <vector>
+#include "math/vec3.h"
 
 class ReferenceStar
 {
 public:
+    ReferenceStar();
+    ReferenceStar(const ReferenceStar& copyme);
     ReferenceStar(double ra, double dec, double mag);
+
+    /**
+     * @brief loadCatalogue Utility function to load the reference star catalogue file.
+     * @param path
+     * @return
+     */
+    static std::vector<ReferenceStar> loadCatalogue(std::string &path);
 
     /**
      * @brief ra
@@ -25,7 +37,12 @@ public:
      */
     const double mag;
 
-
+    /**
+     * @brief r
+     * Camera-frame unit vector pointing towards the star given the current camera orientation and
+     * time.
+     */
+    Vec3<double> r;
 
 
 

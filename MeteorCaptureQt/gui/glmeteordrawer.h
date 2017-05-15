@@ -50,6 +50,12 @@ private:
     // Timestamp string of current image
     std::string timestamp;
 
+    // Current frames-per-second
+    double fps;
+    // Dropped frame statistics
+    unsigned int droppedFrames;
+    unsigned int totalFrames;
+
     // Font used to render timestamp
     FTExtrudeFont * font;
 

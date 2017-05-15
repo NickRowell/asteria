@@ -12,30 +12,95 @@
  * @brief The RingBuffer class
  * http://www.cplusplus.com/forum/beginner/176072/
  */
-class RingBuffer
+template<class T> class RingBuffer
 {
 
 public:
-    RingBuffer(std::size_t cap);
+    RingBuffer(std::size_t cap): buffer(cap) {
 
-    bool empty() const;
+    }
 
-    bool full() const;
+    bool empty() const {
+        return sz == 0;
+    }
 
-    void push(std::shared_ptr<Image>  str );
+    bool full() const {
+        return sz == buffer.size();
+    }
 
-    void clear();
+    std::size_t size() const {
+        return sz;
+    }
 
-    std::shared_ptr<Image> back();
+    void push(T str) {
 
-    std::shared_ptr<Image>& operator[] ( std::size_t pos );
+        // TODO: can do this increment more intelligently like for 'first'
+        ++last;
+        if( last >= buffer.size() ) {
+            // Wrap around
+            last = 0 ;
+        }
+        buffer[last] = str;
 
-    std::vector<std::shared_ptr<Image>> unroll();
+        if(full()) {
+            first = (first+1) %  buffer.size();
+        }
+        else {
+            ++sz;
+        }
+    }
+
+    void clear() {
+        buffer.clear();
+        first = 0;
+        last = -1;
+        sz = 0;
+    }
+
+    T front() {
+        if(empty()) {
+            return T();
+        }
+        return buffer[first];
+    }
+
+    T back() {
+        if(empty()) {
+            return T();
+        }
+        return buffer[last];
+    }
+
+    T& operator[] ( std::size_t pos ) {
+        auto p = ( first + pos ) % buffer.size() ;
+        return buffer[p];
+    }
+
+    std::vector<T> unroll() {
+
+        std::vector<T> unrolled;
+
+        if( first < last ) {
+            for( std::size_t i = first ; i < last ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+        }
+        else
+        {
+            for( std::size_t i = first ; i < buffer.size() ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+            for( std::size_t i = 0 ; i < last ; ++i ) {
+                unrolled.push_back(buffer[i]);
+            }
+        }
+        return unrolled;
+    }
 
 private:
 
     // The ring buffer data packaged in a vector
-    std::vector<std::shared_ptr<Image>> buffer;
+    std::vector<T> buffer;
 
     // Index of the first element in the ring
     std::size_t first = 0;
