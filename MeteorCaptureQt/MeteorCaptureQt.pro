@@ -15,7 +15,6 @@ SOURCES += \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
     util/GLutils.cpp \
-    infra/acquisitionthread.cpp \
     util/jpgutil.cpp \
     config/parameterdouble.cpp \
     config/configparameterfamily.cpp \
@@ -29,7 +28,8 @@ SOURCES += \
     infra/analysisworker.cpp \
     infra/meteorcapturestate.cpp \
     infra/referencestar.cpp \
-    gui/videodirnavigator.cpp
+    gui/videodirnavigator.cpp \
+    infra/acquisitionthread.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -50,7 +50,6 @@ HEADERS += \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
     util/GLutils.h \
-    infra/acquisitionthread.h \
     util/jpgutil.h \
     config/configparameter.h \
     config/configstore.h \
@@ -71,7 +70,8 @@ HEADERS += \
     infra/analysisworker.h \
     optics/Camera.h \
     infra/referencestar.h \
-    gui/videodirnavigator.h
+    gui/videodirnavigator.h \
+    infra/acquisitionthread.h
 
 LIBS += -ljpeg \
         -lftgl \
