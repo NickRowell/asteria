@@ -1,5 +1,5 @@
-#ifndef ACQUISITIONTHREAD_H
-#define ACQUISITIONTHREAD_H
+#ifndef ACQUISITIONWORKER_H
+#define ACQUISITIONWORKER_H
 
 #include <linux/videodev2.h>
 #include <vector>
@@ -19,21 +19,24 @@
 enum AcquisitionState{DETECTING, RECORDING, IDLE};
 
 
-class AcquisitionThread : public QThread
+class AcquisitionWorker : public QObject
 {
     Q_OBJECT
 
 public:
-    AcquisitionThread(QObject *parent = 0, MeteorCaptureState * state = 0);
-    ~AcquisitionThread();
+    AcquisitionWorker(MeteorCaptureState * state = 0);
+    ~AcquisitionWorker();
 
+public slots:
     void launch();
+    void shutdownLater();
 
 signals:
     void acquiredImage(std::shared_ptr<Image>);
+    void finished();
 
 protected:
-    void run() Q_DECL_OVERRIDE;
+    void shutdown();
 
 private:
 
@@ -84,4 +87,4 @@ private:
     QMutex mutex;
 };
 
-#endif // ACQUISITIONTHREAD_H
+#endif // ACQUISITIONWORKER_H
