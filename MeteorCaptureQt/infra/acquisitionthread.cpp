@@ -23,13 +23,6 @@
 #include <QGridLayout>
 #include <QThread>
 
-enum io_method {
-        IO_METHOD_MMAP,
-        IO_METHOD_USERPTR,
-};
-//static enum io_method   io = IO_METHOD_MMAP;
-static enum io_method   io = IO_METHOD_USERPTR;
-
 AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
     : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
 
@@ -60,15 +53,8 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
 
     // Inform device about buffers to use
     state->bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    state->bufrequest->memory = V4L2_MEMORY_MMAP;
     state->bufrequest->count = 32;
-    switch (io) {
-    case IO_METHOD_MMAP:
-        state->bufrequest->memory = V4L2_MEMORY_MMAP;
-        break;
-    case IO_METHOD_USERPTR:
-        state->bufrequest->memory = V4L2_MEMORY_USERPTR;
-        break;
-    }
 
     if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, state->bufrequest) < 0){
         perror("VIDIOC_REQBUFS");
@@ -92,37 +78,24 @@ AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state
     for(unsigned int b = 0; b < state->bufrequest->count; b++) {
 
         state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
         state->bufferinfo->index = b;
 
-        switch (io) {
-        case IO_METHOD_MMAP:
-            state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-
-            if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
-                perror("VIDIOC_QUERYBUF");
-                exit(1);
-            }
-
-            // bufferinfo.length: number of bytes of memory required for the buffer
-            // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-            buffer_start[b] = (unsigned char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
-
-            if(buffer_start[b] == MAP_FAILED){
-                perror("mmap");
-                exit(1);
-            }
-
-            memset(buffer_start[b], 0, state->bufferinfo->length);
-            break;
-        case IO_METHOD_USERPTR:
-            state->bufferinfo->memory = V4L2_MEMORY_USERPTR;
-            buffer_start[b] = (unsigned char *)malloc(state->format->fmt.pix.sizeimage);
-            if (!buffer_start[b]) {
-                perror("malloc");
-                exit(1);
-            }
-            break;
+        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
+            perror("VIDIOC_QUERYBUF");
+            exit(1);
         }
+
+        // bufferinfo.length: number of bytes of memory required for the buffer
+        // bufferinfo.m.offset: offset from the start of the device memory for this buffer
+        buffer_start[b] = (unsigned char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
+
+        if(buffer_start[b] == MAP_FAILED){
+            perror("mmap");
+            exit(1);
+        }
+
+        memset(buffer_start[b], 0, state->bufferinfo->length);
     }
 
 }
@@ -143,15 +116,8 @@ AcquisitionThread::~AcquisitionThread()
 
     qInfo() << "Deallocating image buffers...";
     for(unsigned int b = 0; b < state->bufrequest->count; b++) {
-        switch (io) {
-        case IO_METHOD_MMAP:
-            if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
-                perror("munmap");
-            }
-            break;
-        case IO_METHOD_USERPTR:
-            free(buffer_start[b]);
-            break;
+        if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
+            perror("munmap");
         }
     }
     delete buffer_start;
@@ -183,16 +149,7 @@ void AcquisitionThread::run() {
     for(unsigned long i = 0; i<state->bufrequest->count; i++) {
         state->bufferinfo->index = i;
         state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        switch (io) {
-        case IO_METHOD_MMAP:
-            state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-            break;
-        case IO_METHOD_USERPTR:
-            state->bufferinfo->memory = V4L2_MEMORY_USERPTR;
-            state->bufferinfo->m.userptr = (long unsigned int)buffer_start[i];
-            state->bufferinfo->length = state->format->fmt.pix.sizeimage;
-            break;
-        }
+        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
         if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
@@ -225,15 +182,7 @@ void AcquisitionThread::run() {
         unsigned int j = i % state->bufrequest->count;
 
         state->bufferinfo->index = j;
-
-        switch (io) {
-        case IO_METHOD_MMAP:
-            state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-            break;
-        case IO_METHOD_USERPTR:
-            state->bufferinfo->memory = V4L2_MEMORY_USERPTR;
-            break;
-        }
+        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
         // Wait for this buffer to be dequeued then retrieve the image
         if(ioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
@@ -285,15 +234,7 @@ void AcquisitionThread::run() {
         }
         case V4L2_PIX_FMT_MJPEG: {
             // Convert the JPEG image to greyscale
-            switch (io) {
-            case IO_METHOD_MMAP:
-                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
-                break;
-            case IO_METHOD_USERPTR:
-                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
-                break;
-            }
-
+            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
             break;
         }
         case V4L2_PIX_FMT_YUYV: {
