@@ -29,7 +29,7 @@ SOURCES += \
     infra/meteorcapturestate.cpp \
     infra/referencestar.cpp \
     gui/videodirnavigator.cpp \
-    infra/acquisitionworker.cpp
+    infra/acquisitionthread.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -71,7 +71,7 @@ HEADERS += \
     optics/Camera.h \
     infra/referencestar.h \
     gui/videodirnavigator.h \
-    infra/acquisitionworker.h
+    infra/acquisitionthread.h
 
 LIBS += -ljpeg \
         -lftgl \

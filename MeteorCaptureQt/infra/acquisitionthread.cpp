@@ -1,4 +1,4 @@
-#include "infra/acquisitionworker.h"
+#include "infra/acquisitionthread.h"
 #include "infra/analysisworker.h"
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
@@ -23,49 +23,10 @@
 #include <QGridLayout>
 #include <QThread>
 
-AcquisitionWorker::AcquisitionWorker(MeteorCaptureState * state)
-    : state(state), detectionHeadBuffer(state->detection_head), abort(false) {
+AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
+    : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
+
     acqState = IDLE;
-}
-
-AcquisitionWorker::~AcquisitionWorker()
-{
-
-}
-
-
-void AcquisitionWorker::shutdownLater() {
-    mutex.lock();
-    abort = true;
-    mutex.unlock();
-}
-
-
-
-
-void AcquisitionWorker::shutdown() {
-
-    qInfo() << "Deactivating streaming...";
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
-        perror("VIDIOC_STREAMOFF");
-        exit(1);
-    }
-
-    qInfo() << "Deallocating image buffers...";
-    for(unsigned int b = 0; b < state->bufrequest->count; b++) {
-        if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
-            perror("munmap");
-        }
-    }
-    delete buffer_start;
-
-    qInfo() << "Closing the camera...";
-    ::close(*(this->state->fd));
-
-    emit finished();
-}
-
-void AcquisitionWorker::launch() {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -137,6 +98,47 @@ void AcquisitionWorker::launch() {
         memset(buffer_start[b], 0, state->bufferinfo->length);
     }
 
+}
+
+AcquisitionThread::~AcquisitionThread()
+{
+    mutex.lock();
+    abort = true;
+    mutex.unlock();
+
+    wait();
+
+    qInfo() << "Deactivating streaming...";
+    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+        perror("VIDIOC_STREAMOFF");
+        exit(1);
+    }
+
+    qInfo() << "Deallocating image buffers...";
+    for(unsigned int b = 0; b < state->bufrequest->count; b++) {
+        if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
+            perror("munmap");
+        }
+    }
+    delete buffer_start;
+
+    qInfo() << "Closing the camera...";
+    ::close(*(this->state->fd));
+}
+
+void AcquisitionThread::launch() {
+
+    // Lock this object for the duration of this function
+    QMutexLocker locker(&mutex);
+
+    if (!isRunning()) {
+        start(NormalPriority);
+    }
+}
+
+
+void AcquisitionThread::run() {
+
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //                 Activate streaming                    //
@@ -173,7 +175,6 @@ void AcquisitionWorker::launch() {
     for(unsigned long i = 0; ; i++) {
 
         if(abort) {
-            shutdown();
             return;
         }
 

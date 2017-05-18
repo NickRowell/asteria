@@ -2,13 +2,14 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "infra/acquisitionworker.h"
+#include "infra/acquisitionthread.h"
 
 class MeteorCaptureState;
 class GLMeteorDrawer;
 class QCamera;
 class QCloseEvent;
-class QTreeView;
+
+QT_FORWARD_DECLARE_CLASS(QTreeView)
 
 class MainWindow : public QMainWindow
 {
@@ -26,9 +27,7 @@ private:
     // Main container widget for all GUI elements
     QWidget * central;
 
-    AcquisitionWorker *acqWorker;
-
-    QThread * acqThread;
+    AcquisitionThread *acqThread;
 
     void closeEvent(QCloseEvent *bar);
 

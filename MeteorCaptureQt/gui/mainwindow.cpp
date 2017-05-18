@@ -71,38 +71,17 @@ void MainWindow::slotInit() {
 
     qInfo() << "Initialised video directory model at " << model->rootPath();
 
-    acqWorker = new AcquisitionWorker(state);
+    acqThread = new AcquisitionThread(this, state);
 
     // Connect image acquisition signal to image display slot
-    connect(acqWorker, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
 
-    acqThread = new QThread;
-
-    acqWorker->moveToThread(acqThread);
-
-    // ACQUISITION STARTUP:
-    connect(acqThread, SIGNAL(started()), acqWorker, SLOT(launch()));
-
-    // ACQUISITION SHUTDOWN:
-
-    // Need to respond to user closing the window, and to termination from the command line...
-    connect(acqWorker, SIGNAL(finished()), acqThread, SLOT(quit()));
-
-    // ACQUISITION INITIALISATION:
-    // ACQUISITION PAUSE:
-    // ACQUISITION RESUME:
-
-    // HOUSEKEEPING:
-    // Delete the thread only after it's finished signal has been emitted
-    connect(acqThread, SIGNAL(finished()), acqThread, SLOT(deleteLater()));
-
-    acqThread->start();
+    acqThread->launch();
 
     show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    qInfo() << "Close event detected";
-    acqWorker->shutdownLater();
+    delete acqThread;
 }
