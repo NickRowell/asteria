@@ -79,7 +79,7 @@ private:
     unsigned int nFramesSinceLastTrigger = 0;
 
     /**
-     * @brief mutex
+     * @brief mutex used to control multithreaded use of instances of this class.
      */
     QMutex mutex;
 };

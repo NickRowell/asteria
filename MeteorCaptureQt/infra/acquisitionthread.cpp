@@ -206,7 +206,7 @@ void AcquisitionThread::run() {
             frameCaptureTimes.push(epochTimeStamp_us);
             double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
             fps = (frameCaptureTimes.size()-1) / timeDiffSec;
-            qInfo() << "FPS  = " << fps;
+            qInfo() << "FPS   = " << fps;
             qInfo() << "Dropped frames = " << droppedFramesCounter;
             qInfo() << "Total frames = " << totalFramesCounter;
         }

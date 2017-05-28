@@ -11,9 +11,9 @@
 
 #include <getopt.h>
 
-
-
 using namespace std;
+
+static void usage(FILE *fp, int argc, char **argv);
 
 int main(int argc, char **argv)
 {
@@ -31,16 +31,15 @@ int main(int argc, char **argv)
     state->epochTimeDiffUs = epochTimeDiffUs;
 
     // Parse application parameters from the command line
-
     static struct option long_options[] =
     {
           /* These options set a flag. */
-          {"headless", no_argument, &state->headless, 1},
-          {"gui", no_argument, &state->headless, 0},
+          {"headless",  no_argument,       &state->headless,  1},
+          {"gui",       no_argument,       &state->headless,  0},
           /* These options don’t set a flag.  We distinguish them by their indices. */
-          {"add",     no_argument,       0, 'a'},
-          {"delete",  required_argument, 0, 'd'},
-          {0, 0, 0, 0}
+          {"add",       no_argument,       NULL,              'a'},
+          {"delete",    required_argument, NULL,              'd'},
+          {0,           0,                 NULL,               0}
     };
 
     /* getopt_long stores the option index here. */
@@ -74,6 +73,7 @@ int main(int argc, char **argv)
                 break;
             }
             default: {
+                usage(stderr, argc, argv);
                 abort ();
             }
         }
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
     qInfo() << "State->headless = " << state->headless;
 
-
+    usage(stderr, argc, argv);
     CameraSelectionWindow camWin(0, state);
 
     ConfigCreationWindow configWin(0, state);
@@ -99,4 +99,21 @@ int main(int argc, char **argv)
     camWin.show();
 
     return app.exec();
+}
+
+
+static void usage(FILE *fp, int argc, char **argv)
+{
+        fprintf(fp,
+                 "Usage: %s [options]\n\n"
+                 "Version 1.3\n"
+                 "Options:\n"
+                 "-h | --help          Print this message\n"
+                 "-m | --mmap          Use memory mapped buffers [default]\n"
+                 "-r | --read          Use read() calls\n"
+                 "-u | --userp         Use application allocated buffers\n"
+                 "-o | --output        Outputs stream to stdout\n"
+                 "-f | --format        Force format to 640x480 YUYV\n"
+                 "",
+                 argv[0]);
 }
