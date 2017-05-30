@@ -12,7 +12,7 @@
 #include <QGridLayout>
 #include <QThread>
 
-AnalysisWorker::AnalysisWorker(QObject *parent, MeteorCaptureState * state, std::vector<std::shared_ptr<Image>> eventFrames)
+AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Image>> eventFrames)
     : QObject(parent), state(state), eventFrames(eventFrames) {
 
 }

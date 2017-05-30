@@ -118,6 +118,13 @@ std::string TimeUtil::convertToUtcString(long long epochTimeStamp_us) {
     return strs.str();
 }
 
+std::string TimeUtil::extractTimeFromUtcString(std::string utc) {
+    return utc.substr(11, 8);
+}
+
+const std::regex TimeUtil::getUtcRegex() {
+    return std::regex("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z");
+}
 
 void TimeUtil::convertYearMonthDayHourMinSecUsecString(long long epochTimeStamp_us, std::vector<std::string>& strs) {
 
@@ -188,7 +195,6 @@ void TimeUtil::convertYearMonthDayHourMinSecUsecString(long long epochTimeStamp_
     strs.push_back(minStr);
     strs.push_back(secStr);
     strs.push_back(usecStr);
-
 
     return;
 }

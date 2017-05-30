@@ -26,10 +26,11 @@ SOURCES += \
     config/parameteruintarray.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
-    infra/meteorcapturestate.cpp \
     infra/referencestar.cpp \
     infra/acquisitionthread.cpp \
-    gui/videodirectorymodel.cpp
+    gui/videodirectorymodel.cpp \
+    infra/asteriastate.cpp \
+    gui/treeitem.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -45,7 +46,6 @@ HEADERS += \
     util/IOUtil.h \
     util/V4L2Util.h \
     gui/cameraselectionwindow.h \
-    infra/meteorcapturestate.h \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
@@ -71,7 +71,9 @@ HEADERS += \
     optics/Camera.h \
     infra/referencestar.h \
     infra/acquisitionthread.h \
-    gui/videodirectorymodel.h
+    gui/videodirectorymodel.h \
+    infra/asteriastate.h \
+    gui/treeitem.h
 
 LIBS += -ljpeg \
         -lftgl \

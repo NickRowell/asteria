@@ -3,7 +3,7 @@
 
 #include "config/configparameterfamily.h"
 #include "config/parameteruintarray.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 #include <QDebug>
 
@@ -11,7 +11,7 @@ class CameraParameters : public ConfigParameterFamily {
 
 public:
 
-    CameraParameters(MeteorCaptureState * state) : ConfigParameterFamily("Camera", 3) {
+    CameraParameters(AsteriaState * state) : ConfigParameterFamily("Camera", 3) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];

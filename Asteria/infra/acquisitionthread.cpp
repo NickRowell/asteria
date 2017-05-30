@@ -23,7 +23,7 @@
 #include <QGridLayout>
 #include <QThread>
 
-AcquisitionThread::AcquisitionThread(QObject *parent, MeteorCaptureState * state)
+AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
 
     acqState = IDLE;

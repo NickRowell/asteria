@@ -1,5 +1,5 @@
 #include "gui/glmeteordrawer.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "util/timeutil.h"
 
 #include <QOpenGLShaderProgram>
@@ -13,7 +13,7 @@
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
 
-GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, MeteorCaptureState *state)
+GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state)
     : QOpenGLWidget(parent), state(state), program(0) {
 
     font = new FTExtrudeFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");

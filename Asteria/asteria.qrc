@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>images/side1.png</file>
-        <file>images/side4.png</file>
+        <file>images/meteor-512.png</file>
+        <file>images/folder-outline-filled.png</file>
     </qresource>
 </RCC>

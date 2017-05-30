@@ -1,7 +1,7 @@
 #include "gui/cameraselectionwindow.h"
 #include "gui/configcreationwindow.h"
 #include "gui/mainwindow.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "util/timeutil.h"
 
 #include <QApplication>
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     long long epochTimeDiffUs = TimeUtil::getEpochTimeShift();
 
     // Initialise the state object
-    MeteorCaptureState * state = new MeteorCaptureState();
+    AsteriaState * state = new AsteriaState();
 
     state->epochTimeDiffUs = epochTimeDiffUs;
 

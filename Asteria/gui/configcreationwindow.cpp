@@ -1,5 +1,5 @@
 #include "configcreationwindow.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -18,7 +18,7 @@
 #include "config/configstore.h"
 #include "gui/configparameterfamilytab.h"
 
-ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, MeteorCaptureState * state) : QDialog(parent), state(state)
+ConfigCreationWindow::ConfigCreationWindow(QWidget *parent, AsteriaState * state) : QDialog(parent), state(state)
 {
     tabWidget = new QTabWidget;
 

@@ -10,7 +10,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
 
-class MeteorCaptureState;
+class AsteriaState;
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
@@ -27,7 +27,7 @@ class GLMeteorDrawer : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
 
-    explicit GLMeteorDrawer(QWidget *parent = 0, MeteorCaptureState *state = 0);
+    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0);
     ~GLMeteorDrawer();
 
     QSize sizeHint() const Q_DECL_OVERRIDE;
@@ -36,7 +36,7 @@ public:
 private:
 
     // The MeteorCaptureState object
-    MeteorCaptureState * state;
+    AsteriaState * state;
 
     // Handle to GL texture object used to store video frame
     GLuint VideoImageTexture;

@@ -8,7 +8,7 @@
 #include <QThread>
 #include <QMutex>
 
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "infra/image.h"
 #include "infra/ringbuffer.h"
 
@@ -24,7 +24,7 @@ class AcquisitionThread : public QThread
     Q_OBJECT
 
 public:
-    AcquisitionThread(QObject *parent = 0, MeteorCaptureState * state = 0);
+    AcquisitionThread(QObject *parent = 0, AsteriaState * state = 0);
     ~AcquisitionThread();
 
     void launch();
@@ -37,7 +37,7 @@ protected:
 
 private:
 
-    MeteorCaptureState * state;
+    AsteriaState * state;
 
     bool abort;
 

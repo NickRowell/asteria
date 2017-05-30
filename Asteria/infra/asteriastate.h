@@ -10,7 +10,7 @@
 using namespace std;
 
 
-class MeteorCaptureState
+class AsteriaState
 {
 
 public:
@@ -22,9 +22,9 @@ public:
     /**
      * @brief MeteorCaptureState
      */
-    MeteorCaptureState();
+    AsteriaState();
 
-    ~MeteorCaptureState();
+    ~AsteriaState();
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                              //

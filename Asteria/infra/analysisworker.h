@@ -1,7 +1,7 @@
 #ifndef ANALYSISWORKER_H
 #define ANALYSISWORKER_H
 
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "infra/image.h"
 
 #include <linux/videodev2.h>
@@ -16,7 +16,7 @@ class AnalysisWorker : public QObject
     Q_OBJECT
 
 public:
-    AnalysisWorker(QObject *parent = 0, MeteorCaptureState * state = 0, std::vector<std::shared_ptr<Image>> eventFrames = std::vector<std::shared_ptr<Image>>());
+    AnalysisWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Image>> eventFrames = std::vector<std::shared_ptr<Image>>());
     ~AnalysisWorker();
 
 public slots:
@@ -29,7 +29,7 @@ signals:
 
 private:
 
-    MeteorCaptureState * state;
+    AsteriaState * state;
 
     std::vector<std::shared_ptr<Image>> eventFrames;
 };

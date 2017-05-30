@@ -3,19 +3,35 @@
 # This script contains the necessary installation and setup commands to prepare a new machine
 # for compiling/developing the Asteria software.
 #
-# It assumes the starting point is a clean installation of Lubuntu 16.04 LTS
+# Development baseline:
+# 1) clean installation of Lubuntu 16.04 LTS
+# 2) GCC version 4.9
+# 3) Qt version 5.5
+#
 
 # Build environment:
 sudo apt-get install make
 sudo apt-get install build-essential
 sudo apt-get install git
 
+# Ensure version 4.9 or later of the GCC/G++ compilers are present.
+# Versions 4.8 and earlier lack regex support that is required by the project.
+# NOTE: this may be installed by default in Lubuntu 16.04
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install g++-4.9
+# Put symlinks in place:
+sudo rm /usr/bin/gcc
+sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
+sudo rm /usr/bin/g++
+sudo ln -s /usr/bin/g++-4.9 /usr/bin/g++
+
 # AV packages:
 sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 sudo apt-get install libghc-gstreamer-dev
 sudo apt-get install libgl1-mesa-dev
 
-# QT packages:
+# QT packages [which QT version is the development baseline?]:
 sudo apt-get install qt5-default
 sudo apt-get install qtcreator
 sudo apt-get install qtmultimedia5-dev

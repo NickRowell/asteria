@@ -6,7 +6,7 @@
 class QDialogButtonBox;
 class QTabWidget;
 class QLineEdit;
-class MeteorCaptureState;
+class AsteriaState;
 class ConfigStore;
 class ConfigParameterFamilyTab;
 
@@ -14,12 +14,12 @@ class ConfigCreationWindow : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ConfigCreationWindow(QWidget *parent = 0, MeteorCaptureState * state = 0);
+    explicit ConfigCreationWindow(QWidget *parent = 0, AsteriaState * state = 0);
     ~ConfigCreationWindow();
 
 private:
 
-    MeteorCaptureState *state;
+    AsteriaState *state;
 
     ConfigStore *store;
     ConfigParameterFamilyTab ** tabs;

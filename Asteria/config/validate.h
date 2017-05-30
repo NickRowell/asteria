@@ -1,7 +1,7 @@
 #ifndef VALIDATE_H
 #define VALIDATE_H
 
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -220,12 +220,12 @@ public:
 class ValidateImageSize : public ParameterValidator {
 
 public:
-    ValidateImageSize(MeteorCaptureState * state) : state(state) {
+    ValidateImageSize(AsteriaState * state) : state(state) {
 
     }
 
     // State object that contains the connection to the camera
-    MeteorCaptureState * state;
+    AsteriaState * state;
 
     bool validate(const void *pvalue, std::ostringstream &strs) const {
 

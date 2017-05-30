@@ -1,6 +1,7 @@
 #include "mainwindow.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "gui/glmeteordrawer.h"
+#include "gui/videodirectorymodel.h"
 
 
 #include <fstream>
@@ -16,11 +17,10 @@
 #include <QCloseEvent>
 #include <QGridLayout>
 #include <QThread>
-#include <QFileSystemModel>
 #include <QTreeView>
 
 
-MainWindow::MainWindow(QWidget *parent, MeteorCaptureState * state) : QMainWindow(parent), state(state)
+MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(parent), state(state)
 {
     // Build GUI components
     drawer = new GLMeteorDrawer(this, this->state);
@@ -52,15 +52,8 @@ void MainWindow::slotInit() {
 
     qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
 
-    QFileSystemModel *model = new QFileSystemModel;
-    model->setRootPath(QDir::currentPath());
-    model->setReadOnly(true);
-
+    VideoDirectoryModel *model = new VideoDirectoryModel(state->videoDirPath);
     tree->setModel(model);
-    tree->setRootIndex(model->index(QString::fromUtf8(state->videoDirPath.c_str())));
-    tree->hideColumn(1);  // Hide 'Size'
-    tree->hideColumn(2);  // Hide 'Type'
-    tree->hideColumn(3);  // Hide 'Date Modified'
     tree->resizeColumnToContents(0);
     tree->setFixedWidth(250);
     this->adjustSize();
@@ -69,7 +62,7 @@ void MainWindow::slotInit() {
     const QRect rect = qApp->desktop()->availableGeometry();
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), rect));
 
-    qInfo() << "Initialised video directory model at " << model->rootPath();
+
 
     acqThread = new AcquisitionThread(this, state);
 

@@ -4,13 +4,13 @@
 #include "config/configparameterfamily.h"
 #include "config/parameterdouble.h"
 #include "config/validate.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 class StationParameters : public ConfigParameterFamily {
 
 public:
 
-    StationParameters(MeteorCaptureState * state) : ConfigParameterFamily("Station", 3) {
+    StationParameters(AsteriaState * state) : ConfigParameterFamily("Station", 3) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];

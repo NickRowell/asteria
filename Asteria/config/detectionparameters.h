@@ -3,7 +3,7 @@
 
 #include "config/configparameterfamily.h"
 #include "config/parameteruint.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 #include <QDebug>
 
@@ -11,7 +11,7 @@ class DetectionParameters : public ConfigParameterFamily {
 
 public:
 
-    DetectionParameters(MeteorCaptureState * state) : ConfigParameterFamily("Detection", 4) {
+    DetectionParameters(AsteriaState * state) : ConfigParameterFamily("Detection", 4) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];

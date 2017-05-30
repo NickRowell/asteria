@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include "infra/acquisitionthread.h"
 
-class MeteorCaptureState;
+class AsteriaState;
 class GLMeteorDrawer;
 class QCamera;
 class QCloseEvent;
@@ -16,11 +16,11 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0, MeteorCaptureState * state = 0);
+    explicit MainWindow(QWidget *parent = 0, AsteriaState * state = 0);
 
 private:
 
-    MeteorCaptureState * state;
+    AsteriaState * state;
     GLMeteorDrawer *drawer;
     QTreeView *tree;
 

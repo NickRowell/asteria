@@ -4,7 +4,7 @@
 #include "config/stationparameters.h"
 #include "config/cameraparameters.h"
 #include "config/detectionparameters.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "util/IOUtil.h"
 
 #include <vector>
@@ -13,7 +13,7 @@
 
 #include <QDebug>
 
-ConfigStore::ConfigStore(MeteorCaptureState *state) {
+ConfigStore::ConfigStore(AsteriaState *state) {
     numFamilies = 4;
     families = new ConfigParameterFamily*[numFamilies];
     families[0] = new SystemParameters(state);

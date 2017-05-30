@@ -5,13 +5,13 @@
 #include "parameterdouble.h"
 #include "configparameterfamily.h"
 
-class MeteorCaptureState;
+class AsteriaState;
 
 class ConfigStore {
 
 public:
 
-    ConfigStore(MeteorCaptureState * state);
+    ConfigStore(AsteriaState * state);
 
     ~ConfigStore();
 

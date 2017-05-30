@@ -1,5 +1,5 @@
 #include "gui/cameraselectionwindow.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 #include "util/V4L2Util.h"
 #include "gui/glmeteordrawer.h"
 
@@ -14,12 +14,12 @@
 #include <QButtonGroup>
 #include <QString>
 
-CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, MeteorCaptureState * state) : QWidget(parent)
+CameraSelectionWindow::CameraSelectionWindow(QWidget *parent, AsteriaState * state) : QWidget(parent)
 {
     this->state = state;
 
     // Query the supported cameras
-    cameras = V4L2Util::getSupportedV4LCameras(MeteorCaptureState::preferredFormats, MeteorCaptureState::preferredFormatsN);
+    cameras = V4L2Util::getSupportedV4LCameras(AsteriaState::preferredFormats, AsteriaState::preferredFormatsN);
 
     if(cameras.size() == 0) {
         // Not found any cameras! Can't proceed.

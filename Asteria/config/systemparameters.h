@@ -3,7 +3,7 @@
 
 #include "config/configparameterfamily.h"
 #include "config/parameterdir.h"
-#include "infra/meteorcapturestate.h"
+#include "infra/asteriastate.h"
 
 #include <QDebug>
 
@@ -11,7 +11,7 @@ class SystemParameters : public ConfigParameterFamily {
 
 public:
 
-    SystemParameters(MeteorCaptureState * state) : ConfigParameterFamily("System", 3) {
+    SystemParameters(AsteriaState * state) : ConfigParameterFamily("System", 3) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];
