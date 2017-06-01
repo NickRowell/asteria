@@ -31,6 +31,7 @@ public:
 
 signals:
     void acquiredImage(std::shared_ptr<Image>);
+    void acquiredClip(std::string utc);
 
 protected:
     void run() Q_DECL_OVERRIDE;

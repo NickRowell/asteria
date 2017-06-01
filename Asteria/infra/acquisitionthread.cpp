@@ -353,10 +353,13 @@ void AcquisitionThread::run() {
                 AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
                 worker->moveToThread(thread);
                 connect(thread, SIGNAL(started()), worker, SLOT(process()));
-                connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
-                connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+                connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
+                connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
                 connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
                 thread->start();
+
+                // Notify listeners when a new clip is available
+                connect(worker, SIGNAL(finished(std::string)), this, SIGNAL(acquiredClip(std::string)));
 
                 // Clear the event frame buffer
                 eventFrames.clear();

@@ -20,6 +20,7 @@ int main(int argc, char **argv)
     QApplication app (argc, argv);
 
     qRegisterMetaType<std::shared_ptr<Image>>("std::shared_ptr<Image>");
+    qRegisterMetaType<std::string>("std::string");
 
     // Get the time difference between time of day and the frame timestamp. This needs
     // to be recomputed whenever the computer hibernates.

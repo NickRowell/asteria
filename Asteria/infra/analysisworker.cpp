@@ -30,19 +30,12 @@ void AnalysisWorker::process() {
 
     qInfo() << "Analysis thread; iterating over " << eventFrames.size() << " images";
 
-    // Create new directory to store results for this clip
-    std::vector<std::string> dateTime;
-    TimeUtil::convertYearMonthDayHourMinSecUsecString(eventFrames[0u]->epochTimeUs, dateTime);
-    // Retrieve the individual fields
-    dateTime.pop_back();  // Remove usec
-    dateTime.pop_back();  // Remove sec
-    dateTime.pop_back();  // Rmove min
-    dateTime.pop_back();  // Remove hour
-    std::string dd = dateTime.back();
-    dateTime.pop_back();  // Remove day
-    std::string mm = dateTime.back();
-    dateTime.pop_back();  // Remove month
-    std::string yyyy = dateTime.back();
+    // Create new directory to store results for this clip. The path is set by the
+    // date and time of the first frame
+    std::string utc = TimeUtil::convertToUtcString(eventFrames[0u]->epochTimeUs);
+    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
+    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
+    std::string dd = TimeUtil::extractDayFromUtcString(utc);
 
     // Create the YYYY directory level if it doesn't already exist
     string yearPath = state->videoDirPath + "/" + yyyy;
@@ -114,7 +107,7 @@ void AnalysisWorker::process() {
         return;
     }
 
-    string path = dayPath + "/" + TimeUtil::convertToUtcString(eventFrames[0u]->epochTimeUs);
+    string path = dayPath + "/" + utc;
     int status = mkdir(path.c_str(), S_IRWXU);
     if(status == -1) {
         qInfo() << "Could not create directory " << path.c_str();
@@ -128,9 +121,9 @@ void AnalysisWorker::process() {
         // Write the image data out to a file
         char filename [100];
 
-        string utc = TimeUtil::convertToUtcString(image.epochTimeUs);
+        string utcFrame = TimeUtil::convertToUtcString(image.epochTimeUs);
 
-        sprintf(filename, "%s/%s.pgm", path.c_str(), utc.c_str());
+        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
 
         // PGM (grey image)
         std::ofstream out(filename);
@@ -148,6 +141,6 @@ void AnalysisWorker::process() {
     }
 
     // All done - emit signal
-    emit finished();
+    emit finished(utc);
 }
 

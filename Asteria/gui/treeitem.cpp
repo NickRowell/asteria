@@ -13,7 +13,7 @@ void TreeItem::appendChild(TreeItem *item) {
     m_childItems.append(item);
 }
 
-TreeItem *TreeItem::child(int row) {
+TreeItem *TreeItem::child(unsigned int row) {
     return m_childItems.value(row);
 }
 
@@ -33,7 +33,7 @@ int TreeItem::columnCount() const {
     return m_itemData.count();
 }
 
-QVariant TreeItem::data(int column) const {
+QVariant TreeItem::data(unsigned int column) const {
     return m_itemData.value(column);
 }
 

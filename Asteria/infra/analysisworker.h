@@ -25,7 +25,7 @@ public slots:
 
 signals:
     // Emitted once processing is complete
-    void finished();
+    void finished(std::string utc);
 
 private:
 

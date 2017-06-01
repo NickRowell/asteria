@@ -5,11 +5,14 @@
 #include <regex>
 #include <dirent.h>
 
+#include <QDebug>
+
 VideoDirectoryModel::VideoDirectoryModel(std::string path, QObject *parent) : QAbstractItemModel(parent) {
     QList<QVariant> rootData;
     rootData << "Video clips";
     rootItem = new TreeItem(rootData);
-    setupModelData(path, rootItem);
+    rootPath = path;
+    setupModelData(path);
 }
 
 VideoDirectoryModel::~VideoDirectoryModel() {
@@ -96,7 +99,7 @@ QVariant VideoDirectoryModel::data(const QModelIndex &index, int role) const {
         return item->getIcon();
     }
 
-    if(role != Qt::DisplayRole) {
+    if(role != Qt::DisplayRole && role != Qt::EditRole) {
         return QVariant();
     }
 
@@ -120,7 +123,8 @@ QVariant VideoDirectoryModel::headerData(int section, Qt::Orientation orientatio
     return QVariant();
 }
 
-void VideoDirectoryModel::setupModelData(const std::string &rootPath, TreeItem *parent) {
+void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
+
     // This regex usage relies on version 4.9 or later of the GCC
     const std::regex yearRegex("[0-9]{4}");
     const std::regex monthDayRegex("[0-9]{2}");
@@ -154,9 +158,9 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath, TreeItem *
         // Create a TreeItem then search for MM subdirectories
         QList<QVariant> yearData;
         yearData << years[p].c_str();
-        TreeItem * yearItem = new TreeItem(yearData, parent);
+        TreeItem * yearItem = new TreeItem(yearData, rootItem);
         yearItem->setIcon(folderIcon);
-        parent->appendChild(yearItem);
+        rootItem->appendChild(yearItem);
 
         // Locate all the subdirectories corresponding to months in the year
         std::string yearPath = rootPath + "/" + years[p];
@@ -252,3 +256,129 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath, TreeItem *
     } // Close loop over YYYY
 
 }
+
+/**
+ * @brief VideoDirectoryModel::addNewClipByUtc
+ * @param utc The UTC string of the first frame in the clip, i.e. that used to determine
+ * the path to the directory where the clip results are stored.
+ *
+ * THINGS THAT HAVEN'T BEEN IMPLEMENTED:
+ *  - Adding new clips before the end of the current list, i.e. we assume that new
+ *    clips never fall in a month/day/time that does not go at the end of the current
+ *    list. This is so we can just append new items to the tree rather than find out
+ *    where in the list they should lie
+ *  - Removing clips; this may be useful to allow the user to manually delete clips
+ *
+ */
+void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
+
+    qInfo() << "Inserting new clip at " << utc.c_str();
+
+    // Extract YYYY, MM, DD from UTC
+    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
+    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
+    std::string dd = TimeUtil::extractDayFromUtcString(utc);
+
+    QIcon folderIcon(":/images/folder-outline-filled.png");
+    QIcon meteorIcon(":/images/meteor-512.png");
+
+    // Build the full path to the clip
+    std::string clipPath = rootPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+
+    // Check if YYYY exists in the root directory
+    unsigned int years = rootItem->childCount();
+    TreeItem * clipYearItem = NULL;
+    for(unsigned int year = 0; year < years; year++) {
+        TreeItem * existingYearItem = rootItem->child(year);
+        // Check if the directory represented by this TreeItem corresponds to the year of the new clip
+        QVariant yearDirPath = existingYearItem->data(0);
+        if(yyyy.compare(yearDirPath.toString().toStdString())==0) {
+            // Found existing YYYY directory
+            clipYearItem = existingYearItem;
+            break;
+        }
+    }
+
+    if(!clipYearItem) {
+        // No existing year item - create it. Note that it's OK to append this to the end
+        // of the existing items, because new years will always be after existing years to
+        // the ascending order of the items in the display is preserved.
+        QList<QVariant> yearData;
+        yearData << yyyy.c_str();
+        clipYearItem = new TreeItem(yearData, rootItem);
+        clipYearItem->setIcon(folderIcon);
+
+        int existingRows = rootItem->childCount();
+        QAbstractItemModel::beginInsertRows(QModelIndex(), existingRows, existingRows);
+        rootItem->appendChild(clipYearItem);
+        QAbstractItemModel::endInsertRows();
+    }
+
+    QModelIndex yearIdx = index(clipYearItem->row(), 0, QModelIndex());
+
+    // Check if MM exists in the year item
+    unsigned int months = clipYearItem->childCount();
+    TreeItem * clipMonthItem = NULL;
+
+    for(unsigned int month = 0; month < months; month++) {
+        TreeItem * existingMonthItem = clipYearItem->child(month);
+        QVariant monthDirPath = existingMonthItem->data(0);
+        if(mm.compare(monthDirPath.toString().toStdString())==0) {
+            clipMonthItem = existingMonthItem;
+            break;
+        }
+    }
+    if(!clipMonthItem) {
+        // Create new MM item
+        QList<QVariant> monthData;
+        monthData << mm.c_str();
+        clipMonthItem = new TreeItem(monthData, clipYearItem);
+        clipMonthItem->setIcon(folderIcon);
+
+        int existingRows = clipYearItem->childCount();
+        QAbstractItemModel::beginInsertRows(yearIdx, existingRows, existingRows);
+        clipYearItem->appendChild(clipMonthItem);
+        QAbstractItemModel::endInsertRows();
+    }
+
+    QModelIndex monthIdx = index(clipMonthItem->row(), 0, yearIdx);
+
+    // Check if DD exists in the month item
+    unsigned int days = clipMonthItem->childCount();
+    TreeItem * clipDayItem = NULL;
+    for(unsigned int day = 0; day < days; day++) {
+        TreeItem * existingDayItem = clipMonthItem->child(day);
+        QVariant dayDirPath = existingDayItem->data(0);
+        if(dd.compare(dayDirPath.toString().toStdString())==0) {
+            clipDayItem = existingDayItem;
+            break;
+        }
+    }
+    if(!clipDayItem) {
+        // Create new DD item
+        QList<QVariant> dayData;
+        dayData << dd.c_str();
+        clipDayItem = new TreeItem(dayData, clipMonthItem);
+        clipDayItem->setIcon(folderIcon);
+
+        int existingRows = clipMonthItem->childCount();
+        QAbstractItemModel::beginInsertRows(monthIdx, existingRows, existingRows);
+        clipMonthItem->appendChild(clipDayItem);
+        QAbstractItemModel::endInsertRows();
+    }
+
+    QModelIndex dayIdx = index(clipDayItem->row(), 0, monthIdx);
+
+    // Add new clip
+    QList<QVariant> clipData;
+    clipData << TimeUtil::extractTimeFromUtcString(utc).c_str();
+    TreeItem * clipItem = new TreeItem(clipData, clipDayItem);
+    clipItem->setIcon(meteorIcon);
+
+    int existingRows = clipDayItem->childCount();
+    QAbstractItemModel::beginInsertRows(dayIdx, existingRows, existingRows);
+    clipDayItem->appendChild(clipItem);
+    QAbstractItemModel::endInsertRows();
+}
+
+

@@ -18,13 +18,57 @@ public:
 
     void appendChild(TreeItem *item);
 
-    TreeItem *child(int row);
+    /**
+     * Locate the child item stored at the given row
+     * @brief child
+     * @param row
+     * @return
+     */
+    TreeItem *child(unsigned int row);
+    /**
+     * Get the number of child items
+     * @brief childCount
+     * @return
+     */
     int childCount() const;
+
+    /**
+     * Get the number of columns of data stored in this item
+     * @brief columnCount
+     * @return
+     */
     int columnCount() const;
-    QVariant data(int column) const;
+    /**
+     * Get the data stored at the given column
+     * @brief data
+     * @param column
+     * @return
+     */
+    QVariant data(unsigned int column) const;
+    /**
+     * Get the row number occupied by this item in it's parent item, or
+     * zero if this is the root item.
+     * @brief row
+     * @return
+     */
     int row() const;
+    /**
+     * Get this item's parent, or NULL if this is the root item.
+     * @brief parentItem
+     * @return
+     */
     TreeItem *parentItem();
+    /**
+     * Get the icon to be displayed next to this item in the tree viewer
+     * @brief getIcon
+     * @return
+     */
     QIcon getIcon();
+    /**
+     * Set the icon to be displayed next to this item in the tree viewer
+     * @brief setIcon
+     * @param iconToUse
+     */
     void setIcon(QIcon iconToUse);
 
 private:

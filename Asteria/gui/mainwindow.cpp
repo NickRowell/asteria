@@ -55,19 +55,19 @@ void MainWindow::slotInit() {
     VideoDirectoryModel *model = new VideoDirectoryModel(state->videoDirPath);
     tree->setModel(model);
     tree->resizeColumnToContents(0);
-    tree->setFixedWidth(250);
     this->adjustSize();
 
     // Rectangle aligned with the screen, for use in centering the widget
     const QRect rect = qApp->desktop()->availableGeometry();
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), rect));
 
-
-
     acqThread = new AcquisitionThread(this, state);
 
     // Connect image acquisition signal to image display slot
     connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
+
+    // Connect new clip signal to tree viewer slot
+    connect(acqThread, SIGNAL (acquiredClip(std::string)), model, SLOT (addNewClipByUtc(std::string)));
 
     acqThread->launch();
 

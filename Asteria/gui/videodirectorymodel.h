@@ -35,11 +35,16 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
+public slots:
+    void addNewClipByUtc(std::string utc);
+
 private:
 
-    void setupModelData(const std::string &rootPath, TreeItem *parent);
+    void setupModelData(const std::string &rootPath);
 
     TreeItem *rootItem;
+
+    std::string rootPath;
 };
 
 #endif // VIDEODIRECTORYMODEL_H
