@@ -409,8 +409,6 @@ void VideoDirectoryModel::deleteItem(TreeItem * itemToDelete) {
 
     std::string pathToItem = itemToDelete->data(1).toString().toStdString();
 
-    qInfo() << "Deleting " << pathToItem.c_str();
-
     // Delete the files from disk
     FileUtil::deleteFilePath(pathToItem);
 

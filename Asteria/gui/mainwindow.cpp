@@ -62,13 +62,10 @@ void MainWindow::slotInit() {
     tree->resizeColumnToContents(0);
     tree->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    // Capture right-clicks in the tree view
+    // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
 
-    // Forward delete signals to the model...
-
-
-    // Capture double-clicks in the viewer for replaying videos
+    // Capture double-clicks in the tree view for replaying videos
     connect(tree, SIGNAL (doubleClicked(const QModelIndex)), this, SLOT(replayVideo(const QModelIndex)));
 
     this->adjustSize();
@@ -85,9 +82,6 @@ void MainWindow::slotInit() {
 
     // Connect new clip signal to tree viewer slot, so that new clips get added to the viewer
     connect(acqThread, SIGNAL (acquiredClip(std::string)), model, SLOT (addNewClipByUtc(std::string)));
-
-
-
 
     acqThread->launch();
 

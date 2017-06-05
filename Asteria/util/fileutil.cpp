@@ -61,9 +61,7 @@ bool FileUtil::deleteFilePath(std::string path) {
 
     if(S_ISREG(info.st_mode)) {
         // Regular file - delete and return.
-        qInfo() << "Deleting file " << path.c_str();
-        return true;
-        //return remove( path.c_str() ) == 0;
+        return remove( path.c_str() ) == 0;
     }
 
     if(S_ISDIR(info.st_mode)) {
@@ -95,9 +93,7 @@ bool FileUtil::deleteFilePath(std::string path) {
 
         // Only delete the directory if we managed to delete all of it's contents.
         if(dirNowEmpty) {
-            qInfo() << "Deleting directory " << path.c_str();
-            return true;
-            //return remove( path.c_str() ) == 0;
+            return remove( path.c_str() ) == 0;
         }
         else {
             return false;
