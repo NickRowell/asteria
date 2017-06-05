@@ -35,16 +35,19 @@ bool FileUtil::deleteFilePath(std::string path) {
     // What type of object is this?
     if(S_ISCHR(info.st_mode)) {
         // Character device - don't touch it
+        qInfo() << "Not deleting character device " << path.c_str();
         return false;
     }
 
     if(S_ISBLK(info.st_mode)) {
         // Block device - don't touch it
+        qInfo() << "Not deleting block device " << path.c_str();
         return false;
     }
 
     if(S_ISFIFO(info.st_mode)) {
         // FIFO (named pipe) - don't touch it
+        qInfo() << "Not deleting FIFO " << path.c_str();
         return false;
     }
 
@@ -56,6 +59,7 @@ bool FileUtil::deleteFilePath(std::string path) {
 
     if(S_ISSOCK(info.st_mode)) {
         // Socket - don't touch it
+        qInfo() << "Not deleting socket " << path.c_str();
         return false;
     }
 
