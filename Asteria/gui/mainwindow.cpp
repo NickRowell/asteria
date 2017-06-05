@@ -23,7 +23,13 @@
 MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(parent), state(state)
 {
     // Build GUI components
-    drawer = new GLMeteorDrawer(this, this->state);
+    live = new GLMeteorDrawer(this, this->state);
+//    replay = new GLMeteorDrawer(this, this->state);
+
+    tabWidget = new QTabWidget;
+    tabWidget->addTab(live, QString("Live"));
+//    tabWidget->addTab(replay, QString("Replay"));
+
     tree = new QTreeView(this);
 
     // Arrange layout
@@ -32,12 +38,11 @@ MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(pare
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(tree);
     mainLayout->addStretch(1);
-    mainLayout->addWidget(drawer);
+    mainLayout->addWidget(tabWidget);
     mainLayout->addStretch(1);
     central->setLayout(mainLayout);
 
     this->setCentralWidget(central);
-
 }
 
 void MainWindow::slotInit() {
@@ -52,9 +57,20 @@ void MainWindow::slotInit() {
 
     qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
 
-    VideoDirectoryModel *model = new VideoDirectoryModel(state->videoDirPath);
+    VideoDirectoryModel *model = new VideoDirectoryModel(state->videoDirPath, tree);
     tree->setModel(model);
     tree->resizeColumnToContents(0);
+    tree->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    // Capture right-clicks in the tree view
+    connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
+
+    // Forward delete signals to the model...
+
+
+    // Capture double-clicks in the viewer for replaying videos
+    connect(tree, SIGNAL (doubleClicked(const QModelIndex)), this, SLOT(replayVideo(const QModelIndex)));
+
     this->adjustSize();
 
     // Rectangle aligned with the screen, for use in centering the widget
@@ -64,14 +80,34 @@ void MainWindow::slotInit() {
     acqThread = new AcquisitionThread(this, state);
 
     // Connect image acquisition signal to image display slot
-    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), drawer, SLOT (newFrame(std::shared_ptr<Image>)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), live, SLOT (newFrame(std::shared_ptr<Image>)));
+//    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), replay, SLOT (newFrame(std::shared_ptr<Image>)));
 
-    // Connect new clip signal to tree viewer slot
+    // Connect new clip signal to tree viewer slot, so that new clips get added to the viewer
     connect(acqThread, SIGNAL (acquiredClip(std::string)), model, SLOT (addNewClipByUtc(std::string)));
+
+
+
 
     acqThread->launch();
 
     show();
+}
+
+
+void MainWindow::replayVideo(const QModelIndex &index) {
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+
+    qInfo() << "Double clicked on " << item->data(0);
+    qInfo() << "TODO: implement playback, if this is a video clip";
+}
+
+void MainWindow::onCustomContextMenu(const QPoint &point) {
+    QModelIndex index = tree->indexAt(point);
+    if (index.isValid()) {
+        TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+        item->getContextMenu()->exec(tree->viewport()->mapToGlobal(point));
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

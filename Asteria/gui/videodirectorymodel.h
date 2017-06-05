@@ -23,7 +23,7 @@ public:
      * @brief VideoDirectoryModel
      * @param path The path to the video directory
      */
-    explicit VideoDirectoryModel(std::string path, QObject *parent = 0);
+    explicit VideoDirectoryModel(std::string path, QWidget *widget, QObject *parent = 0);
     ~VideoDirectoryModel();
 
     QVariant data(const QModelIndex &index, int role) const override;
@@ -37,12 +37,19 @@ public:
 
 public slots:
     void addNewClipByUtc(std::string utc);
+    void deleteItem(TreeItem * itemToDelete);
 
 private:
 
     void setupModelData(const std::string &rootPath);
+    void addContextMenu(TreeItem *);
+    void removeTreeItemsRecursive(TreeItem * itemToDelete);
+
 
     TreeItem *rootItem;
+
+    // The widget displaying this item model, so we can capture clicks and delete clips
+    QWidget * displayWidget;
 
     std::string rootPath;
 };

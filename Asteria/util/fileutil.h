@@ -18,37 +18,28 @@
 #include <iostream>     // std::cin, std::cout
 #include <sstream>
 
-//#include "vec3.h"
 
-
-class GLutils
+class FileUtil
 {
     
 public:
-    
-    // Vertex attribute indices used in my shaders
-    static const GLuint PositionAttributeIndex = 0;
-    static const GLuint TexCoordAttributeIndex = 1;
-    static const GLuint NormalAttributeIndex   = 2;
-    static const GLuint ColourAttributeIndex   = 3;
-    
-    // Default constructor
-    GLutils();
+    FileUtil();
 
-    // Utility functions used to draw certain types of object in the
-    // current rendering context.
-    //void sphere(const Vec3<float> &, const Vec3<float> &, const float &, const unsigned int &);
-    //void chessBoard(const unsigned int &, const unsigned int &, const float &);
 
-    // Functions to load and render an ICQ file
-    //bool loadICQ(const char * fname, unsigned int &q, Vec3<float> ** &verts, Vec3<float> ** &norms);
-    //unsigned int getVertexNumber(unsigned int q, unsigned int i, unsigned int j, unsigned int k);
-    //void icq(unsigned int &q, Vec3<float> ** &verts, Vec3<float> ** &norms, const float & albedo);
+    /**
+     * @brief deleteFilePath
+     *
+     * Deletes the contents of the given file path; if this is a file then it is simply deleted, if this is
+     * a directory then the directory and all of it's contents are recursively deleted.
+     * Only directories and regular files are deleted, which is all we should ever need to do. In case the
+     * function encounters other types of object then these will be left in place.
+     * @param path
+     * @return Bool stating whether the path was successfully deleted.
+     */
+    static bool deleteFilePath(std::string path);
 
     /**
      * This function writes the contents of the array to disk as a PPM-type image.
-     * It applies a linear transformation (scale & shift) to the values in the array
-     * in order to keep the grey levels within an 8-bit range.
      * @param fname Filename (full path)
      * @param image Pointer to start of array containing data
      * @param w     Image width

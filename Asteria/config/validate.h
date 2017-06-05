@@ -125,7 +125,7 @@ public:
                     strs << "Cannot create " << labLc << " \"" << path << "\" in non-existent parent directory \"" << parent << "\"";
                     return false;
                 }
-                else if( parentinfo.st_mode & S_IFDIR )  {
+                else if(S_ISDIR(parentinfo.st_mode))  {
                     // Parent exists and is a directory. Check if we can create the child, and create it if so.
                     if (access(parent.c_str(), R_OK | W_OK) == 0) {
 
@@ -165,7 +165,7 @@ public:
                 return false;
             }
         }
-        else if( info.st_mode & S_IFDIR )  {
+        else if(S_ISDIR(info.st_mode))  {
             // Exists and is a directory.
             if(isFile) {
                 // But we want a file!
@@ -185,7 +185,7 @@ public:
                 return false;
             }
         }
-        else if( S_ISREG(info.st_mode)) {
+        else if(S_ISREG(info.st_mode)) {
             // Exists and is a regular file.
             if(!isFile) {
                 // But we want a directory!

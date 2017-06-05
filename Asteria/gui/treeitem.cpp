@@ -1,5 +1,9 @@
 #include "treeitem.h"
 
+
+TreeItem::TreeItem() {
+}
+
 TreeItem::TreeItem(const QList<QVariant> &data, TreeItem *parentItem) {
     m_parentItem = parentItem;
     m_itemData = data;
@@ -13,11 +17,15 @@ void TreeItem::appendChild(TreeItem *item) {
     m_childItems.append(item);
 }
 
+void TreeItem::removeChild(unsigned int idx) {
+    m_childItems.removeAt(idx);
+}
+
 TreeItem *TreeItem::child(unsigned int row) {
     return m_childItems.value(row);
 }
 
-int TreeItem::childCount() const {
+unsigned int TreeItem::childCount() const {
     return m_childItems.count();
 }
 
@@ -47,4 +55,12 @@ QIcon TreeItem::getIcon() {
 
 void TreeItem::setIcon(QIcon iconToUse) {
     icon = iconToUse;
+}
+
+QMenu * TreeItem::getContextMenu() {
+    return contextMenu;
+}
+
+void TreeItem::setContextMenu(QMenu * menuToUse) {
+    contextMenu = menuToUse;
 }

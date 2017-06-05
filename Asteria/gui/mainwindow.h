@@ -21,8 +21,12 @@ public:
 private:
 
     AsteriaState * state;
-    GLMeteorDrawer *drawer;
+    GLMeteorDrawer *live;
+    GLMeteorDrawer *replay;
+
     QTreeView *tree;
+
+    QTabWidget *tabWidget;
 
     // Main container widget for all GUI elements
     QWidget * central;
@@ -36,6 +40,8 @@ signals:
 
 public slots:
     void slotInit();
+    void replayVideo(const QModelIndex &index);
+    void onCustomContextMenu(const QPoint &point);
 };
 
 #endif // MAINWINDOW_H

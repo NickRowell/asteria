@@ -1,17 +1,20 @@
 #include "videodirectorymodel.h"
 
 #include "util/timeutil.h"
+#include "gui/treeitemaction.h"
+#include "util/fileutil.h"
 
 #include <regex>
 #include <dirent.h>
 
 #include <QDebug>
 
-VideoDirectoryModel::VideoDirectoryModel(std::string path, QObject *parent) : QAbstractItemModel(parent) {
+VideoDirectoryModel::VideoDirectoryModel(std::string path, QWidget *widget, QObject *parent) : QAbstractItemModel(parent) {
     QList<QVariant> rootData;
     rootData << "Video clips";
     rootItem = new TreeItem(rootData);
     rootPath = path;
+    displayWidget = widget;
     setupModelData(path);
 }
 
@@ -154,16 +157,17 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
 
     // Loop over each YYYY directory
     for(unsigned int p=0; p<years.size(); p++) {
+        std::string yearPath = rootPath + "/" + years[p];
 
         // Create a TreeItem then search for MM subdirectories
         QList<QVariant> yearData;
-        yearData << years[p].c_str();
+        yearData << years[p].c_str() << yearPath.c_str();
         TreeItem * yearItem = new TreeItem(yearData, rootItem);
         yearItem->setIcon(folderIcon);
+        addContextMenu(yearItem);
         rootItem->appendChild(yearItem);
 
         // Locate all the subdirectories corresponding to months in the year
-        std::string yearPath = rootPath + "/" + years[p];
         std::vector<std::string> months;
         DIR *yearDir;
         if ((yearDir = opendir (yearPath.c_str())) != NULL) {
@@ -182,16 +186,18 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
 
         // Loop over each MM directory
         for(unsigned int q=0; q<months.size(); q++) {
+            std::string monthPath = yearPath + "/" + months[q];
 
             // Create a TreeItem then search for DD subdirectories
             QList<QVariant> monthData;
-            monthData << months[q].c_str();
+            monthData << months[q].c_str() << monthPath.c_str();
             TreeItem * monthItem = new TreeItem(monthData, yearItem);
             monthItem->setIcon(folderIcon);
+            addContextMenu(monthItem);
             yearItem->appendChild(monthItem);
 
             // Locate all the subdirectories corresponding to days in the month
-            std::string monthPath = yearPath + "/" + months[q];
+
             std::vector<std::string> days;
             DIR *monthDir;
             if ((monthDir = opendir (monthPath.c_str())) != NULL) {
@@ -210,16 +216,18 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
 
             // Loop over each DD directory
             for(unsigned int r=0; r<days.size(); r++) {
+                std::string dayPath = monthPath + "/" + days[r];
 
                 // Create a TreeItem then search for subdirectories containing individual clips
                 QList<QVariant> dayData;
-                dayData << days[r].c_str();
+                dayData << days[r].c_str() << dayPath.c_str();
                 TreeItem * dayItem = new TreeItem(dayData, monthItem);
                 dayItem->setIcon(folderIcon);
+                addContextMenu(dayItem);
                 monthItem->appendChild(dayItem);
 
                 // Locate all the subdirectories corresponding to days in the month
-                std::string dayPath = monthPath + "/" + days[r];
+
                 std::vector<std::string> clips;
                 DIR *dayDir;
                 if ((dayDir = opendir (dayPath.c_str())) != NULL) {
@@ -238,18 +246,19 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
 
                 // Loop over each clip directory
                 for(unsigned int s=0; s<clips.size(); s++) {
-
+                    std::string clipPath = dayPath + "/" + clips[s];
                     // Found a clip directory - create a TreeItem; log the full path to the
                     // clip and use the time as the title for the node.
                     // Set the right kind of icon to use.
                     QList<QVariant> clipData;
                     // Extract time part of UTC string
-                    clipData << TimeUtil::extractTimeFromUtcString(clips[s]).c_str();
+                    clipData << TimeUtil::extractTimeFromUtcString(clips[s]).c_str() << clipPath.c_str();
                     TreeItem * clipItem = new TreeItem(clipData, dayItem);
                     clipItem->setIcon(meteorIcon);
+                    addContextMenu(clipItem);
                     dayItem->appendChild(clipItem);
 
-                    std::string clipPath = dayPath + "/" + clips[s];
+
                 }
             } // Close loop over DD
         } // Close loop over MM
@@ -283,7 +292,10 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
     QIcon meteorIcon(":/images/meteor-512.png");
 
     // Build the full path to the clip
-    std::string clipPath = rootPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+    std::string yearPath = rootPath + "/" + yyyy;
+    std::string monthPath = yearPath + "/" + mm;
+    std::string dayPath = monthPath  + "/" + dd;
+    std::string clipPath = dayPath + "/" + utc;
 
     // Check if YYYY exists in the root directory
     unsigned int years = rootItem->childCount();
@@ -304,9 +316,10 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
         // of the existing items, because new years will always be after existing years to
         // the ascending order of the items in the display is preserved.
         QList<QVariant> yearData;
-        yearData << yyyy.c_str();
+        yearData << yyyy.c_str() << yearPath.c_str();
         clipYearItem = new TreeItem(yearData, rootItem);
         clipYearItem->setIcon(folderIcon);
+        addContextMenu(clipYearItem);
 
         int existingRows = rootItem->childCount();
         QAbstractItemModel::beginInsertRows(QModelIndex(), existingRows, existingRows);
@@ -331,9 +344,10 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
     if(!clipMonthItem) {
         // Create new MM item
         QList<QVariant> monthData;
-        monthData << mm.c_str();
+        monthData << mm.c_str() << monthPath.c_str();
         clipMonthItem = new TreeItem(monthData, clipYearItem);
         clipMonthItem->setIcon(folderIcon);
+        addContextMenu(clipMonthItem);
 
         int existingRows = clipYearItem->childCount();
         QAbstractItemModel::beginInsertRows(yearIdx, existingRows, existingRows);
@@ -357,9 +371,10 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
     if(!clipDayItem) {
         // Create new DD item
         QList<QVariant> dayData;
-        dayData << dd.c_str();
+        dayData << dd.c_str() << dayPath.c_str();
         clipDayItem = new TreeItem(dayData, clipMonthItem);
         clipDayItem->setIcon(folderIcon);
+        addContextMenu(clipDayItem);
 
         int existingRows = clipMonthItem->childCount();
         QAbstractItemModel::beginInsertRows(monthIdx, existingRows, existingRows);
@@ -371,9 +386,10 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
 
     // Add new clip
     QList<QVariant> clipData;
-    clipData << TimeUtil::extractTimeFromUtcString(utc).c_str();
+    clipData << TimeUtil::extractTimeFromUtcString(utc).c_str() << clipPath.c_str();
     TreeItem * clipItem = new TreeItem(clipData, clipDayItem);
     clipItem->setIcon(meteorIcon);
+    addContextMenu(clipItem);
 
     int existingRows = clipDayItem->childCount();
     QAbstractItemModel::beginInsertRows(dayIdx, existingRows, existingRows);
@@ -381,4 +397,39 @@ void VideoDirectoryModel::addNewClipByUtc(std::string utc) {
     QAbstractItemModel::endInsertRows();
 }
 
+void VideoDirectoryModel::addContextMenu(TreeItem * item) {
+    QMenu * contextMenu = new QMenu(QString("Title"), displayWidget);
+    TreeItemAction * deleteAction = new TreeItemAction("Delete", item, contextMenu);
+    contextMenu->addAction(deleteAction);
+    connect(deleteAction, SIGNAL (itemClicked(TreeItem *)), this, SLOT( deleteItem(TreeItem *)));
+    item->setContextMenu(contextMenu);
+}
 
+void VideoDirectoryModel::deleteItem(TreeItem * itemToDelete) {
+
+    std::string pathToItem = itemToDelete->data(1).toString().toStdString();
+
+    qInfo() << "Deleting " << pathToItem.c_str();
+
+    // Delete the files from disk
+    FileUtil::deleteFilePath(pathToItem);
+
+    // Recurse through the tree deleting each child item
+    removeTreeItemsRecursive(itemToDelete);
+}
+
+void VideoDirectoryModel::removeTreeItemsRecursive(TreeItem * itemToDelete) {
+
+    // Delete each of the item's children
+    for(unsigned int child = 0u; child < itemToDelete->childCount(); child++) {
+        removeTreeItemsRecursive(itemToDelete->child(child));
+    }
+    // Now delete this item (remove it from it's parent's list)
+
+    // Get the model index of the parent of the item to be deleted
+    QModelIndex parentIdx = createIndex(itemToDelete->row(), 0, itemToDelete->parentItem());
+
+    QAbstractItemModel::beginRemoveRows(parentIdx, itemToDelete->row(), itemToDelete->row());
+    itemToDelete->parentItem()->removeChild(itemToDelete->row());
+    QAbstractItemModel::endRemoveRows();
+}

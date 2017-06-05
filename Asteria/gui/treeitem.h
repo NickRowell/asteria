@@ -4,19 +4,28 @@
 #include <QList>
 #include <QVariant>
 #include <QIcon>
+#include <QMenu>
 
 /**
  * @brief The TreeItem class
+ *
+ * The data stored by each TreeItem:
+ * [0] - The short string to be displayed in the viewer
+ * [1] - Full path to the node represented by this TreeItem
  *
  * Follows the example at http://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html
  */
 class TreeItem
 {
+
 public:
+    explicit TreeItem();
     explicit TreeItem(const QList<QVariant> &data, TreeItem *parentItem=0);
     ~TreeItem();
 
     void appendChild(TreeItem *item);
+
+    void removeChild(unsigned int idx);
 
     /**
      * Locate the child item stored at the given row
@@ -30,7 +39,7 @@ public:
      * @brief childCount
      * @return
      */
-    int childCount() const;
+    unsigned int childCount() const;
 
     /**
      * Get the number of columns of data stored in this item
@@ -71,6 +80,13 @@ public:
      */
     void setIcon(QIcon iconToUse);
 
+    QMenu *getContextMenu();
+
+    void setContextMenu(QMenu *menuToUse);
+
+
+
+
 private:
     // Child items (links to subdirectories, video clips)
     QList<TreeItem*> m_childItems;
@@ -80,6 +96,8 @@ private:
     TreeItem *m_parentItem;
     // Icon displayed next to the item in the tree viewer
     QIcon icon;
+    // Context menu (right-click) for this item
+    QMenu * contextMenu;
 };
 
 #endif // TREEITEM_H

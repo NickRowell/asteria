@@ -14,7 +14,6 @@ SOURCES += \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
-    util/GLutils.cpp \
     util/jpgutil.cpp \
     config/parameterdouble.cpp \
     config/configparameterfamily.cpp \
@@ -30,7 +29,9 @@ SOURCES += \
     infra/acquisitionthread.cpp \
     gui/videodirectorymodel.cpp \
     infra/asteriastate.cpp \
-    gui/treeitem.cpp
+    gui/treeitem.cpp \
+    gui/treeitemaction.cpp \
+    util/fileutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -49,7 +50,6 @@ HEADERS += \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
-    util/GLutils.h \
     util/jpgutil.h \
     config/configparameter.h \
     config/configstore.h \
@@ -73,7 +73,9 @@ HEADERS += \
     infra/acquisitionthread.h \
     gui/videodirectorymodel.h \
     infra/asteriastate.h \
-    gui/treeitem.h
+    gui/treeitem.h \
+    gui/treeitemaction.h \
+    util/fileutil.h
 
 LIBS += -ljpeg \
         -lftgl \
