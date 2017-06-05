@@ -36,12 +36,13 @@ int main(int argc, char **argv)
     // Parse application parameters from the command line
     static struct option long_options[] =
     {
+          {"help",      no_argument,       NULL,             'h'},
           /* These options set a flag. */
           {"headless",  no_argument,       &state->headless,  1},
           {"gui",       no_argument,       &state->headless,  0},
           /* These options don’t set a flag.  We distinguish them by their indices. */
-          {"add",       no_argument,       NULL,              'a'},
-          {"delete",    required_argument, NULL,              'd'},
+          {"camera",    required_argument, NULL,              'c'},
+          {"config",    required_argument, NULL,              'C'},
           {0,           0,                 NULL,               0}
     };
 
@@ -49,8 +50,8 @@ int main(int argc, char **argv)
     int option_index = 0;
 
     int c;
-    // The colon after d indicates that an argument follows
-    while ((c = getopt_long (argc, argv, "ad:", long_options, &option_index)) != -1) {
+    // The colon after the character indicates that an argument follows
+    while ((c = getopt_long (argc, argv, "hc:C:", long_options, &option_index)) != -1) {
 
         switch (c) {
             case 0: {
@@ -63,12 +64,17 @@ int main(int argc, char **argv)
                 }
                 break;
             }
-            case 'a': {
-                qInfo() << "Option a";
+            case 'h': {
+                usage(stderr, argc, argv);
+                exit(0);
                 break;
             }
-            case 'd': {
-                qInfo() << "Option d with value " << optarg;
+            case 'c': {
+                qInfo() << "Option camera with value " << optarg;
+                break;
+            }
+            case 'C': {
+                qInfo() << "Option config with value " << optarg;
                 break;
             }
             case '?': {
@@ -77,14 +83,13 @@ int main(int argc, char **argv)
             }
             default: {
                 usage(stderr, argc, argv);
-                abort ();
+                exit(0);
             }
         }
     }
 
     qInfo() << "State->headless = " << state->headless;
 
-    usage(stderr, argc, argv);
     CameraSelectionWindow camWin(0, state);
 
     ConfigCreationWindow configWin(0, state);
@@ -109,14 +114,12 @@ static void usage(FILE *fp, int argc, char **argv)
 {
         fprintf(fp,
                  "Usage: %s [options]\n\n"
-                 "Version 1.3\n"
                  "Options:\n"
-                 "-h | --help          Print this message\n"
-                 "-m | --mmap          Use memory mapped buffers [default]\n"
-                 "-r | --read          Use read() calls\n"
-                 "-u | --userp         Use application allocated buffers\n"
-                 "-o | --output        Outputs stream to stdout\n"
-                 "-f | --format        Force format to 640x480 YUYV\n"
+                 "-h, --help          Print this message\n"
+                 "    --headless      Operate in headless (no GUI) mode\n"
+                 "    --gui           Operate in GUI mode\n"
+                 "-c, --camera PATH   Use the camera located at PATH (e.g. /dev/video0)\n"
+                 "-C, --config PATH   Use the asteria.config file located at PATH\n"
                  "",
                  argv[0]);
 }
