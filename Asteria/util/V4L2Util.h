@@ -49,6 +49,9 @@ public:
 
     static string getFourCC(__u32 format);
 
+    static void openCamera(string &path, int *&fd, unsigned int &format);
+
+    static string getCameraName(int & fd);
 
 
 

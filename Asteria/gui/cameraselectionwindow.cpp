@@ -73,15 +73,11 @@ void CameraSelectionWindow::slotCameraButtonClicked()
     pair< string, string > camera = cameras.at(p);
 
     // Copy path to the camera device
-    state->cameraPath = new string(camera.first);
+    state->cameraPath = string(camera.first);
 
-    // Open the camera device and store the file descriptor to the state
-    state->fd = new int(open(camera.first.c_str(), O_RDWR));
+    V4L2Util::openCamera(state->cameraPath, state->fd, state->selectedFormat);
 
-    // Set the pixel format
-    state->selectedFormat = V4L2Util::getPreferredPixelFormat(*(state->fd), state->preferredFormats, state->preferredFormatsN);
-
-    qInfo() << "Selected camera = " << QString::fromStdString(camera.second);
+    qInfo() << "Selected camera = " << QString::fromStdString(V4L2Util::getCameraName(*(state->fd)));
     qInfo() << "Selected pixel format = " << QString::fromStdString(V4L2Util::getFourCC(state->selectedFormat));
 
     hide();

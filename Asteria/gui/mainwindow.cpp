@@ -20,8 +20,7 @@
 #include <QTreeView>
 
 
-MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(parent), state(state)
-{
+MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(parent), state(state) {
     // Build GUI components
     live = new GLMeteorDrawer(this, this->state);
 //    replay = new GLMeteorDrawer(this, this->state);
@@ -45,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(pare
     this->setCentralWidget(central);
 }
 
-void MainWindow::slotInit() {
+void MainWindow::initAndShowGui() {
 
     // Initialisation to perform:
     // 1) Load the reference star catalogue
@@ -86,6 +85,7 @@ void MainWindow::slotInit() {
     acqThread->launch();
 
     show();
+
 }
 
 
@@ -104,7 +104,6 @@ void MainWindow::onCustomContextMenu(const QPoint &point) {
     }
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
-{
+void MainWindow::closeEvent(QCloseEvent *event) {
     delete acqThread;
 }

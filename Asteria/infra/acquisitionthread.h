@@ -27,11 +27,31 @@ public:
     AcquisitionThread(QObject *parent = 0, AsteriaState * state = 0);
     ~AcquisitionThread();
 
-    void launch();
+
 
 signals:
     void acquiredImage(std::shared_ptr<Image>);
     void acquiredClip(std::string utc);
+
+public slots:
+
+    /**
+     * @brief launch Start the thread if it's not currently running
+     */
+    void launch();
+    /**
+     * @brief shutdown Shutdown the thread and release all resources
+     */
+    void shutdown();
+    /**
+     * @brief pause Pause image acqusition
+     */
+    void pause();
+    /**
+     * @brief resume Resume image acquisition from the paused state
+     */
+    void resume();
+
 
 protected:
     void run() Q_DECL_OVERRIDE;

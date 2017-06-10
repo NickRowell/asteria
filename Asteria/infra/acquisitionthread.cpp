@@ -137,6 +137,30 @@ void AcquisitionThread::launch() {
 }
 
 
+void AcquisitionThread::shutdown() {
+
+    // Lock this object for the duration of this function
+    QMutexLocker locker(&mutex);
+
+    qInfo() << "Shutting down!";
+    if (isRunning()) {
+        abort = true;
+    }
+}
+
+void AcquisitionThread::pause() {
+    QMutexLocker locker(&mutex);
+}
+
+void AcquisitionThread::resume() {
+    QMutexLocker locker(&mutex);
+}
+
+
+
+
+
+
 void AcquisitionThread::run() {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//

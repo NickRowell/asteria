@@ -60,15 +60,20 @@ public:
     struct v4l2_requestbuffers * bufrequest;
 
     /**
+     * @brief configDirPath
+     * Directory where calibration info is to be stored
+     */
+    string configDirPath;
+
+    /**
      * \brief Path to the camera device file
      */
-    std::string * cameraPath;
+    string cameraPath;
 
     /**
      * \brief Open file descriptor on the camera device
      */
     int * fd;
-
 
     // Cannot be loaded from config file: must be created programmatically,
     // either by user selection or automated selection of default camera.
@@ -113,11 +118,6 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * @brief configDirPath
-     */
-    string configDirPath;
-
-    /**
      * @brief videoDirPath
      */
     string videoDirPath;
@@ -130,7 +130,7 @@ public:
     /**
      * @brief refStarCatalogue
      */
-    std::vector<ReferenceStar> refStarCatalogue;
+    vector<ReferenceStar> refStarCatalogue;
 
     /**
      * @brief jplEphemerisPath

@@ -39,7 +39,7 @@ signals:
     void newFrameCaptured(char * bufferStart);
 
 public slots:
-    void slotInit();
+    void initAndShowGui();
     void replayVideo(const QModelIndex &index);
     void onCustomContextMenu(const QPoint &point);
 };

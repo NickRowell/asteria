@@ -1,5 +1,7 @@
 #include "V4L2Util.h"
 
+#include "infra/asteriastate.h"
+
 V4L2Util::V4L2Util() {
 	// Constructor
 
@@ -182,8 +184,30 @@ __u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supported
 
 
 
+void V4L2Util::openCamera(string &path, int * &fd, unsigned int &format) {
+
+    // Open the camera device and store the file descriptor to the state
+    fd = new int(open(path.c_str(), O_RDWR));
+
+    // Set the pixel format
+    format = V4L2Util::getPreferredPixelFormat(*fd, AsteriaState::preferredFormats, AsteriaState::preferredFormatsN);
+}
 
 
+string V4L2Util::getCameraName(int & fd) {
+
+    struct v4l2_capability caps;
+    memset(&caps, 0, sizeof(caps));
+
+    if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+        perror("Querying Capabilities");
+        return "";
+    }
+    else {
+        string s( reinterpret_cast< char const* >(caps.card) );
+        return s;
+    }
+}
 
 
 
