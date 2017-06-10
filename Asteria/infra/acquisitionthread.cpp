@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <iomanip>              // setprecision(...)
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -189,7 +190,7 @@ void AcquisitionThread::run() {
     acqState = DETECTING;
 
     // Monitor the FPS using a ringbuffer to buffer the image capture times and get a moving average
-    RingBuffer<long long> frameCaptureTimes(1000u);
+    RingBuffer<long long> frameCaptureTimes(100u);
     double fps = 0.0;
     // Monitor dropped FPS: more tricky as we don't know the capture times of the dropped frames
     unsigned int droppedFramesCounter = 0;
@@ -230,9 +231,14 @@ void AcquisitionThread::run() {
             frameCaptureTimes.push(epochTimeStamp_us);
             double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
             fps = (frameCaptureTimes.size()-1) / timeDiffSec;
-//            qInfo() << "FPS   = " << fps;
-//            qInfo() << "Dropped frames = " << droppedFramesCounter;
-//            qInfo() << "Total frames = " << totalFramesCounter;
+
+            if(state->headless) {
+                // Headless mode: print frame stats to console
+                std::cout << "+++ FPS: " << std::setw(6) << std::setprecision(5) << left << fps
+                          << " Dropped: " << std::setw(6) << droppedFramesCounter
+                          << " Total: " << std::setw(6) << totalFramesCounter
+                          << " +++" << '\r' << std::flush;
+            }
         }
         lastFrameSequence = state->bufferinfo->sequence;
 
@@ -326,7 +332,7 @@ void AcquisitionThread::run() {
 
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
                 event = true;
-                qInfo() << "EVENT! " << utc.c_str();
+                std::cout << '\n' << "EVENT! " << utc.c_str() << std::flush;
             }
         }
 
@@ -341,7 +347,7 @@ void AcquisitionThread::run() {
             if(event) {
                 // We're detecting and an event occurred - transition to recording mode
                 // and start accumulating images in the detection tail buffer
-                qInfo() << "Transitioned to RECORDING";
+                std::cout << '\n' << "Transitioned to RECORDING" << std::flush;
                 acqState = RECORDING;
                 // Copy the detection head buffer contents to the event frames buffer
                 std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
@@ -368,7 +374,7 @@ void AcquisitionThread::run() {
                 // reset the buffers and counters.
                 acqState = DETECTING;
                 nFramesSinceLastTrigger = 0;
-                qInfo() << "Transitioned to DETECTING";
+                std::cout << '\n' << "Transitioned to DETECTING" << std::flush;
                 qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: store running analysis threads in a threadpool so can limit their number
