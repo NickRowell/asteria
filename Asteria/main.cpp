@@ -147,8 +147,8 @@ int main(int argc, char **argv)
         state->cameraPath = string(camera);
         V4L2Util::openCamera(state->cameraPath, state->fd, state->selectedFormat);
 
-        qInfo() << "Selected camera = " << QString::fromStdString(V4L2Util::getCameraName(*(state->fd)));
-        qInfo() << "Selected pixel format = " << QString::fromStdString(V4L2Util::getFourCC(state->selectedFormat));
+        std::cout << "Selected camera = " << V4L2Util::getCameraName(*(state->fd)) << '\n' << std::flush;
+        std::cout << "Selected pixel format = " << V4L2Util::getFourCC(state->selectedFormat) << '\n' << std::flush;
 
         if(!config) {
             // No config file specified - display config creation window (only reach this point if we're in GUI mode)
@@ -195,17 +195,10 @@ int main(int argc, char **argv)
         // All parameters OK.
         if(state->headless) {
             // Headless mode
-            signal(SIGINT, SIG_DFL);
-
             // TODO: introduce a small class to encapsulate the thread and close it down cleanly etc
-
             AcquisitionThread * acqThread = new AcquisitionThread(0, state);
-
             QObject::connect(qApp, SIGNAL(aboutToQuit()), acqThread, SLOT(shutdown()));
-
             acqThread->launch();
-
-
         }
         else {
             // Present GUI

@@ -21,13 +21,14 @@
 
 
 MainWindow::MainWindow(QWidget *parent, AsteriaState * state) : QMainWindow(parent), state(state) {
+
     // Build GUI components
     live = new GLMeteorDrawer(this, this->state);
-//    replay = new GLMeteorDrawer(this, this->state);
+    replay = new GLMeteorDrawer(this, this->state);
 
     tabWidget = new QTabWidget;
     tabWidget->addTab(live, QString("Live"));
-//    tabWidget->addTab(replay, QString("Replay"));
+    tabWidget->addTab(replay, QString("Replay"));
 
     tree = new QTreeView(this);
 
@@ -77,7 +78,7 @@ void MainWindow::initAndShowGui() {
 
     // Connect image acquisition signal to image display slot
     connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), live, SLOT (newFrame(std::shared_ptr<Image>)));
-//    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), replay, SLOT (newFrame(std::shared_ptr<Image>)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), replay, SLOT (newFrame(std::shared_ptr<Image>)));
 
     // Connect new clip signal to tree viewer slot, so that new clips get added to the viewer
     connect(acqThread, SIGNAL (acquiredClip(std::string)), model, SLOT (addNewClipByUtc(std::string)));

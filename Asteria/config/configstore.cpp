@@ -67,8 +67,6 @@ void ConfigStore::saveToFile(string &path) {
  */
 void ConfigStore::loadFromFile(string &path) {
 
-    qInfo() << "loading from file " << path.c_str();
-
     ifstream myfile(path);
     string line;
     if (myfile.is_open())

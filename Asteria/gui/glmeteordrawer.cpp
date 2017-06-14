@@ -69,9 +69,7 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
     update();
 }
 
-void GLMeteorDrawer::initializeGL()
-{
-    initializeOpenGLFunctions();
+void GLMeteorDrawer::initializeGL() {
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char * vsrc =
@@ -132,6 +130,7 @@ void GLMeteorDrawer::initializeGL()
 
     //+++ Use underlying GL texture API +++//
     glGenTextures(1, &VideoImageTexture);
+
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -163,13 +162,11 @@ void GLMeteorDrawer::initializeGL()
     qInfo() << "Finished initialising GL";
 }
 
-void GLMeteorDrawer::resizeGL(int w, int h)
-{
+void GLMeteorDrawer::resizeGL(int w, int h) {
     glViewport(0, 0, w, h);
 }
 
-void GLMeteorDrawer::paintGL()
-{
+void GLMeteorDrawer::paintGL() {
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -180,7 +177,7 @@ void GLMeteorDrawer::paintGL()
     program->setAttributeBuffer(PositionAttributeIndex, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     program->setAttributeBuffer(TexCoordAttributeIndex, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
-//     Bind the texture then render it onto screen-aligned quad
+    // Bind the texture then render it onto screen-aligned quad
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -212,10 +209,6 @@ void GLMeteorDrawer::paintGL()
         font->Render(dFpsArr, length, FTPoint(10, 25), FTPoint(1, 0), FTGL::RENDER_FRONT);
         glColor3f(0, 0, 0);
         font->Render(dFpsArr, length, FTPoint(10, 25), FTPoint(1, 0), FTGL::RENDER_SIDE);
-
-
-
-
     }
 }
 

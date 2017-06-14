@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <sys/stat.h>
+#include <iostream>
 
 #include <QDebug>
 #include <QString>
@@ -28,7 +29,7 @@ void AnalysisWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    qInfo() << "Analysis thread; iterating over " << eventFrames.size() << " images";
+    std::cout << '\n' << "Analysis thread; iterating over " << eventFrames.size() << " images" << '\n';
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame

@@ -45,7 +45,17 @@ public:
 
     static vector< pair< string, string > > getSupportedV4LCameras(const unsigned int * supportedFmts, const unsigned int supportedFmtsN);
 
-    static __u32 getPreferredPixelFormat(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN);
+    /**
+     * Examine the pixel formats provided by the camera, and get the subset of formats supported by the application, in order of
+     * preference. Clients can pick the preferred format from the first element in the vector, or detect if no supported format
+     * exists if the vector is empty.
+     * @brief getSupportedPixelFormats
+     * @param fd
+     * @param supportedFmts
+     * @param supportedFmtsN
+     * @return
+     */
+    static std::vector< v4l2_fmtdesc > getSupportedPixelFormats(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN);
 
     static string getFourCC(__u32 format);
 

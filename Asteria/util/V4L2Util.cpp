@@ -53,7 +53,7 @@ vector< pair<string,string> > V4L2Util::getAllV4LCameras() {
                 struct v4l2_capability caps;
                 memset(&caps, 0, sizeof(caps));
 
-                if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+                if (xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
                     cout << "Fail Querying Capabilities." << endl;
                     perror("Querying Capabilities");
                 }
@@ -99,10 +99,8 @@ vector< pair<string,string> > V4L2Util::getSupportedV4LCameras(const unsigned in
         // Open file desriptor on the camera
         int fd = open(camera.first.c_str(), O_RDWR);
 
-        // Determine if the camera provides one of the supported image formats
-        __u32 format = getPreferredPixelFormat(fd, supportedFmts, supportedFmtsN);
-
-        if(format != 0) {
+        // Determine if the camera provides at least one of the supported image formats
+        if(!getSupportedPixelFormats(fd, supportedFmts, supportedFmtsN).empty()) {
 
             // The camera does provide one of the supported pixel formats
             supportedCamerasList.push_back(camera);
@@ -132,10 +130,13 @@ string V4L2Util::getFourCC(__u32 format) {
  * Queries the pixel formats provided by the camera and returns the preferred one, being the one
  * that appears earliest in the list of supportedFmts.
  */
-__u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN) {
+std::vector< v4l2_fmtdesc > V4L2Util::getSupportedPixelFormats(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN) {
 
-    // Pixel formats provided by the camera
-    std::vector< unsigned int > availableFormats;
+    // Contains all pixel formats provided by the camera
+    std::vector< v4l2_fmtdesc > availableFormats;
+
+    // Contains the subset of formats that are supported by the application, in order of preference
+    std::vector< v4l2_fmtdesc > supportedFormats;
 
     struct v4l2_fmtdesc vid_fmtdesc;
     memset(&vid_fmtdesc, 0, sizeof(vid_fmtdesc));
@@ -143,26 +144,20 @@ __u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supported
     // Only interested in pixel formats for video capture
     vid_fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-//    const char *buf_types[] = {"VIDEO_CAPTURE","VIDEO_OUTPUT", "VIDEO_OVERLAY"};
-//    const char *flags[] = {"uncompressed", "compressed"};
-
     // Get list of all the available pixel formats
-    while( ioctl(fd, VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 )
-    {
-        // We got a video format/codec back
-//        qInfo() << QString("VIDIOC_ENUM_FMT(%1, %2)").arg(QString::number(vid_fmtdesc.index), buf_types[vid_fmtdesc.type-1]);
-//        qInfo() << QString("  index       : %1").arg(QString::number(vid_fmtdesc.index));
-//        qInfo() << QString("  type        : %1").arg(buf_types[vid_fmtdesc.type-1]);
-//        qInfo() << QString("  flags       : %1").arg(flags[vid_fmtdesc.flags]);
-//        QString qDesc;
-//        qDesc.sprintf("  description : %s", vid_fmtdesc.description);
-//        qInfo() << qDesc;
-//        QString fmt;
-//        fmt.sprintf("%c%c%c%c",vid_fmtdesc.pixelformat & 0xFF, (vid_fmtdesc.pixelformat >> 8) & 0xFF,
-//                    (vid_fmtdesc.pixelformat >> 16) & 0xFF, (vid_fmtdesc.pixelformat >> 24) & 0xFF);
-//        qInfo() << QString("%1").arg(fmt);
+    while( ioctl(fd, VIDIOC_ENUM_FMT, &vid_fmtdesc ) == 0 ) {
 
-        availableFormats.push_back(vid_fmtdesc.pixelformat);
+        // Copy the v4l2_fmtdesc into the vector
+        struct v4l2_fmtdesc copy;
+        memset(&copy, 0, sizeof(copy));
+        std::copy(std::begin(vid_fmtdesc.description), std::end(vid_fmtdesc.description), std::begin(copy.description));
+        copy.flags = vid_fmtdesc.flags;
+        copy.index = vid_fmtdesc.index;
+        copy.pixelformat = vid_fmtdesc.pixelformat;
+        std::copy(std::begin(vid_fmtdesc.reserved), std::end(vid_fmtdesc.reserved), std::begin(copy.reserved));
+        copy.type = vid_fmtdesc.type;
+
+        availableFormats.push_back(copy);
         // Increment the format descriptor index
         vid_fmtdesc.index++;
     }
@@ -173,24 +168,35 @@ __u32 V4L2Util::getPreferredPixelFormat(int & fd, const unsigned int * supported
         unsigned int preferredFormat = supportedFmts[f];
 
         // Is the corresponding preferred format provided by the camera?
-        if(std::find(availableFormats.begin(), availableFormats.end(), preferredFormat) != availableFormats.end()) {
-            return preferredFormat;
+        for (unsigned int p=0; p < availableFormats.size(); p++) {
+            v4l2_fmtdesc format = availableFormats[p];
+            if(format.pixelformat == preferredFormat) {
+                supportedFormats.push_back(format);
+            }
         }
     }
 
-    // The camera does not provide any supported pixel formats
-    return 0;
+    return supportedFormats;
 }
-
-
 
 void V4L2Util::openCamera(string &path, int * &fd, unsigned int &format) {
 
     // Open the camera device and store the file descriptor to the state
     fd = new int(open(path.c_str(), O_RDWR));
 
-    // Set the pixel format
-    format = V4L2Util::getPreferredPixelFormat(*fd, AsteriaState::preferredFormats, AsteriaState::preferredFormatsN);
+    // Get the supported pixel formats, in order of preference
+    std::vector<v4l2_fmtdesc> formats = getSupportedPixelFormats(*fd, AsteriaState::preferredFormats, AsteriaState::preferredFormatsN);
+
+    // If there are NO supported formats print an error and exit
+    if(formats.empty()) {
+        cout << "No supported pixel format provided by camera " << getCameraName(*fd) << flush;
+        ::close(*fd);
+        exit(1);
+    }
+    // Otherwise, pick the first entry as the format to use
+    v4l2_fmtdesc preferredFormat = formats[0];
+
+    format = preferredFormat.pixelformat;
 }
 
 
@@ -199,7 +205,7 @@ string V4L2Util::getCameraName(int & fd) {
     struct v4l2_capability caps;
     memset(&caps, 0, sizeof(caps));
 
-    if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+    if (xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
         perror("Querying Capabilities");
         return "";
     }
@@ -435,7 +441,7 @@ bool V4L2Util::getInfos(int & fd) {
 //    cout << "Max gain        : " << gMax << endl;
 
     return true;
-};
+}
 
 
 
@@ -445,7 +451,7 @@ void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
     memset(&queryctrl, 0, sizeof(queryctrl));
     queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
 
-    if (-1 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) {
+    if (xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl) == -1) {
 
         if (errno != EINVAL) {
 

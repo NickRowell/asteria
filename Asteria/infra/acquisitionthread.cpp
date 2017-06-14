@@ -48,6 +48,62 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
+    //      Determine interlaced/progressive scan mode       //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // TODO!
+    if(state->format->fmt.pix.field == V4L2_FIELD_ANY) {
+        // This is used to request any one of the V4L2_FIELD_NONE, V4L2_FIELD_TOP, V4L2_FIELD_BOTTOM, or V4L2_FIELD_INTERLACED
+        // and wouldn't be returned by the query.
+        cout << "V4L2_FIELD_ANY";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_NONE) {
+        cout << "V4L2_FIELD_NONE (progressive)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_TOP) {
+        cout << "V4L2_FIELD_TOP (top field only)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_BOTTOM) {
+        cout << "V4L2_FIELD_BOTTOM (bottom field only)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_INTERLACED) {
+        cout << "V4L2_FIELD_INTERLACED (top and bottom field interleaved)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_TB) {
+        cout << "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_BT) {
+        cout << "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)";
+    }
+    if(state->format->fmt.pix.field == V4L2_FIELD_ALTERNATE) {
+
+        // The two fields of a frame are passed in separate buffers, in temporal order,
+        // i. e. the older one first. To indicate the field parity (whether the current
+        // field is a top or bottom field) the driver or application, depending on data
+        // direction, must set struct v4l2_buffer field to V4L2_FIELD_TOP or V4L2_FIELD_BOTTOM.
+        // Any two successive fields pair to build a frame. If fields are successive, without
+        // any dropped fields between them (fields can drop individually), can be determined
+        // from the struct v4l2_buffer sequence field. Image sizes refer to the frame, not
+        // fields. This format cannot be selected when using the read/write I/O method.
+        cout << "V4L2_FIELD_ALTERNATE";
+    }
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //  Determine exposure time & whether it's configurable  //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+
+
+
+
+
+
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
     //     Inform device about buffers & streaming mode      //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -332,7 +388,10 @@ void AcquisitionThread::run() {
 
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
                 event = true;
-                std::cout << '\n' << "EVENT! " << utc.c_str() << std::flush;
+                if(state->headless && acqState != RECORDING) {
+                    // Only print one event notification for each recording
+                    std::cout << '\n' << "EVENT! " << utc.c_str() << '\n' << std::flush;
+                }
             }
         }
 
@@ -347,7 +406,6 @@ void AcquisitionThread::run() {
             if(event) {
                 // We're detecting and an event occurred - transition to recording mode
                 // and start accumulating images in the detection tail buffer
-                std::cout << '\n' << "Transitioned to RECORDING" << std::flush;
                 acqState = RECORDING;
                 // Copy the detection head buffer contents to the event frames buffer
                 std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
@@ -374,8 +432,7 @@ void AcquisitionThread::run() {
                 // reset the buffers and counters.
                 acqState = DETECTING;
                 nFramesSinceLastTrigger = 0;
-                std::cout << '\n' << "Transitioned to DETECTING" << std::flush;
-                qInfo() << "Got " << eventFrames.size() << " frames from last event";
+//                qInfo() << "Got " << eventFrames.size() << " frames from last event";
 
                 // TODO: store running analysis threads in a threadpool so can limit their number
                 // OR: use one single analysis thread, and queue up analysis jobs for serial processing
