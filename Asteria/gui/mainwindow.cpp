@@ -2,13 +2,15 @@
 #include "infra/asteriastate.h"
 #include "gui/glmeteordrawer.h"
 #include "gui/videodirectorymodel.h"
-
+#include "util/timeutil.h"
 
 #include <fstream>
 #include <iostream>
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <regex>
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -91,10 +93,73 @@ void MainWindow::initAndShowGui() {
 
 
 void MainWindow::replayVideo(const QModelIndex &index) {
+
     TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
 
-    qInfo() << "Double clicked on " << item->data(0);
+    QString title = item->data(0).toString();
+    QString path = item->data(1).toString();
+
+    // TODO: detect if this is a video clip
+
+    qInfo() << "Double clicked on " << title << "(" << path << ")";
     qInfo() << "TODO: implement playback, if this is a video clip";
+
+    // Regex suitable for identifying images with filenames e.g. 2017-06-14T19:41:09.282Z
+    const std::regex utcRegex = TimeUtil::getUtcRegex();
+    const std::regex peakHoldRegex = std::regex("peakhold");
+
+    // Load all the images found here...
+    DIR *dir;
+    if ((dir = opendir (path.toStdString().c_str())) == NULL) {
+        // Couldn't open the directory!
+        return;
+    }
+
+    Image peakHold;
+//    std::shared_ptr<Image> peakHold;// = make_shared<Image>(state->width, state->height);
+
+    std::vector<Image> sequence;
+
+    // Loop over the contents of the directory
+    struct dirent *child;
+    while ((child = readdir (dir)) != NULL) {
+
+        // Skip the . and .. directories
+        if(strcmp(child->d_name,".") == 0 || strcmp(child->d_name,"..") == 0) {
+            continue;
+        }
+
+        // Parse the filename to decide what type of file it is using regex
+
+        // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
+        // These are the raw frames from the sequence
+        if(std::regex_search(child->d_name, utcRegex, std::regex_constants::match_continuous)) {
+            // Build full path to the item
+            std::string childPath = path.toStdString() + "/" + child->d_name;
+            // Load the image from file and store a shared pointer to it in the vector
+            Image seq;
+            std::ifstream input(childPath);
+            input >> seq;
+            sequence.push_back(seq);
+            input.close();
+        }
+
+        // Detect the peak hold image
+        if(std::regex_search(child->d_name, peakHoldRegex, std::regex_constants::match_continuous)) {
+            // Build full path to the item
+            std::string childPath = path.toStdString() + "/" + child->d_name;
+            // Load the image from file and store a shared pointer to it in the peakHold variable
+            std::ifstream input(childPath);
+            input >> peakHold;
+            input.close();
+        }
+    }
+    closedir (dir);
+
+    // Sort the image sequence into ascending order of capture time
+    std::sort(sequence.begin(), sequence.end());
+
+
 }
 
 void MainWindow::onCustomContextMenu(const QPoint &point) {

@@ -2,6 +2,7 @@
 #define IMAGE_H
 
 #include <vector>
+#include <iostream>
 
 class Image
 {
@@ -10,18 +11,15 @@ public:
 
     Image();
     Image(const Image& copyme);
-    Image(unsigned int width, unsigned int height);
+    Image(unsigned int &width, unsigned int &height);
+    Image(unsigned int &width, unsigned int &height, unsigned char val);
     ~Image();
-
-    // Raw (greyscale) image data for analysis
-    std::vector<unsigned char> rawImage;
-
-    // Optional RGBA version of the image with annotations, for display.
-    // Not to be computed if it's not being displayed in real time.
-    std::vector<unsigned int> annotatedImage;
 
     unsigned int width;
     unsigned int height;
+
+    // Raw (greyscale) image data for analysis
+    std::vector<unsigned char> rawImage;
 
     /**
      * @brief epochTimeUs
@@ -29,6 +27,27 @@ public:
      * of the time the first byte of image data was captured.
      */
     long long epochTimeUs;
+
+
+    friend std::ostream &operator<<(std::ostream &output, const Image &image);
+
+    friend std::istream &operator>>(std::istream  &input, Image &image);
+
+    /**
+     * Function used to aid sorting of a vector of Images into ascending order of capture time
+     * using std::sort(vecOfImages.begin(), vecOfImages.end());
+     *
+     * @brief operator <
+     * @param image
+     * @return
+     */
+    bool operator < (const Image& image) const;
+
+    // Remaining fields are transient (not serialised)
+
+    // Optional RGBA version of the image with annotations, for display.
+    // Not to be computed if it's not being displayed in real time.
+    std::vector<unsigned int> annotatedImage;
 
     // Some statistics of the image acquisition at the time the image was captured
     double fps;

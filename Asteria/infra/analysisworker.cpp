@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <iostream>
+#include <algorithm>    // std::max
 
 #include <QDebug>
 #include <QString>
@@ -115,31 +116,42 @@ void AnalysisWorker::process() {
         return;
     }
 
+    // Write all the images to file and create a peak hold image
+    Image peakHold(state->width, state->height, static_cast<unsigned char>(0));
+
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
 
         Image &image = *eventFrames[i];
 
         // Write the image data out to a file
         char filename [100];
-
         string utcFrame = TimeUtil::convertToUtcString(image.epochTimeUs);
-
         sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
 
         // PGM (grey image)
         std::ofstream out(filename);
-        // Raw PGMs:
-        out << "P5\n" << state->width << " " << state->height << " 255\n";
-        for(unsigned int k=0; k<state->height; k++) {
-            for(unsigned int l=0; l<state->width; l++) {
-                unsigned int offset = k*state->width + l;
-                unsigned char pix = image.rawImage[offset];
-                out << pix;
-            }
-        }
+        out << image;
         out.close();
 
+        // Compute peak hold image
+        for(unsigned int k=0; k<image.height; k++) {
+            for(unsigned int l=0; l<image.width; l++) {
+                unsigned int offset = k*image.width + l;
+                peakHold.rawImage[offset] = std::max(peakHold.rawImage[offset], image.rawImage[offset]);
+            }
+        }
+
     }
+
+    // Write out the peak hold image
+    char filename [100];
+    string utcFrame = TimeUtil::convertToUtcString(eventFrames[0]->epochTimeUs);
+    sprintf(filename, "%s/peakhold_%s.pgm", path.c_str(), utcFrame.c_str());
+
+    // PGM (grey image)
+    std::ofstream out(filename);
+    out << peakHold;
+    out.close();
 
     // All done - emit signal
     emit finished(utc);
