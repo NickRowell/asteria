@@ -6,6 +6,8 @@
 #include "gui/treeitem.h"
 #include "config/configstore.h"
 #include "util/V4L2Util.h"
+#include "infra/image.h"
+#include "infra/acquisitionthread.h"
 
 #include <signal.h>
 #include <getopt.h>

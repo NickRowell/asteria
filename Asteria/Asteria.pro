@@ -31,7 +31,9 @@ SOURCES += \
     infra/asteriastate.cpp \
     gui/treeitem.cpp \
     gui/treeitemaction.cpp \
-    util/fileutil.cpp
+    util/fileutil.cpp \
+    gui/acquisitionwidget.cpp \
+    gui/analysiswidget.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -75,7 +77,9 @@ HEADERS += \
     infra/asteriastate.h \
     gui/treeitem.h \
     gui/treeitemaction.h \
-    util/fileutil.h
+    util/fileutil.h \
+    gui/acquisitionwidget.h \
+    gui/analysiswidget.h
 
 LIBS += -ljpeg \
         -lftgl \

@@ -30,7 +30,7 @@ class GLMeteorDrawer : public QOpenGLWidget {
 
 public:
 
-    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0);
+    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0, bool rgb = true);
     ~GLMeteorDrawer();
 
     QSize sizeHint() const Q_DECL_OVERRIDE;
@@ -43,6 +43,9 @@ private:
 
     // Handle to GL texture object used to store video frame
     GLuint VideoImageTexture;
+
+    // Indicates RGB texture (true) or grey texture (false)
+    bool rgb;
 
     // Shader program used to render textured quad
     QOpenGLShaderProgram * program;
@@ -74,7 +77,6 @@ protected:
 
 public slots:
 
-//    void newFrame(char *bufferStart);
     void newFrame(std::shared_ptr<Image> image);
 };
 

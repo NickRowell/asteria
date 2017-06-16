@@ -27,8 +27,6 @@ public:
     AcquisitionThread(QObject *parent = 0, AsteriaState * state = 0);
     ~AcquisitionThread();
 
-
-
 signals:
     void acquiredImage(std::shared_ptr<Image>);
     void acquiredClip(std::string utc);
@@ -44,7 +42,7 @@ public slots:
      */
     void shutdown();
     /**
-     * @brief pause Pause image acqusition
+     * @brief pause Pause image acquisition
      */
     void pause();
     /**

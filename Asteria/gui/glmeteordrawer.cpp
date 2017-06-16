@@ -13,8 +13,8 @@
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
 
-GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state)
-    : QOpenGLWidget(parent), state(state), program(0) {
+GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state, bool rgb)
+    : QOpenGLWidget(parent), state(state), rgb(rgb), program(0) {
 
     font = new FTExtrudeFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");
 
@@ -48,17 +48,16 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
     unsigned int width = state->width;
     unsigned int height = state->height;
 
-    // For displaying the greyscale image:
-//     unsigned char* a = &(image->rawImage[0]);
-//     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
-
-    // For displaying the RGB annotated image:
-//    unsigned char* a = &(image->annotatedImage[0]);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, a);
-
-    // For displaying the RGBA annotated image with 32bit pixels:
-    unsigned int* a = &(image->annotatedImage[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, a);
+    if(rgb) {
+        // For displaying the RGBA annotated image with 32bit pixels:
+        unsigned int* a = &(image->annotatedImage[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, a);
+    }
+    else {
+        // For displaying the greyscale image:
+        unsigned char* a = &(image->rawImage[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
+    }
 
     timestamp = TimeUtil::convertToUtcString(image->epochTimeUs);
     fps = image->fps;
@@ -138,14 +137,14 @@ void GLMeteorDrawer::initializeGL() {
     unsigned int width = state->width;
     unsigned int height = state->height;
 
-    // For displaying greyscale image from a texture:
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
-
-    // For displaying RGB annotated image from a texture:
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    // For displaying RGB annotated image from a texture, 32bit pixels:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
+    if(rgb) {
+        // For displaying RGB annotated image from a texture, 32bit pixels:
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
+    }
+    else {
+        // For displaying greyscale image from a texture:
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+    }
 
     // Set identity modelview and projection matrices. These are only relevant for rendering the
     // bitmapped timestamp into the image, for which the raster position is transformed and projected
@@ -186,7 +185,7 @@ void GLMeteorDrawer::paintGL() {
     program->release();
 
     // Timestamp using FTGL:
-    if(font) {
+    if(font && rgb) {
         // Render inside
         glColor3f(0, 0.75, 0);
         font->Render(timestamp.c_str(), timestamp.size(), FTPoint(10, 10), FTPoint(1, 0), FTGL::RENDER_FRONT);
@@ -210,6 +209,7 @@ void GLMeteorDrawer::paintGL() {
         glColor3f(0, 0, 0);
         font->Render(dFpsArr, length, FTPoint(10, 25), FTPoint(1, 0), FTGL::RENDER_SIDE);
     }
+    glFlush();
 }
 
 int GLMeteorDrawer::printOpenGLError() {

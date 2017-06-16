@@ -2,14 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "infra/acquisitionthread.h"
 
 class AsteriaState;
-class GLMeteorDrawer;
-class QCamera;
+class AcquisitionWidget;
+class AnalysisWidget;
 class QCloseEvent;
-
-QT_FORWARD_DECLARE_CLASS(QTreeView)
+class QTreeView;
 
 class MainWindow : public QMainWindow
 {
@@ -21,8 +19,10 @@ public:
 private:
 
     AsteriaState * state;
-    GLMeteorDrawer *live;
-    GLMeteorDrawer *replay;
+
+    AcquisitionWidget * acqWidget;
+
+    AnalysisWidget * analWidget;
 
     QTreeView *tree;
 
@@ -31,12 +31,9 @@ private:
     // Main container widget for all GUI elements
     QWidget * central;
 
-    AcquisitionThread *acqThread;
-
     void closeEvent(QCloseEvent *bar);
 
 signals:
-    void newFrameCaptured(char * bufferStart);
 
 public slots:
     void initAndShowGui();

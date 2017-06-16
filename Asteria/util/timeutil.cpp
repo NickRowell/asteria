@@ -144,3 +144,7 @@ std::string TimeUtil::extractTimeFromUtcString(std::string utc) {
 const std::regex TimeUtil::getUtcRegex() {
     return std::regex("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z");
 }
+
+const std::regex TimeUtil::getTimeRegex() {
+    return std::regex("[0-9]{2}:[0-9]{2}:[0-9]{2}");
+}

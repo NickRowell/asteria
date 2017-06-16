@@ -26,6 +26,7 @@ public:
 
 
     static const std::regex getUtcRegex();
+    static const std::regex getTimeRegex();
 };
 
 #endif // TIMEUTIL_H

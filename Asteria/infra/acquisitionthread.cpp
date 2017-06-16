@@ -27,7 +27,21 @@
 AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
 
-    acqState = IDLE;
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //           Load the reference star catalogue           //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
+
+    qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
+
+    // Other initialisation to do:
+    // 1) Load ephemeris file?
+    // 2) Load existing calibration data?
+    //     - should really port this out to an initialisation function that both the headless and
+    //       GUI mode can use to load these to the state object.
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -154,6 +168,8 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
         memset(buffer_start[b], 0, state->bufferinfo->length);
     }
+
+    acqState = IDLE;
 
 }
 
