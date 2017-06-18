@@ -33,7 +33,9 @@ SOURCES += \
     gui/treeitemaction.cpp \
     util/fileutil.cpp \
     gui/acquisitionwidget.cpp \
-    gui/analysiswidget.cpp
+    gui/analysiswidget.cpp \
+    infra/analysisinventory.cpp \
+    gui/replayvideothread.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -79,7 +81,9 @@ HEADERS += \
     gui/treeitemaction.h \
     util/fileutil.h \
     gui/acquisitionwidget.h \
-    gui/analysiswidget.h
+    gui/analysiswidget.h \
+    infra/analysisinventory.h \
+    gui/replayvideothread.h
 
 LIBS += -ljpeg \
         -lftgl \

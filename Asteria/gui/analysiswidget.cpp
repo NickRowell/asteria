@@ -1,88 +1,53 @@
 #include "gui/analysiswidget.h"
 #include "gui/glmeteordrawer.h"
-#include "util/timeutil.h"
-
-#include <dirent.h>
-#include <regex>
-#include <fstream>
-#include <iostream>
-#include <memory>
+#include "infra/analysisinventory.h"
 
 #include <QHBoxLayout>
+#include <QPushButton>
 
-
-AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
+AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), replay(0) {
 
     replay = new GLMeteorDrawer(this, this->state, false);
 
+    play_button = new QPushButton("Play", this);
+    player = new ReplayVideoThread;
+
+    // A widget to contain the control buttons
+    QWidget * controls = new QWidget(this);
+    QHBoxLayout * controlsLayout = new QHBoxLayout;
+    controlsLayout->addWidget(play_button);
+    controls->setLayout(controlsLayout);
+
+    connect(play_button, SIGNAL(pressed()), player, SLOT(play()));
+
+    connect(player, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), replay, SLOT(newFrame(std::shared_ptr<Image>)));
 
     // Arrange layout
-    QHBoxLayout *mainLayout = new QHBoxLayout;
+    QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(replay);
+    mainLayout->addWidget(controls);
     this->setLayout(mainLayout);
-
 }
-
-
 
 void AnalysisWidget::loadClip(QString path) {
 
-    // Regex suitable for identifying images with filenames e.g. 2017-06-14T19:41:09.282Z
-    const std::regex utcRegex = TimeUtil::getUtcRegex();
-    // Regex suitable for identifying images with filenames starting 'peakhold'
-    const std::regex peakHoldRegex = std::regex("peakhold");
+    // If there's already an AnalysisInventory loaded then delete it
+    if(inv) {
+        delete inv;
+    }
 
-    // Load all the images found here...
-    DIR *dir;
-    if ((dir = opendir (path.toStdString().c_str())) == NULL) {
-        // Couldn't open the directory!
+    inv = AnalysisInventory::loadFromDir(path.toStdString());
+
+    if(!inv) {
+        // Couldn't load from dir!
+        qInfo() << "Couldn't load analysis from " << path;
         return;
     }
 
-    Image peakHold;
-    std::vector<Image> sequence;
-
-    // Loop over the contents of the directory
-    struct dirent *child;
-    while ((child = readdir (dir)) != NULL) {
-
-        // Skip the . and .. directories
-        if(strcmp(child->d_name,".") == 0 || strcmp(child->d_name,"..") == 0) {
-            continue;
-        }
-
-        // Parse the filename to decide what type of file it is using regex
-
-        // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
-        // These are the raw frames from the sequence
-        if(std::regex_search(child->d_name, utcRegex, std::regex_constants::match_continuous)) {
-            // Build full path to the item
-            std::string childPath = path.toStdString() + "/" + child->d_name;
-            // Load the image from file and store a shared pointer to it in the vector
-            Image seq;
-            std::ifstream input(childPath);
-            input >> seq;
-            sequence.push_back(seq);
-            input.close();
-        }
-
-        // Detect the peak hold image
-        if(std::regex_search(child->d_name, peakHoldRegex, std::regex_constants::match_continuous)) {
-            // Build full path to the item
-            std::string childPath = path.toStdString() + "/" + child->d_name;
-            // Load the image from file and store a shared pointer to it in the peakHold variable
-            std::ifstream input(childPath);
-            input >> peakHold;
-            input.close();
-        }
-    }
-    closedir (dir);
-
-    // Sort the image sequence into ascending order of capture time
-    std::sort(sequence.begin(), sequence.end());
-
-    std::shared_ptr<Image> peakHoldPtr = std::make_shared<Image>(peakHold);
+    // Pass the clip to the player
+    player->loadClip(inv->eventFrames);
 
     // Initialise it with the peak hold image
-    replay->newFrame(peakHoldPtr);
+    replay->newFrame(inv->peakHold);
 }
+
