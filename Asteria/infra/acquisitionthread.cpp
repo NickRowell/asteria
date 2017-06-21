@@ -1,5 +1,6 @@
 #include "infra/acquisitionthread.h"
 #include "infra/analysisworker.h"
+#include "infra/calibrationworker.h"
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
 
@@ -109,12 +110,19 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    // TODO
+    double expTime = 0.04; // 25 FPS
 
 
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //  Determine number of frames between calibration runs  //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    calibration_intervals_frames = (1.0 / expTime) * 60 * state->calibration_interval;
 
-
-
+    qInfo() << "Interval between calibration frames: " <<  calibration_intervals_frames;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -170,7 +178,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     }
 
     acqState = IDLE;
-
+    calState = NOT_CALIBRATING;
 }
 
 AcquisitionThread::~AcquisitionThread()
@@ -260,6 +268,14 @@ void AcquisitionThread::run() {
     }
 
     acqState = DETECTING;
+
+    // The number of frames recorded since the last trigger. Usually, there will be
+    // multiple triggers during a single event, so we reset this counter to zero on each trigger
+    // and terminate the recording when it exceeds the detection tail length.
+    unsigned int nFramesSinceLastTrigger = 0;
+
+    // Counts the number of frames since we last
+    unsigned int nFramesSinceLastCalibration = 0;
 
     // Monitor the FPS using a ringbuffer to buffer the image capture times and get a moving average
     RingBuffer<long long> frameCaptureTimes(100u);
@@ -415,6 +431,7 @@ void AcquisitionThread::run() {
         // we're currently recording an event. This supports two events in rapid succession.
         detectionHeadBuffer.push(image);
 
+        // Process the acquisition
         if(acqState == IDLE) {
             // Do nothing
         }
@@ -468,6 +485,46 @@ void AcquisitionThread::run() {
                 eventFrames.clear();
             }
         }
+
+        if(calState == CALIBRATING) {
+
+            // Determine if we've recorded all the calibration frames we need
+            if(calibrationFrames.size() > state->calibration_stack) {
+                // Spawn a new CalibrationThread
+                qInfo() << "Got " << calibrationFrames.size() << " frames for calibration";
+
+                QThread* thread = new QThread;
+                CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);
+                worker->moveToThread(thread);
+                connect(thread, SIGNAL(started()), worker, SLOT(process()));
+                connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
+                connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
+                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+                thread->start();
+
+                // Clear the calibration buffer
+                calibrationFrames.clear();
+
+                // Back to NOT_CALIBRATING mode
+                calState = NOT_CALIBRATING;
+            }
+            else {
+                // Add the frame to the calibration set
+                calibrationFrames.push_back(image);
+            }
+
+        }
+        else if (calState = NOT_CALIBRATING) {
+            // Not yet time to perform calibration increment frame counter
+            nFramesSinceLastCalibration++;
+
+            // Determine if the calibration should be started on the next frame
+            if(nFramesSinceLastCalibration >= calibration_intervals_frames) {
+                calState = CALIBRATING;
+                nFramesSinceLastCalibration = 0;
+            }
+        }
+
 
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);

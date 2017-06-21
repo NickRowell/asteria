@@ -35,7 +35,8 @@ SOURCES += \
     gui/acquisitionwidget.cpp \
     gui/analysiswidget.cpp \
     infra/analysisinventory.cpp \
-    gui/replayvideothread.cpp
+    gui/replayvideothread.cpp \
+    infra/calibrationworker.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -83,7 +84,10 @@ HEADERS += \
     gui/acquisitionwidget.h \
     gui/analysiswidget.h \
     infra/analysisinventory.h \
-    gui/replayvideothread.h
+    gui/replayvideothread.h \
+    config/analysisparameters.h \
+    config/calibrationparameters.h \
+    infra/calibrationworker.h
 
 LIBS += -ljpeg \
         -lftgl \

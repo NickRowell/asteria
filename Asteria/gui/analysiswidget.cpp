@@ -9,16 +9,23 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
 
     replay = new GLMeteorDrawer(this, this->state, false);
 
+    // TODO: display the usual symbols for each button
     play_button = new QPushButton("Play", this);
+    pause_button = new QPushButton("Pause", this);
+    stop_button = new QPushButton("Stop", this);
     player = new ReplayVideoThread;
 
     // A widget to contain the control buttons
     QWidget * controls = new QWidget(this);
     QHBoxLayout * controlsLayout = new QHBoxLayout;
     controlsLayout->addWidget(play_button);
+    controlsLayout->addWidget(pause_button);
+    controlsLayout->addWidget(stop_button);
     controls->setLayout(controlsLayout);
 
     connect(play_button, SIGNAL(pressed()), player, SLOT(play()));
+    connect(pause_button, SIGNAL(pressed()), player, SLOT(pause()));
+    connect(stop_button, SIGNAL(pressed()), player, SLOT(stop()));
 
     connect(player, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), replay, SLOT(newFrame(std::shared_ptr<Image>)));
 

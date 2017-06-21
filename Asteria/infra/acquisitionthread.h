@@ -18,6 +18,12 @@
  */
 enum AcquisitionState{DETECTING, RECORDING, IDLE};
 
+/**
+ * @brief The CalibrationState enum enumerates the possible states of the
+ * calibration thread, which can be accumulating frames for processing with
+ * the calibration routine, or can be idle.
+ */
+enum CalibrationState{CALIBRATING, NOT_CALIBRATING};
 
 class AcquisitionThread : public QThread
 {
@@ -79,23 +85,29 @@ private:
     std::vector<std::shared_ptr<Image>> eventFrames;
 
     /**
+     * @brief calibrationFrames
+     * Buffer to store the calibration footage
+     */
+    std::vector<std::shared_ptr<Image>> calibrationFrames;
+
+    /**
      * @brief state
      * The current state of the acquisition thread, which determines what is done with newly
      * acquired frames.
      */
     AcquisitionState acqState;
 
-    // The total number of frames recorded for a given event. This is used to limit the
-    // length of clips recorded to a manageable size and avoid very long events (which probably
-    // aren't meteors) from overwhelming the system.
-    // TODO: any sequences that exceed this could be discarded rather than clamped.
-    // TODO: add this parameter to the detection parameters
-    unsigned int nRecordedFrames = 0;
+    /**
+     * @brief calState
+     * The current state of the calibration procedure.
+     */
+    CalibrationState calState;
 
-    // The number of frames recorded since the last trigger. Usually, there will be
-    // multiple triggers during a single event, so we reset this counter to zero on each trigger
-    // and terminate the recording when it exceeds the detection tail length.
-    unsigned int nFramesSinceLastTrigger = 0;
+    /**
+     * @brief calibration_intervals_frames
+     * Number of frames between calibration intervals.
+     */
+    unsigned int calibration_intervals_frames;
 
     /**
      * @brief mutex used to control multithreaded use of instances of this class.

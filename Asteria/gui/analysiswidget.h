@@ -33,6 +33,8 @@ public:
     ReplayVideoThread * player;
 
     QPushButton *play_button;
+    QPushButton *stop_button;
+    QPushButton *pause_button;
 
 signals:
 

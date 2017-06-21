@@ -9,7 +9,6 @@
 #include <memory>               // shared_ptr
 
 #include <QObject>
-#include <QMutex>
 
 class AnalysisWorker : public QObject
 {

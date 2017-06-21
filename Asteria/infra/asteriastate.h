@@ -187,6 +187,35 @@ public:
      */
     unsigned int n_changed_pixels_for_trigger;
 
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                     Analysis parameters                      //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    /**
+     * Limit on the deviation from a straight line for a detection to be classified as a meteor.
+     * @brief linearity_threshold
+     */
+    double linearity_threshold;
+
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                              //
+    //                   Calibration parameters                     //
+    //                                                              //
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    /**
+     * @brief Period between calibration routine executions [minutes]
+     */
+    double calibration_interval;
+
+    /**
+     * @brief Number of frames that are stacked to produce the calibration images [frames]
+     */
+    unsigned int calibration_stack;
+
+
 };
 
 #endif // METEORCAPTURESTATE_H

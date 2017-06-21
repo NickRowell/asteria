@@ -4,6 +4,8 @@
 #include "config/stationparameters.h"
 #include "config/cameraparameters.h"
 #include "config/detectionparameters.h"
+#include "config/analysisparameters.h"
+#include "config/calibrationparameters.h"
 #include "infra/asteriastate.h"
 #include "util/IOUtil.h"
 
@@ -14,12 +16,14 @@
 #include <QDebug>
 
 ConfigStore::ConfigStore(AsteriaState *state) {
-    numFamilies = 4;
+    numFamilies = 6;
     families = new ConfigParameterFamily*[numFamilies];
     families[0] = new SystemParameters(state);
     families[1] = new StationParameters(state);
     families[2] = new CameraParameters(state);
     families[3] = new DetectionParameters(state);
+    families[4] = new AnalysisParameters(state);
+    families[5] = new CalibrationParameters(state);
 }
 
 ConfigStore::~ConfigStore() {

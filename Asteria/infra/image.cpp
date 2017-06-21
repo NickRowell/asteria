@@ -3,6 +3,8 @@
 
 #include <numeric>
 
+#include <QDebug>
+
 Image::Image() {
 
 }
@@ -35,14 +37,16 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
 
     // Raw PGMs:
     output << "P5\n";
-    output << image.width << " " << image.height << " 255\n";
 
     // Write the epoch time of image capture
     output << "# epochTimeUs=" << std::to_string(image.epochTimeUs) << "\n";
 
     // TODO: write additional header info
 
-    // Write data section
+    // Write the data section
+    output << image.width << " " << image.height << " 255\n";
+
+    // Write raster
     for(unsigned int k=0; k<image.height; k++) {
         for(unsigned int l=0; l<image.width; l++) {
             unsigned int offset = k*image.width + l;
@@ -74,40 +78,6 @@ std::istream &operator>>(std::istream  &input, Image &image) {
         // Check magic number (first two chars in file)
         if(*(line.data()) != 'P' || *(line.data()+1) != '5') {
             std::cout << "Failed to read image as PGM, magic number wrong: " << line << std::endl;
-            return input;
-        }
-    }
-    else {
-        std::cout << "Ran out of data for parsing image!" << std::endl;
-        return input;
-    }
-
-    // Read image width, height and 255 (the maximum pixel value)
-    if(input.good()) {
-        getline (input, line);
-
-        // Tokenize the string
-        std::vector<std::string> x = split(line, ' ');
-
-        // Check we found the right amount of elements:
-        if(x.size() != 3) {
-            std::cout << "Expected to read width, height and pixel limit, found " << x.size() << " numbers!\n";
-            return input;
-        }
-
-        // Parse width & height
-        try {
-            image.width = std::stoi(x[0]);
-        }
-        catch(std::exception& e) {
-            std::cout << "Couldn't parse width from " << x[0];
-            return input;
-        }
-        try {
-            image.height = std::stoi(x[1]);
-        }
-        catch(std::exception& e) {
-            std::cout << "Couldn't parse height from " << x[1];
             return input;
         }
     }
@@ -149,6 +119,41 @@ std::istream &operator>>(std::istream  &input, Image &image) {
     }
 
     // TODO: read any additional header info
+
+    // Read image width, height and 255 (the maximum pixel value)
+    if(input.good()) {
+        getline (input, line);
+
+        // Tokenize the string
+        std::vector<std::string> x = split(line, ' ');
+
+        // Check we found the right amount of elements:
+        if(x.size() != 3) {
+            std::cout << "Expected to read width, height and pixel limit, found " << x.size() << " numbers!\n";
+            return input;
+        }
+
+        // Parse width & height
+        try {
+            image.width = std::stoi(x[0]);
+        }
+        catch(std::exception& e) {
+            std::cout << "Couldn't parse width from " << x[0];
+            return input;
+        }
+        try {
+            image.height = std::stoi(x[1]);
+        }
+        catch(std::exception& e) {
+            std::cout << "Couldn't parse height from " << x[1];
+            return input;
+        }
+    }
+    else {
+        std::cout << "Ran out of data for parsing image!" << std::endl;
+        return input;
+    }
+
 
     // Read data section
     if(input.good()) {

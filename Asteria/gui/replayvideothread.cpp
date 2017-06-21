@@ -55,6 +55,7 @@ void ReplayVideoThread::run() {
                     // Reset to start; stop playing
                     idx=0;
                     state = STOPPED;
+                    emit queueNewFrame(frames[idx]);
                 }
                 else {
                     emit queueNewFrame(frames[idx++]);
@@ -62,6 +63,7 @@ void ReplayVideoThread::run() {
                 break;
             case STOPPED:
                 idx=0;
+                emit queueNewFrame(frames[idx]);
                 break;
             case PAUSED:
                 break;
