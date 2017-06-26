@@ -1,5 +1,5 @@
 #include "image.h"
-#include "util/IOUtil.h"
+#include "util/ioutil.h"
 
 #include <numeric>
 
@@ -93,13 +93,13 @@ std::istream &operator>>(std::istream  &input, Image &image) {
         // The line has the format '# key=value' or possibly '# key=value1,value2,value3' etc
 
         // Tokenize to remove the leading hash symbol(s)
-        std::vector<std::string> x = split(line, ' ');
+        std::vector<std::string> x = IoUtil::split(line, ' ');
         x.erase(x.begin());
         // Concatenate the remaining line to rejoin any values separated by a space
         std::string keyValue = accumulate(x.begin(), x.end(), std::string(""));
 
         // Now split the string on '=' to separate into key/value
-        std::vector<std::string> y = split(keyValue, '=');
+        std::vector<std::string> y = IoUtil::split(keyValue, '=');
         if(y.size() != 2) {
             std::cout << "Couldn't parse key-value pair from " << keyValue << "\n";
             return input;
@@ -125,7 +125,7 @@ std::istream &operator>>(std::istream  &input, Image &image) {
         getline (input, line);
 
         // Tokenize the string
-        std::vector<std::string> x = split(line, ' ');
+        std::vector<std::string> x = IoUtil::split(line, ' ');
 
         // Check we found the right amount of elements:
         if(x.size() != 3) {

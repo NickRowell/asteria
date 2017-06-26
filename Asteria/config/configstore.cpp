@@ -7,7 +7,7 @@
 #include "config/analysisparameters.h"
 #include "config/calibrationparameters.h"
 #include "infra/asteriastate.h"
-#include "util/IOUtil.h"
+#include "util/ioutil.h"
 
 #include <vector>
 #include <iostream>
@@ -81,7 +81,7 @@ void ConfigStore::loadFromFile(string &path) {
             if (line[0] != '#' )
             {
                 // Tokenise the string
-                std::vector<std::string> x = split(line, '=');
+                std::vector<std::string> x = IoUtil::split(line, '=');
 
                 // Check that we got preciely two tokens (parameter family/key and value):
                 if(x.size()==2) {
@@ -90,7 +90,7 @@ void ConfigStore::loadFromFile(string &path) {
 
                     // Now we need to determine which parameter we're dealing with from the key.
                     // This should be split into the parameter family & key
-                    std::vector<std::string> y = split(key, '.');
+                    std::vector<std::string> y = IoUtil::split(key, '.');
 
                     // Check that we got precisely two tokens (parameter family and name):
                     if(y.size()==2) {

@@ -1,5 +1,5 @@
 #include "infra/referencestar.h"
-#include "util/IOUtil.h"
+#include "util/ioutil.h"
 
 #include <iostream>
 #include <fstream>
@@ -39,7 +39,7 @@ std::vector<ReferenceStar> ReferenceStar::loadCatalogue(std::string &path) {
             {
                 // Tokenise the string
                 // TODO: split on any amount of whitespace
-                std::vector<std::string> x = split(line, '\t');
+                std::vector<std::string> x = IoUtil::split(line, '\t');
 
                 // Check that we got preciely three tokens (ra, dec, magnitude):
                 if(x.size()==3) {

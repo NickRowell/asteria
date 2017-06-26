@@ -3,6 +3,7 @@
 #include "infra/calibrationworker.h"
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
+#include "util/ioutil.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -55,7 +56,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     state->format->fmt.pix.width = state->width;
     state->format->fmt.pix.height = state->height;
 
-    if(ioctl(*(this->state->fd), VIDIOC_S_FMT, state->format) < 0) {
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_S_FMT, state->format) < 0) {
         perror("VIDIOC_S_FMT");
         ::close(*(this->state->fd));
         exit(1);
@@ -135,7 +136,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     state->bufrequest->memory = V4L2_MEMORY_MMAP;
     state->bufrequest->count = 32;
 
-    if(ioctl(*(this->state->fd), VIDIOC_REQBUFS, state->bufrequest) < 0){
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_REQBUFS, state->bufrequest) < 0){
         perror("VIDIOC_REQBUFS");
         ::close(*(this->state->fd));
         exit(1);
@@ -256,13 +257,13 @@ void AcquisitionThread::run() {
         state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
-        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }
     }
 
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMON");
         exit(1);
     }
@@ -298,7 +299,7 @@ void AcquisitionThread::run() {
         state->bufferinfo->memory = V4L2_MEMORY_MMAP;
 
         // Wait for this buffer to be dequeued then retrieve the image
-        if(ioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
             perror("VIDIOC_DQBUF");
             exit(1);
         }
@@ -374,7 +375,7 @@ void AcquisitionThread::run() {
         }
 
         // Re-enqueue the buffer now we've extracted all the image data
-        if(ioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }

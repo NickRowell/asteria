@@ -8,8 +8,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 SOURCES += \
     main.cpp \
-    util/IOUtil.cpp \
-    util/V4L2Util.cpp \
     gui/cameraselectionwindow.cpp \
     gui/configcreationwindow.cpp \
     gui/mainwindow.cpp \
@@ -36,7 +34,9 @@ SOURCES += \
     gui/analysiswidget.cpp \
     infra/analysisinventory.cpp \
     gui/replayvideothread.cpp \
-    infra/calibrationworker.cpp
+    infra/calibrationworker.cpp \
+    util/ioutil.cpp \
+    util/v4l2util.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -49,8 +49,6 @@ HEADERS += \
     optics/GeometricOpticsModel.h \
     optics/PinholeCameraWithRadialDistortion.h \
     optics/Camera.h \
-    util/IOUtil.h \
-    util/V4L2Util.h \
     gui/cameraselectionwindow.h \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
@@ -87,7 +85,9 @@ HEADERS += \
     gui/replayvideothread.h \
     config/analysisparameters.h \
     config/calibrationparameters.h \
-    infra/calibrationworker.h
+    infra/calibrationworker.h \
+    util/ioutil.h \
+    util/v4l2util.h
 
 LIBS += -ljpeg \
         -lftgl \

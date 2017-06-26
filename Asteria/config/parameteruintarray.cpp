@@ -1,6 +1,6 @@
 #include "parameteruintarray.h"
 
-#include "util/IOUtil.h"
+#include "util/ioutil.h"
 
 #include <fstream>
 #include <iostream>
@@ -27,7 +27,7 @@ void ParameterUintArray::parseAndValidate(const string stringRep) {
     std::ostringstream strs;
 
     // Tokenize the string; split on white space
-    std::vector<std::string> x = split(stringRep, ' ');
+    std::vector<std::string> x = IoUtil::split(stringRep, ' ');
 
     // Check we found the right amount of elements:
     if(x.size() != nEls) {

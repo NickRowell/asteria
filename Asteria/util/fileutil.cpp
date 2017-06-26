@@ -1,12 +1,7 @@
-
 #include "fileutil.h"
 
-#include <iostream>
-#include <stdio.h>
-#include <string.h>   /* strdup */
-#include <fcntl.h>  /* open */
-#include <unistd.h> /* lseek */
-#include <math.h>
+#include <fstream>      // std::ofstream
+#include <iostream>     // std::cin, std::cout
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -108,98 +103,45 @@ bool FileUtil::deleteFilePath(std::string path) {
     return false;
 }
 
-void
-FileUtil::save_rgba_image_to_ppm(const char * fname, const GLubyte * image, const unsigned int &w, const unsigned int &h)
-{
-    std::ofstream out(fname);
-    
-    // For raw PPMs:
-    out << "P6\n" << w << " " << h << " 255\n";
-    for(unsigned int j=0; j<h; j++)
-    {
-        for(unsigned int i=0; i<w; i++)
-        {
-            // Pixel number
-            unsigned int index = 4 * (j*w + i);
-            
-            char r = (char)(image[index+0]);
-            char g = (char)(image[index+1]);
-            char b = (char)(image[index+2]);
-            char a = (char)(image[index+3]);
+bool FileUtil::createDir(std::string parent, std::string child) {
 
-            out << r << g << b;
-            
+    std::string newDirPath = parent + "/" + child;
+    struct stat info;
+    if( stat( newDirPath.c_str(), &info ) != 0 ) {
+        // Path does not exist; create it.
+        if(mkdir(newDirPath.c_str(), S_IRWXU) == -1) {
+//            qInfo() << "Could not create directory " << yearPath.c_str();
+            return false;
+        }
+        else {
+            // Successfully created directory
+            return true;
         }
     }
-    
-    out.close();
-    
+    else if( info.st_mode & S_IFDIR )  {
+        // Exists and is a directory; take no action
+        return true;
+    }
+    else if( S_ISREG(info.st_mode)) {
+        // Exists and is a regular file.
+//        qInfo() << "Found a regular file at " << yearPath.c_str() << "; can't create directory!";
+        return false;
+    }
+    else {
+        // Exists and is neither a directory or regular file
+//        qInfo() << "Found an existing file of unknown type at " << yearPath.c_str() << "; can't create directory!";
+        return false;
+    }
 }
 
-void
-FileUtil::save_rgb_image_to_ppm(const char * fname, const GLubyte * image, const unsigned int &w, const unsigned int &h)
-{
-    std::ofstream out(fname);
-    
-    // For raw PPMs:
-    out << "P6\n" << w << " " << h << " 255\n";
-    for(unsigned int j=0; j<h; j++)
-    {
-        for(unsigned int i=0; i<w; i++)
-        {
-            // Pixel number
-            unsigned int index = 3 * (j*w + i);
-            
-            char r = (char)(image[index+0]);
-            char g = (char)(image[index+1]);
-            char b = (char)(image[index+2]);
-
-            out << r << g << b;
+bool FileUtil::createDirs(std::string topLevel, std::vector<std::string> subLevels) {
+    // Create each subdirectory in turn
+    std::string path = topLevel;
+    for(unsigned int d = 0; d<subLevels.size(); d++) {
+        if(!FileUtil::createDir(path, subLevels[d])) {
+            return false;
         }
+        path = path + "/" + subLevels[d];
     }
-    
-    out.close();
-    
-}
-
-void
-FileUtil::save_grey_image_to_pgm(const char * fname, const GLubyte * image, const unsigned int &w, const unsigned int &h)
-{
-    std::ofstream out(fname);
-    
-    // For raw PGMs:
-    out << "P5\n" << w << " " << h << " 255\n";
-    for(unsigned int j=0; j<h; j++)
-    {
-        for(unsigned int i=0; i<w; i++)
-        {
-            // Lookup grey level
-            char grey = (char)(image[j*w + i]);
-            out << grey;
-        }
-    }
-    out.close();
-}
-
-
-void
-FileUtil::save_grey_image_to_pgm(const char * fname, const float * image, const unsigned int &w, const unsigned int &h)
-{
-    std::ofstream out(fname);
-    
-    // For raw PGMs:
-    out << "P5\n" << w << " " << h << " 255\n";
-    for(unsigned int j=0; j<h; j++)
-    {
-        for(unsigned int i=0; i<w; i++)
-        {
-            // Lookup grey level
-            float grey = (image[j*w+i]*1000000000);
-            // Saturate, don't wraparound
-            if(grey > 255) grey = 255;
-            
-            out << (unsigned char)grey;
-        }
-    }
-    out.close();
+    return true;
 }

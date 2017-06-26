@@ -5,7 +5,7 @@
 #include "util/timeutil.h"
 #include "gui/treeitem.h"
 #include "config/configstore.h"
-#include "util/V4L2Util.h"
+#include "util/v4l2util.h"
 #include "infra/image.h"
 #include "infra/acquisitionthread.h"
 

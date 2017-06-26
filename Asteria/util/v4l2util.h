@@ -1,7 +1,5 @@
-#ifndef V4L2UTIL_H_
-#define V4L2UTIL_H_
-
-#include "IOUtil.h"
+#ifndef V4L2UTIL_H
+#define V4L2UTIL_H
 
 #include <vector>     // provides vector
 #include <string>     // provides string
@@ -30,16 +28,12 @@
 #include <QString>
 #include <QDebug>
 
-// Mean I can use vector rather tha std::vector etc.
 using namespace std;
 
 class V4L2Util {
 
 public:
-
 	V4L2Util();
-
-	virtual ~V4L2Util();
 
     static vector< pair< string, string > > getAllV4LCameras();
 

@@ -11,7 +11,7 @@ class CameraParameters : public ConfigParameterFamily {
 
 public:
 
-    CameraParameters(AsteriaState * state) : ConfigParameterFamily("Camera", 3) {
+    CameraParameters(AsteriaState * state) : ConfigParameterFamily("Camera", 4) {
 
         parameters = new ConfigParameterBase*[numPar];
         validators = new ParameterValidator*[numPar];
@@ -30,6 +30,8 @@ public:
         validators[0] = new ValidateImageSize(state);
         validators[1] = new ValidateWithinLimits<double>(0.0, 360.0);
         validators[2] = new ValidateWithinLimits<double>(-90.0, 90.0);
+        validators[3] = new ValidateWithinLimits<double>(-180.0, 180.0);
+
 
         unsigned int * vals[2] = {&(state->width), &(state->height)};
 
@@ -37,6 +39,7 @@ public:
         parameters[0] = new ParameterUintArray("image_width_height", "Image Width and Height", "pixels", validators[0], 2u, vals);
         parameters[1] = new ParameterDouble("azimuth", "Azimuth", "deg", validators[1], &(state->azimuth));
         parameters[2] = new ParameterDouble("elevation", "Elevation", "deg", validators[2], &(state->elevation));
+        parameters[3] = new ParameterDouble("roll", "Roll", "deg", validators[3], &(state->roll));
 
     }
 };

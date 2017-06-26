@@ -8,8 +8,8 @@
 #include <regex>
 #include <sys/time.h>
 
-class TimeUtil
-{
+class TimeUtil {
+
 public:
     TimeUtil();
 

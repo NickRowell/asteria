@@ -1,6 +1,6 @@
 #include "gui/cameraselectionwindow.h"
 #include "infra/asteriastate.h"
-#include "util/V4L2Util.h"
+#include "util/v4l2util.h"
 #include "gui/glmeteordrawer.h"
 
 #include <QPushButton>

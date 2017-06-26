@@ -1,24 +1,11 @@
-/*
- * IOUtil.cpp
- *
- *  Created on: 26 Dec 2016
- *      Author: nrowell
- */
+#include "util/ioutil.h"
 
-#include <vector>
-#include <string>
 #include <sstream>
 #include <sys/ioctl.h>
-
-template<typename Out>
-void split(const std::string &s, char delim, Out result) {
-    std::stringstream ss;
-    ss.str(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        *(result++) = item;
-    }
-}
+#include <unistd.h>
+#include <fstream>
+#include <sys/stat.h>
+#include <iostream>
 
 /**
  * @brief Tokenise the string
@@ -26,7 +13,7 @@ void split(const std::string &s, char delim, Out result) {
  * @param delim The token delimiter
  * @return Vector of string tokens
  */
-std::vector<std::string> split(const std::string &s, char delim) {
+std::vector<std::string> IoUtil::split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
     return elems;
@@ -37,7 +24,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
  * \param i Integer to convert to a string
  * \return	String containing the converted integer
  */
-std::string intToString(int i){
+std::string IoUtil::intToString(int i){
     std::ostringstream oss;
     oss << i;
     std::string result = oss.str();
@@ -54,7 +41,7 @@ std::string intToString(int i){
  * \param arg Untyped pointer to memory, where the results of the request are written.
  * \return Error flag: 0 for success, -1 indicates error.
  */
-int xioctl (int fd, int request, void *arg) {
+int IoUtil::xioctl (int fd, int request, void *arg) {
 	int r;
 
 	do {

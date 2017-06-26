@@ -111,6 +111,11 @@ public:
      */
     double elevation;
 
+    /**
+     * \brief Camera roll angle [decimal degrees]
+     */
+    double roll;
+
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                              //
     //                      System parameters                       //

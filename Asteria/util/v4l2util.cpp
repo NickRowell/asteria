@@ -1,14 +1,11 @@
-#include "V4L2Util.h"
+#include "util/v4l2util.h"
+
+#include "util/ioutil.h"
 
 #include "infra/asteriastate.h"
 
 V4L2Util::V4L2Util() {
 	// Constructor
-
-}
-
-V4L2Util::~V4L2Util() {
-	// Destructor
 }
 
 /**
@@ -29,7 +26,7 @@ vector< pair<string,string> > V4L2Util::getAllV4LCameras() {
 
     do {
 
-        string devicePathStr = "/dev/video" + intToString(deviceNumber);
+        string devicePathStr = "/dev/video" + IoUtil::intToString(deviceNumber);
 
         // http://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c-cross-platform
 
@@ -53,7 +50,7 @@ vector< pair<string,string> > V4L2Util::getAllV4LCameras() {
                 struct v4l2_capability caps;
                 memset(&caps, 0, sizeof(caps));
 
-                if (xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
+                if (IoUtil::xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
                     cout << "Fail Querying Capabilities." << endl;
                     perror("Querying Capabilities");
                 }
@@ -205,7 +202,7 @@ string V4L2Util::getCameraName(int & fd) {
     struct v4l2_capability caps;
     memset(&caps, 0, sizeof(caps));
 
-    if (xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
+    if (IoUtil::xioctl(fd, VIDIOC_QUERYCAP, &caps) == -1) {
         perror("Querying Capabilities");
         return "";
     }
@@ -334,7 +331,7 @@ bool V4L2Util::getInfos(int & fd) {
 
     // http://linuxtv.org/downloads/v4l-dvb-apis/vidioc-querycap.html
 
-    if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
+    if (-1 == IoUtil::xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
         perror("Querying Capabilities");
         return false;
     }
@@ -372,7 +369,7 @@ bool V4L2Util::getInfos(int & fd) {
     cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 
-    if (-1 == xioctl (fd, VIDIOC_CROPCAP, &cropcap)) {
+    if (-1 == IoUtil::xioctl (fd, VIDIOC_CROPCAP, &cropcap)) {
         perror("Querying Cropping Capabilities");
         return false;
     }
@@ -395,7 +392,7 @@ bool V4L2Util::getInfos(int & fd) {
     char c, e;
     printf( "  FORMAT    : CE Desc\n");
 
-    while (0 == xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
+    while (0 == IoUtil::xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
 
         strncpy(fourcc, (char *)&fmtdesc.pixelformat, 4);
         if (fmtdesc.pixelformat == V4L2_PIX_FMT_SGRBG10)
@@ -451,7 +448,7 @@ void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
     memset(&queryctrl, 0, sizeof(queryctrl));
     queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
 
-    if (xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl) == -1) {
+    if (IoUtil::xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl) == -1) {
 
         if (errno != EINVAL) {
 
@@ -492,7 +489,7 @@ void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
 
 bool V4L2Util::createDevice(int id, int &fd) {
 
-    string deviceNameStr = "/dev/video" + intToString(id);
+    string deviceNameStr = "/dev/video" + IoUtil::intToString(id);
 
     const char* mDeviceName = deviceNameStr.c_str();
 
@@ -521,7 +518,7 @@ bool V4L2Util::createDevice(int id, int &fd) {
     memset(&mFormat, 0, sizeof(mFormat));
     mFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     // Preserve original settings as set by v4l2-ctl for example
-    if (-1 == xioctl(fd, VIDIOC_G_FMT, &mFormat)){
+    if (-1 == IoUtil::xioctl(fd, VIDIOC_G_FMT, &mFormat)){
     	fprintf(stdout, "Failed to create device\n");
         return false;
     }
@@ -536,7 +533,7 @@ double V4L2Util::getExposureTime(int & fd) {
     memset(&control, 0, sizeof(control));
     control.id = V4L2_CID_EXPOSURE_ABSOLUTE;
 
-    if(0 == ioctl(fd, VIDIOC_G_CTRL, &control)) {
+    if(0 == IoUtil::xioctl(fd, VIDIOC_G_CTRL, &control)) {
 
         return control.value * 100;
 
@@ -563,7 +560,7 @@ bool V4L2Util::setExposureTime(int & fd, double val){
 
         queryctrl1.id = V4L2_CID_EXPOSURE_AUTO;
 
-        if(-1 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl1)) {
+        if(-1 == IoUtil::xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl1)) {
 
             if(errno != EINVAL) {
 
@@ -587,7 +584,7 @@ bool V4L2Util::setExposureTime(int & fd, double val){
             control1.id = V4L2_CID_EXPOSURE_AUTO;
             control1.value = V4L2_EXPOSURE_MANUAL;
 
-            if (-1 == ioctl(fd, VIDIOC_S_CTRL, &control1)) {
+            if (-1 == IoUtil::xioctl(fd, VIDIOC_S_CTRL, &control1)) {
                 perror("VIDIOC_S_CTRL");
                 return false;
             }
@@ -603,7 +600,7 @@ bool V4L2Util::setExposureTime(int & fd, double val){
         memset(&queryctrl, 0, sizeof(queryctrl));
         queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
 
-        if(-1 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) {
+        if(-1 == IoUtil::xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) {
 
             if(errno != EINVAL) {
 
@@ -638,7 +635,7 @@ bool V4L2Util::setExposureTime(int & fd, double val){
 //            exp = val;
             printf(">> V4L2_CID_EXPOSURE_ABSOLUTE setted to %f (%f with V4L2)\n", val, val/100);
 
-            if (-1 == ioctl(fd, VIDIOC_S_CTRL, &control)) {
+            if (-1 == IoUtil::xioctl(fd, VIDIOC_S_CTRL, &control)) {
                 perror("VIDIOC_S_CTRL");
                 return false;
             }

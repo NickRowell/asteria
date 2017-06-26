@@ -2,8 +2,7 @@
 
 #include <sstream>              // ostringstream
 
-TimeUtil::TimeUtil()
-{
+TimeUtil::TimeUtil() {
 
 }
 

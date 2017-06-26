@@ -1,5 +1,6 @@
 #include "infra/calibrationworker.h"
 #include "util/timeutil.h"
+#include "util/fileutil.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -39,80 +40,15 @@ void CalibrationWorker::process() {
     std::string mm = TimeUtil::extractMonthFromUtcString(utc);
     std::string dd = TimeUtil::extractDayFromUtcString(utc);
 
-    // Create the YYYY directory level if it doesn't already exist
-    string yearPath = state->videoDirPath + "/" + yyyy;
-    struct stat info;
-    if( stat( yearPath.c_str(), &info ) != 0 ) {
-        // Path does not exist; create it.
-        if(mkdir(yearPath.c_str(), S_IRWXU) == -1) {
-            qInfo() << "Could not create directory " << yearPath.c_str();
-            return;
-        }
-    }
-    else if( info.st_mode & S_IFDIR )  {
-        // Exists and is a directory; take no action
-    }
-    else if( S_ISREG(info.st_mode)) {
-        // Exists and is a regular file.
-        qInfo() << "Found a regular file at " << yearPath.c_str() << "; can't save videos!";
-        return;
-    }
-    else {
-        // Exists and is neither a directory or regular file
-        qInfo() << "Found an existing file of unknown type at " << yearPath.c_str() << "; can't save videos!";
-        return;
-    }
+    std::vector<std::string> subLevels;
+    subLevels.push_back(yyyy);
+    subLevels.push_back(mm);
+    subLevels.push_back(dd);
+    subLevels.push_back(utc);
+    string path = state->videoDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
 
-    // Create the MM directory level if it doesn't already exist
-    string monthPath = yearPath + "/" + mm;
-    if( stat( monthPath.c_str(), &info ) != 0 ) {
-        // Path does not exist; create it.
-        if(mkdir(monthPath.c_str(), S_IRWXU) == -1) {
-            qInfo() << "Could not create directory " << monthPath.c_str();
-            return;
-        }
-    }
-    else if( info.st_mode & S_IFDIR )  {
-        // Exists and is a directory; take no action
-    }
-    else if( S_ISREG(info.st_mode)) {
-        // Exists and is a regular file.
-        qInfo() << "Found a regular file at " << monthPath.c_str() << "; can't save videos!";
-        return;
-    }
-    else {
-        // Exists and is neither a directory or regular file
-        qInfo() << "Found an existing file of unknown type at " << monthPath.c_str() << "; can't save videos!";
-        return;
-    }
-
-    // Create the DD directory level if it doesn't already exist
-    string dayPath = monthPath + "/" + dd;
-    if( stat( dayPath.c_str(), &info ) != 0 ) {
-        // Path does not exist; create it.
-        if(mkdir(dayPath.c_str(), S_IRWXU) == -1) {
-            qInfo() << "Could not create directory " << dayPath.c_str();
-            return;
-        }
-    }
-    else if( info.st_mode & S_IFDIR )  {
-        // Exists and is a directory; take no action
-    }
-    else if( S_ISREG(info.st_mode)) {
-        // Exists and is a regular file.
-        qInfo() << "Found a regular file at " << dayPath.c_str() << "; can't save videos!";
-        return;
-    }
-    else {
-        // Exists and is neither a directory or regular file
-        qInfo() << "Found an existing file of unknown type at " << dayPath.c_str() << "; can't save videos!";
-        return;
-    }
-
-    string path = dayPath + "/" + utc;
-    int status = mkdir(path.c_str(), S_IRWXU);
-    if(status == -1) {
-        qInfo() << "Could not create directory " << path.c_str();
+    if(!FileUtil::createDirs(state->videoDirPath, subLevels)) {
+        qInfo() << "Couldn't create directory " << path.c_str() << "!";
         return;
     }
 
@@ -148,8 +84,6 @@ void CalibrationWorker::process() {
                 unsigned int a = (int)pixel[pixel.size()/2];
                 unsigned int b = (int)pixel[pixel.size()/2 - 1];
                 unsigned int c = (a + b)/2;
-//                qInfo() << "a, b, c = " << a << ", " << b << ", " << c;
-
                 unsigned char d = c & 0xFF;
                 medianVals.push_back(d);
             }
@@ -157,8 +91,6 @@ void CalibrationWorker::process() {
                 // Odd number of elements - pick central one
                 medianVals.push_back(pixel[pixel.size()/2]);
             }
-
-
         }
     }
 

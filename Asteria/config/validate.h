@@ -4,7 +4,7 @@
 #include "infra/asteriastate.h"
 
 #include <linux/videodev2.h>
-#include <sys/ioctl.h>          // IOCTL etc
+#include <sys/ioctl.h>
 #include <sstream>
 #include <unistd.h>
 #include <sys/types.h>
