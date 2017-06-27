@@ -36,7 +36,8 @@ SOURCES += \
     gui/replayvideothread.cpp \
     infra/calibrationworker.cpp \
     util/ioutil.cpp \
-    util/v4l2util.cpp
+    util/v4l2util.cpp \
+    infra/logging.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -87,7 +88,8 @@ HEADERS += \
     config/calibrationparameters.h \
     infra/calibrationworker.h \
     util/ioutil.h \
-    util/v4l2util.h
+    util/v4l2util.h \
+    infra/logging.h
 
 LIBS += -ljpeg \
         -lftgl \

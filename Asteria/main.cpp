@@ -8,6 +8,7 @@
 #include "util/v4l2util.h"
 #include "infra/image.h"
 #include "infra/acquisitionthread.h"
+#include "infra/logging.h"
 
 #include <signal.h>
 #include <getopt.h>
@@ -17,7 +18,6 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QSurfaceFormat>
-#include <QDebug>
 
 using namespace std;
 
@@ -28,6 +28,7 @@ static void catchUnixSignals();
 int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
+
     catchUnixSignals();
 
     qRegisterMetaType<std::shared_ptr<Image>>("std::shared_ptr<Image>");
@@ -72,12 +73,9 @@ int main(int argc, char **argv)
             case 0: {
                 /* If this option set a flag, do nothing else now. */
                 if (long_options[option_index].flag != 0) {
-                    fprintf(stderr, "Mode = %s\n", long_options[option_index].name);
-                    break;
-                }
-                qInfo() << "Option: " << long_options[option_index].name;
-                if (optarg) {
-                    qInfo() << "Arg: " << optarg;
+                    Logging::stdOutStream << QString("Mode = %1").arg(long_options[option_index].name) << endl;
+//                    Logging::logFileOut << QString("Mode = %1").arg(long_options[option_index].name) << endl;
+//                    fprintf(stderr, "Mode = %s\n", long_options[option_index].name);
                 }
                 break;
             }
@@ -149,6 +147,7 @@ int main(int argc, char **argv)
         state->cameraPath = string(camera);
         V4L2Util::openCamera(state->cameraPath, state->fd, state->selectedFormat);
 
+        // MOVE TO LOG FILE OR SOMETHING
         std::cout << "Selected camera = " << V4L2Util::getCameraName(*(state->fd)) << '\n' << std::flush;
         std::cout << "Selected pixel format = " << V4L2Util::getFourCC(state->selectedFormat) << '\n' << std::flush;
 
@@ -241,7 +240,7 @@ static void catchUnixSignals() {
 
     for (unsigned i=0; i < quitSignals.size(); i++) {
         auto handler = [](int sig) ->void {
-            printf("\nReceived %s signal; quitting...\n", strsignal(sig));
+            fprintf(stderr, "\nReceived %s signal; quitting...\n", strsignal(sig));
             QCoreApplication::quit();
         };
         signal(quitSignals[i], handler);

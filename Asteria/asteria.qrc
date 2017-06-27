@@ -2,5 +2,10 @@
     <qresource prefix="/">
         <file>images/meteor-512.png</file>
         <file>images/folder-outline-filled.png</file>
+        <file>images/pause.png</file>
+        <file>images/play.png</file>
+        <file>images/stepb.png</file>
+        <file>images/stepf.png</file>
+        <file>images/stop.png</file>
     </qresource>
 </RCC>
