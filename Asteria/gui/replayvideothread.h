@@ -12,7 +12,7 @@
  * Current state of the replay viewer
  * @brief The ReplayState enum
  */
-enum ReplayState{PLAYING, PAUSED, STOPPED};
+enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB};
 
 
 
@@ -52,6 +52,8 @@ public slots:
     void play();
     void pause();
     void stop();
+    void stepb();
+    void stepf();
 
 signals:
     void queueNewFrame(std::shared_ptr<Image> image);

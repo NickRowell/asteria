@@ -20,7 +20,6 @@
 #include <vector>
 #include <algorithm>            // std::find(...)
 
-#include <QDebug>
 #include <QString>
 #include <QCloseEvent>
 #include <QGridLayout>
@@ -37,7 +36,8 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
 
-    qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
+    fprintf(stderr, "Loaded %d ReferenceStars!\n", refStarCatalogue.size());
+//    qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
 
     // Other initialisation to do:
     // 1) Load ephemeris file?
@@ -72,25 +72,32 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     if(state->format->fmt.pix.field == V4L2_FIELD_ANY) {
         // This is used to request any one of the V4L2_FIELD_NONE, V4L2_FIELD_TOP, V4L2_FIELD_BOTTOM, or V4L2_FIELD_INTERLACED
         // and wouldn't be returned by the query.
-        cout << "V4L2_FIELD_ANY";
+        fprintf(stderr, "V4L2_FIELD_ANY");
+//        cout << "V4L2_FIELD_ANY";
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_NONE) {
-        cout << "V4L2_FIELD_NONE (progressive)";
+//        cout << "V4L2_FIELD_NONE (progressive)";
+        fprintf(stderr, "V4L2_FIELD_NONE (progressive)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_TOP) {
-        cout << "V4L2_FIELD_TOP (top field only)";
+//        cout << "V4L2_FIELD_TOP (top field only)";
+        fprintf(stderr, "V4L2_FIELD_TOP (top field only)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_BOTTOM) {
-        cout << "V4L2_FIELD_BOTTOM (bottom field only)";
+//        cout << "V4L2_FIELD_BOTTOM (bottom field only)";
+        fprintf(stderr, "V4L2_FIELD_BOTTOM (bottom field only)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_INTERLACED) {
-        cout << "V4L2_FIELD_INTERLACED (top and bottom field interleaved)";
+//        cout << "V4L2_FIELD_INTERLACED (top and bottom field interleaved)";
+        fprintf(stderr, "V4L2_FIELD_INTERLACED (top and bottom field interleaved)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_TB) {
-        cout << "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)";
+//        cout << "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)";
+        fprintf(stderr, "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_BT) {
-        cout << "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)";
+//        cout << "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)";
+        fprintf(stderr, "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_ALTERNATE) {
 
@@ -102,7 +109,8 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
         // any dropped fields between them (fields can drop individually), can be determined
         // from the struct v4l2_buffer sequence field. Image sizes refer to the frame, not
         // fields. This format cannot be selected when using the read/write I/O method.
-        cout << "V4L2_FIELD_ALTERNATE";
+//        cout << "V4L2_FIELD_ALTERNATE";
+        fprintf(stderr, "V4L2_FIELD_ALTERNATE");
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -123,7 +131,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     calibration_intervals_frames = (1.0 / expTime) * 60 * state->calibration_interval;
 
-    qInfo() << "Interval between calibration frames: " <<  calibration_intervals_frames;
+    fprintf(stderr, "Interval between calibration frames: %d\n", calibration_intervals_frames);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -190,13 +198,13 @@ AcquisitionThread::~AcquisitionThread()
 
     wait();
 
-    qInfo() << "Deactivating streaming...";
+    fprintf(stderr, "Deactivating streaming...\n");
     if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMOFF");
         exit(1);
     }
 
-    qInfo() << "Deallocating image buffers...";
+    fprintf(stderr, "Deallocating image buffers...\n");
     for(unsigned int b = 0; b < state->bufrequest->count; b++) {
         if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
             perror("munmap");
@@ -204,7 +212,7 @@ AcquisitionThread::~AcquisitionThread()
     }
     delete buffer_start;
 
-    qInfo() << "Closing the camera...";
+    fprintf(stderr, "Closing the camera...\n");
     ::close(*(this->state->fd));
 }
 
@@ -224,7 +232,7 @@ void AcquisitionThread::shutdown() {
     // Lock this object for the duration of this function
     QMutexLocker locker(&mutex);
 
-    qInfo() << "Shutting down!";
+    fprintf(stderr, "Shutting down!\n");
     if (isRunning()) {
         abort = true;
     }
@@ -323,10 +331,11 @@ void AcquisitionThread::run() {
 
             if(state->headless) {
                 // Headless mode: print frame stats to console
-                std::cout << "+++ FPS: " << std::setw(6) << std::setprecision(5) << left << fps
-                          << " Dropped: " << std::setw(6) << droppedFramesCounter
-                          << " Total: " << std::setw(6) << totalFramesCounter
-                          << " +++" << '\r' << std::flush;
+                fprintf(stderr, "+++ FPS: %06d Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, totalFramesCounter);
+//                std::cout << "+++ FPS: " << std::setw(6) << std::setprecision(5) << left << fps
+//                          << " Dropped: " << std::setw(6) << droppedFramesCounter
+//                          << " Total: " << std::setw(6) << totalFramesCounter
+//                          << " +++" << '\r' << std::flush;
             }
         }
         lastFrameSequence = state->bufferinfo->sequence;
@@ -423,7 +432,8 @@ void AcquisitionThread::run() {
                 event = true;
                 if(state->headless && acqState != RECORDING) {
                     // Only print one event notification for each recording
-                    std::cout << '\n' << "EVENT! " << utc.c_str() << '\n' << std::flush;
+                    fprintf(stderr, "EVENT! %s\n", utc.c_str());
+//                    std::cout << '\n' << "EVENT! " << utc.c_str() << '\n' << std::flush;
                 }
             }
         }
@@ -492,7 +502,7 @@ void AcquisitionThread::run() {
             // Determine if we've recorded all the calibration frames we need
             if(calibrationFrames.size() > state->calibration_stack) {
                 // Spawn a new CalibrationThread
-                qInfo() << "Got " << calibrationFrames.size() << " frames for calibration";
+                fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
 
                 QThread* thread = new QThread;
                 CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);

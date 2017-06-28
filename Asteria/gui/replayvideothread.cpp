@@ -37,6 +37,14 @@ void ReplayVideoThread::stop() {
     state = STOPPED;
 }
 
+void ReplayVideoThread::stepf() {
+    state = STEPF;
+}
+
+void ReplayVideoThread::stepb() {
+    state = STEPB;
+}
+
 void ReplayVideoThread::run() {
 
     forever {
@@ -47,6 +55,7 @@ void ReplayVideoThread::run() {
 
         // Take no action if we have no video
         if(!frames.empty()) {
+
             // Take action depending on the ReplayState
             switch(state) {
             case PLAYING:
@@ -66,6 +75,22 @@ void ReplayVideoThread::run() {
                 emit queueNewFrame(frames[idx]);
                 break;
             case PAUSED:
+                break;
+            case STEPB:
+                // Check we've not yet reached the start
+                if(idx > 0) {
+                    emit queueNewFrame(frames[--idx]);
+                }
+                // Return to PAUSED state to prevent recurrence of step
+                state = PAUSED;
+                break;
+            case STEPF:
+                // Check we've not yet reached the end
+                if(idx < (frames.size()-1)) {
+                    emit queueNewFrame(frames[++idx]);
+                }
+                // Return to PAUSED state to prevent recurrence of step
+                state = PAUSED;
                 break;
             }
         }

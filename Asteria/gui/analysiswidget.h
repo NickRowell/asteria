@@ -35,6 +35,8 @@ public:
     QPushButton *play_button;
     QPushButton *stop_button;
     QPushButton *pause_button;
+    QPushButton *stepf_button;
+    QPushButton *stepb_button;
 
 signals:
 
