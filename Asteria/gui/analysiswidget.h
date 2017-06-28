@@ -4,8 +4,6 @@
 #include "infra/image.h"
 #include "gui/replayvideothread.h"
 
-#include <memory>
-
 #include <QWidget>
 
 class QButtonGroup;
@@ -13,6 +11,8 @@ class QPushButton;
 class AsteriaState;
 class GLMeteorDrawer;
 class AnalysisInventory;
+class QCheckBox;
+class QSlider;
 
 class AnalysisWidget : public QWidget
 {
@@ -37,6 +37,8 @@ public:
     QPushButton *pause_button;
     QPushButton *stepf_button;
     QPushButton *stepb_button;
+    QSlider * slider;
+    QCheckBox *dicheckbox;
 
 signals:
 

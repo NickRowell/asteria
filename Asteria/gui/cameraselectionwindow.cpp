@@ -9,7 +9,6 @@
 #include <QRadioButton>
 #include <QVBoxLayout>
 #include <QStyle>
-#include <QDebug>
 #include <QDesktopWidget>
 #include <QButtonGroup>
 #include <QString>
@@ -77,8 +76,8 @@ void CameraSelectionWindow::slotCameraButtonClicked()
 
     V4L2Util::openCamera(state->cameraPath, state->fd, state->selectedFormat);
 
-    qInfo() << "Selected camera = " << QString::fromStdString(V4L2Util::getCameraName(*(state->fd)));
-    qInfo() << "Selected pixel format = " << QString::fromStdString(V4L2Util::getFourCC(state->selectedFormat));
+    fprintf(stderr, "Selected camera = %s\n", V4L2Util::getCameraName(*(state->fd)).c_str());
+    fprintf(stderr, "Selected pixel format = %s\n", V4L2Util::getFourCC(state->selectedFormat).c_str());
 
     hide();
     emit cameraSelected(camera.first);

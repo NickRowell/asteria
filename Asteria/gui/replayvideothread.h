@@ -12,7 +12,7 @@
  * Current state of the replay viewer
  * @brief The ReplayState enum
  */
-enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB};
+enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB, FQUEUED};
 
 
 
@@ -54,11 +54,11 @@ public slots:
     void stop();
     void stepb();
     void stepf();
+    void queueFrameIndex(int fIdx);
 
 signals:
     void queueNewFrame(std::shared_ptr<Image> image);
-
-
+    void queuedFrameIndex(int fIdx);
 };
 
 #endif // REPLAYVIDEOTHREAD_H

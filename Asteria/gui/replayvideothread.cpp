@@ -1,4 +1,4 @@
-#include "replayvideothread.h"
+#include "gui/replayvideothread.h"
 
 ReplayVideoThread::ReplayVideoThread() : frames(0), idx(0), state(STOPPED), abort(false), fperiodms(40) {
     // Start the thread
@@ -45,6 +45,11 @@ void ReplayVideoThread::stepb() {
     state = STEPB;
 }
 
+void ReplayVideoThread::queueFrameIndex(int fIdx) {
+    state = FQUEUED;
+    idx = fIdx;
+}
+
 void ReplayVideoThread::run() {
 
     forever {
@@ -65,21 +70,27 @@ void ReplayVideoThread::run() {
                     idx=0;
                     state = STOPPED;
                     emit queueNewFrame(frames[idx]);
+                    emit queuedFrameIndex(idx);
                 }
                 else {
-                    emit queueNewFrame(frames[idx++]);
+                    emit queueNewFrame(frames[idx]);
+                    emit queuedFrameIndex(idx);
+                    idx++;
                 }
                 break;
             case STOPPED:
                 idx=0;
                 emit queueNewFrame(frames[idx]);
+                emit queuedFrameIndex(idx);
                 break;
             case PAUSED:
                 break;
             case STEPB:
                 // Check we've not yet reached the start
                 if(idx > 0) {
-                    emit queueNewFrame(frames[--idx]);
+                    --idx;
+                    emit queueNewFrame(frames[idx]);
+                    emit queuedFrameIndex(idx);
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
@@ -87,10 +98,16 @@ void ReplayVideoThread::run() {
             case STEPF:
                 // Check we've not yet reached the end
                 if(idx < (frames.size()-1)) {
-                    emit queueNewFrame(frames[++idx]);
+                    ++idx;
+                    emit queueNewFrame(frames[idx]);
+                    emit queuedFrameIndex(idx);
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
+                break;
+            case FQUEUED:
+                emit queueNewFrame(frames[idx]);
+                emit queuedFrameIndex(idx);
                 break;
             }
         }

@@ -19,7 +19,7 @@ GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state, bool rgb)
     font = new FTExtrudeFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf");
 
     if(font->Error()) {
-        qInfo() << "Error loading font!";
+        fprintf(stderr, "Error loading font!\n");
         delete font;
     }
     else {
@@ -157,8 +157,6 @@ void GLMeteorDrawer::initializeGL() {
     glPushMatrix();
     glLoadIdentity();
     gluOrtho2D( 0, state->width, 0, state->height );
-
-    qInfo() << "Finished initialising GL";
 }
 
 void GLMeteorDrawer::resizeGL(int w, int h) {

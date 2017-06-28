@@ -37,7 +37,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
 
     fprintf(stderr, "Loaded %d ReferenceStars!\n", refStarCatalogue.size());
-//    qInfo() << "Loaded " << refStarCatalogue.size() << " ReferenceStars!";
 
     // Other initialisation to do:
     // 1) Load ephemeris file?
@@ -72,32 +71,25 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     if(state->format->fmt.pix.field == V4L2_FIELD_ANY) {
         // This is used to request any one of the V4L2_FIELD_NONE, V4L2_FIELD_TOP, V4L2_FIELD_BOTTOM, or V4L2_FIELD_INTERLACED
         // and wouldn't be returned by the query.
-        fprintf(stderr, "V4L2_FIELD_ANY");
-//        cout << "V4L2_FIELD_ANY";
+        fprintf(stderr, "V4L2_FIELD_ANY\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_NONE) {
-//        cout << "V4L2_FIELD_NONE (progressive)";
-        fprintf(stderr, "V4L2_FIELD_NONE (progressive)");
+        fprintf(stderr, "V4L2_FIELD_NONE (progressive)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_TOP) {
-//        cout << "V4L2_FIELD_TOP (top field only)";
-        fprintf(stderr, "V4L2_FIELD_TOP (top field only)");
+        fprintf(stderr, "V4L2_FIELD_TOP (top field only)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_BOTTOM) {
-//        cout << "V4L2_FIELD_BOTTOM (bottom field only)";
-        fprintf(stderr, "V4L2_FIELD_BOTTOM (bottom field only)");
+        fprintf(stderr, "V4L2_FIELD_BOTTOM (bottom field only)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_INTERLACED) {
-//        cout << "V4L2_FIELD_INTERLACED (top and bottom field interleaved)";
-        fprintf(stderr, "V4L2_FIELD_INTERLACED (top and bottom field interleaved)");
+        fprintf(stderr, "V4L2_FIELD_INTERLACED (top and bottom field interleaved)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_TB) {
-//        cout << "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)";
-        fprintf(stderr, "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)");
+        fprintf(stderr, "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_BT) {
-//        cout << "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)";
-        fprintf(stderr, "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)");
+        fprintf(stderr, "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)\n");
     }
     if(state->format->fmt.pix.field == V4L2_FIELD_ALTERNATE) {
 
@@ -109,8 +101,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
         // any dropped fields between them (fields can drop individually), can be determined
         // from the struct v4l2_buffer sequence field. Image sizes refer to the frame, not
         // fields. This format cannot be selected when using the read/write I/O method.
-//        cout << "V4L2_FIELD_ALTERNATE";
-        fprintf(stderr, "V4L2_FIELD_ALTERNATE");
+        fprintf(stderr, "V4L2_FIELD_ALTERNATE\n");
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
