@@ -10,7 +10,6 @@
 #include <iostream>
 #include <algorithm>    // std::max
 
-#include <QDebug>
 #include <QString>
 #include <QCloseEvent>
 #include <QGridLayout>
@@ -32,8 +31,6 @@ void AnalysisWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    std::cout << '\n' << "Analysis thread; iterating over " << eventFrames.size() << " images" << '\n';
-
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
     std::string utc = TimeUtil::convertToUtcString(eventFrames[0u]->epochTimeUs);
@@ -49,7 +46,7 @@ void AnalysisWorker::process() {
     string path = state->videoDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
 
     if(!FileUtil::createDirs(state->videoDirPath, subLevels)) {
-        qInfo() << "Couldn't create directory " << path.c_str() << "!";
+        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
         return;
     }
 
@@ -84,8 +81,6 @@ void AnalysisWorker::process() {
     char filename [100];
     string utcFrame = TimeUtil::convertToUtcString(eventFrames[0]->epochTimeUs);
     sprintf(filename, "%s/peakhold_%s.pgm", path.c_str(), utcFrame.c_str());
-
-    // PGM (grey image)
     std::ofstream out(filename);
     out << peakHold;
     out.close();

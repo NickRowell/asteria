@@ -57,6 +57,8 @@ public:
 
     static string getCameraName(int & fd);
 
+    static string getV4l2FieldNameFromIndex(const unsigned int &field);
+
 
 
 	bool getInfos(int &);

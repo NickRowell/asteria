@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <linux/videodev2.h>
 
 class Image
 {
@@ -28,13 +29,22 @@ public:
      */
     long long epochTimeUs;
 
+    /**
+     * @brief field
+     * The value of the v4l2_field enum representing the field order of the image.
+     * Currently only the following types are supported:
+     * V4L2_FIELD_NONE (progressive format; not interlaced)
+     * V4L2_FIELD_INTERLACED (interleaved/interlaced format)
+     * V4L2_FIELD_INTERLACED_TB (interleaved/interlaced format; top field is transmitted first)
+     * V4L2_FIELD_INTERLACED_BT (interleaved/interlaced format; bottom field is transmitted first)
+     */
+    unsigned int field;
+
     // Remaining fields are transient (not serialised)
 
     // Optional RGBA version of the image with annotations, for display.
     // Not to be computed if it's not being displayed in real time.
     std::vector<unsigned int> annotatedImage;
-
-
 
     // Some statistics of the image acquisition at the time the image was captured
     double fps;

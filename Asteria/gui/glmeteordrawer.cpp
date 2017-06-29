@@ -34,7 +34,6 @@ GLMeteorDrawer::~GLMeteorDrawer() {
     vbo.destroy();
     delete program;
     doneCurrent();
-
 }
 
 QSize GLMeteorDrawer::sizeHint() const {
@@ -127,7 +126,7 @@ void GLMeteorDrawer::initializeGL() {
     vbo.bind();
     vbo.allocate(vertData.constData(), vertData.count() * sizeof(GLfloat));
 
-    //+++ Use underlying GL texture API +++//
+    // Use underlying GL texture API
     glGenTextures(1, &VideoImageTexture);
 
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
@@ -212,13 +211,13 @@ void GLMeteorDrawer::paintGL() {
 
 int GLMeteorDrawer::printOpenGLError() {
 
-    /* Returns 1 if an OpenGL error occurred, 0 otherwise. */
+    // Returns 1 if an OpenGL error occurred, 0 otherwise
     GLenum glErr;
     int    retCode = 0;
 
     glErr = glGetError ();
     while (glErr != GL_NO_ERROR) {
-        qInfo() << "glError: " << glErr;
+        fprintf(stderr, "glError: %s\n", glErr);
         retCode = 1;
         glErr = glGetError ();
     }

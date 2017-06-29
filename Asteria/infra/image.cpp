@@ -1,9 +1,8 @@
 #include "image.h"
 #include "util/ioutil.h"
+#include "util/v4l2util.h"
 
 #include <numeric>
-
-#include <QDebug>
 
 Image::Image() {
 
@@ -40,6 +39,10 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
 
     // Write the epoch time of image capture
     output << "# epochTimeUs=" << std::to_string(image.epochTimeUs) << "\n";
+    // Write scan mode of the image
+    output << "# v4l2_field_index=" << std::to_string(image.field) << "\n";
+    // Human-readable version (not deserialised; this is for manual inspection of files only)
+    output << "# v4l2_field_name=" << V4L2Util::getV4l2FieldNameFromIndex(image.field) << "\n";
 
     // TODO: write additional header info
 
@@ -67,7 +70,7 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
  * @param D
  * @return
  */
-std::istream &operator>>(std::istream  &input, Image &image) {
+std::istream &operator>>(std::istream &input, Image &image) {
 
     // Function to load an Image from file
 
@@ -77,12 +80,12 @@ std::istream &operator>>(std::istream  &input, Image &image) {
         getline (input, line);
         // Check magic number (first two chars in file)
         if(*(line.data()) != 'P' || *(line.data()+1) != '5') {
-            std::cout << "Failed to read image as PGM, magic number wrong: " << line << std::endl;
+            fprintf(stderr, "Failed to read image as PGM, magic number wrong: %s\n", line.c_str());
             return input;
         }
     }
     else {
-        std::cout << "Ran out of data for parsing image!" << std::endl;
+        fprintf(stderr, "Ran out of data for parsing image!\n");
         return input;
     }
 
@@ -101,7 +104,7 @@ std::istream &operator>>(std::istream  &input, Image &image) {
         // Now split the string on '=' to separate into key/value
         std::vector<std::string> y = IoUtil::split(keyValue, '=');
         if(y.size() != 2) {
-            std::cout << "Couldn't parse key-value pair from " << keyValue << "\n";
+            fprintf(stderr, "Couldn't parse key-value pair from %s\n", keyValue.c_str());
             return input;
         }
         std::string key = y[0];
@@ -112,10 +115,21 @@ std::istream &operator>>(std::istream  &input, Image &image) {
                 image.epochTimeUs = std::stoll(val);
             }
             catch(std::exception& e) {
-                std::cout << "Couldn't parse epochTimeUs from " << val;
+                fprintf(stderr, "Couldn't parse epochTimeUs from %s\n", val.c_str());
                 return input;
             }
         }
+        if(!key.compare("v4l2_field_index")) {
+            try {
+                image.field = std::stoul(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse v4l2_field_index from %s\n", val.c_str());
+                return input;
+            }
+        }
+
+
     }
 
     // TODO: read any additional header info
@@ -129,7 +143,7 @@ std::istream &operator>>(std::istream  &input, Image &image) {
 
         // Check we found the right amount of elements:
         if(x.size() != 3) {
-            std::cout << "Expected to read width, height and pixel limit, found " << x.size() << " numbers!\n";
+            fprintf(stderr, "Expected to read width, height and pixel limit, found %d numbers!\n", x.size());
             return input;
         }
 
@@ -138,48 +152,35 @@ std::istream &operator>>(std::istream  &input, Image &image) {
             image.width = std::stoi(x[0]);
         }
         catch(std::exception& e) {
-            std::cout << "Couldn't parse width from " << x[0];
+            fprintf(stderr, "Couldn't parse width from %s\n", x[0].c_str());
             return input;
         }
         try {
             image.height = std::stoi(x[1]);
         }
         catch(std::exception& e) {
-            std::cout << "Couldn't parse height from " << x[1];
+            fprintf(stderr, "Couldn't parse height from %s\n", x[1].c_str());
             return input;
         }
     }
     else {
-        std::cout << "Ran out of data for parsing image!" << std::endl;
+        fprintf(stderr, "Ran out of data for parsing image!\n");
         return input;
     }
 
+    // Read data section. Don't do getline because zeros are interpreted as newline characters.
+    for(unsigned int i=0; i<image.width*image.height; i++) {
 
-    // Read data section
-    if(input.good()) {
-        getline (input, line);
-
-        // Check we have the right amount of data
-        if(line.size() != image.width*image.height) {
-            std::cout << "Found wrong amount of data: expected " << image.width*image.height <<
-                         "pixels, found " << line.size();
+        // Check that input is good
+        if(!input.good()) {
+            // Ran out of data early
+            fprintf(stderr, "Found wrong amount of data: expected %d pixels, found %d\n", image.width*image.height, i);
             return input;
         }
 
-        const char * ptr = line.data();
-        for(unsigned int i=0; i<image.width*image.height; i++) {
-            // Must first cast to an unsigned char, otherwise numbers in the upper
-            // half of the 8-bit range are shifted to negative values, which then
-            // get shifted to very large positive values if we cast to an unsigned
-            // type afterwards.
-            image.rawImage.push_back((unsigned char)*(ptr++));
-        }
-    }
-    else {
-        std::cout << "Ran out of data for parsing image!" << std::endl;
-        return input;
+        unsigned char pix = (unsigned char)input.get();
+        image.rawImage.push_back(pix);
     }
 
     return input;
 }
-

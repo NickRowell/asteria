@@ -4,6 +4,7 @@
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
 #include "util/ioutil.h"
+#include "util/v4l2util.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>          // IOCTL etc
@@ -67,41 +68,25 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO!
-    if(state->format->fmt.pix.field == V4L2_FIELD_ANY) {
-        // This is used to request any one of the V4L2_FIELD_NONE, V4L2_FIELD_TOP, V4L2_FIELD_BOTTOM, or V4L2_FIELD_INTERLACED
-        // and wouldn't be returned by the query.
-        fprintf(stderr, "V4L2_FIELD_ANY\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_NONE) {
-        fprintf(stderr, "V4L2_FIELD_NONE (progressive)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_TOP) {
-        fprintf(stderr, "V4L2_FIELD_TOP (top field only)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_BOTTOM) {
-        fprintf(stderr, "V4L2_FIELD_BOTTOM (bottom field only)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_INTERLACED) {
-        fprintf(stderr, "V4L2_FIELD_INTERLACED (top and bottom field interleaved)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_TB) {
-        fprintf(stderr, "V4L2_FIELD_SEQ_TB (contains both top & bottom fields in that order)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_SEQ_BT) {
-        fprintf(stderr, "V4L2_FIELD_SEQ_BT (contains both bottom & top fields in that order)\n");
-    }
-    if(state->format->fmt.pix.field == V4L2_FIELD_ALTERNATE) {
-
-        // The two fields of a frame are passed in separate buffers, in temporal order,
-        // i. e. the older one first. To indicate the field parity (whether the current
-        // field is a top or bottom field) the driver or application, depending on data
-        // direction, must set struct v4l2_buffer field to V4L2_FIELD_TOP or V4L2_FIELD_BOTTOM.
-        // Any two successive fields pair to build a frame. If fields are successive, without
-        // any dropped fields between them (fields can drop individually), can be determined
-        // from the struct v4l2_buffer sequence field. Image sizes refer to the frame, not
-        // fields. This format cannot be selected when using the read/write I/O method.
-        fprintf(stderr, "V4L2_FIELD_ALTERNATE\n");
+    switch(state->format->fmt.pix.field) {
+    case V4L2_FIELD_ANY:
+    case V4L2_FIELD_TOP:
+    case V4L2_FIELD_BOTTOM:
+    case V4L2_FIELD_SEQ_TB:
+    case V4L2_FIELD_SEQ_BT:
+    case V4L2_FIELD_ALTERNATE:
+        // Not supported!
+        fprintf(stderr, "Image field format %s not supported!\n", V4L2Util::getV4l2FieldNameFromIndex(state->format->fmt.pix.field).c_str());
+        ::close(*(this->state->fd));
+        exit(1);
+        break;
+    case V4L2_FIELD_NONE:
+    case V4L2_FIELD_INTERLACED:
+    case V4L2_FIELD_INTERLACED_TB:
+    case V4L2_FIELD_INTERLACED_BT:
+        // Supported!
+        fprintf(stderr, "Image field format %s is supported\n", V4L2Util::getV4l2FieldNameFromIndex(state->format->fmt.pix.field).c_str());
+        break;
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -217,7 +202,6 @@ void AcquisitionThread::launch() {
     }
 }
 
-
 void AcquisitionThread::shutdown() {
 
     // Lock this object for the duration of this function
@@ -236,11 +220,6 @@ void AcquisitionThread::pause() {
 void AcquisitionThread::resume() {
     QMutexLocker locker(&mutex);
 }
-
-
-
-
-
 
 void AcquisitionThread::run() {
 
@@ -322,11 +301,7 @@ void AcquisitionThread::run() {
 
             if(state->headless) {
                 // Headless mode: print frame stats to console
-                fprintf(stderr, "+++ FPS: %06d Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, totalFramesCounter);
-//                std::cout << "+++ FPS: " << std::setw(6) << std::setprecision(5) << left << fps
-//                          << " Dropped: " << std::setw(6) << droppedFramesCounter
-//                          << " Total: " << std::setw(6) << totalFramesCounter
-//                          << " +++" << '\r' << std::flush;
+                fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, totalFramesCounter);
             }
         }
         lastFrameSequence = state->bufferinfo->sequence;
@@ -336,6 +311,7 @@ void AcquisitionThread::run() {
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
 
         image->epochTimeUs = epochTimeStamp_us;
+        image->field = state->format->fmt.pix.field;
         image->fps = fps;
         image->droppedFrames = droppedFramesCounter;
         image->totalFrames = totalFramesCounter;

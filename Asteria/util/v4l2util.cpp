@@ -212,9 +212,32 @@ string V4L2Util::getCameraName(int & fd) {
     }
 }
 
-
-
-
+string V4L2Util::getV4l2FieldNameFromIndex(const unsigned int &field) {
+    switch(field) {
+    case V4L2_FIELD_ANY:
+        return "V4L2_FIELD_ANY";
+    case V4L2_FIELD_NONE:
+        return "V4L2_FIELD_NONE";
+    case V4L2_FIELD_TOP:
+        return "V4L2_FIELD_TOP";
+    case V4L2_FIELD_BOTTOM:
+        return "V4L2_FIELD_BOTTOM";
+    case V4L2_FIELD_SEQ_TB:
+        return "V4L2_FIELD_SEQ_TB";
+    case V4L2_FIELD_SEQ_BT:
+        return "V4L2_FIELD_SEQ_BT";
+    case V4L2_FIELD_INTERLACED:
+        return "V4L2_FIELD_INTERLACED";
+    case V4L2_FIELD_ALTERNATE:
+        return "V4L2_FIELD_ALTERNATE";
+    case V4L2_FIELD_INTERLACED_TB:
+        return "V4L2_FIELD_INTERLACED_TB";
+    case V4L2_FIELD_INTERLACED_BT:
+        return "V4L2_FIELD_INTERLACED_BT";
+    default:
+        return "UNDEFINED";
+    }
+}
 
 
 
