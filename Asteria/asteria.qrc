@@ -7,5 +7,6 @@
         <file>images/stepb.png</file>
         <file>images/stepf.png</file>
         <file>images/stop.png</file>
+        <file>images/detect.png</file>
     </qresource>
 </RCC>

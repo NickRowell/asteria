@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QSlider>

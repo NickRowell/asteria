@@ -7,7 +7,7 @@
 #include "util/v4l2util.h"
 
 #include <linux/videodev2.h>
-#include <sys/ioctl.h>          // IOCTL etc
+//#include <sys/ioctl.h>          // IOCTL etc
 #include <sys/mman.h>           // mmap etc
 #include <memory>               // shared_ptr
 #include <sstream>              // ostringstream
@@ -26,6 +26,9 @@
 #include <QGridLayout>
 #include <QThread>
 
+const std::string AcquisitionThread::acquisitionStateNames[] = {"PREVIEWING", "PAUSED", "DETECTING", "RECORDING", "CALIBRATING"};
+const std::string AcquisitionThread::actionNames[] = {"PREVIEW", "PAUSE", "DETECT"};
+
 AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
 
@@ -38,12 +41,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
 
     fprintf(stderr, "Loaded %d ReferenceStars!\n", refStarCatalogue.size());
-
-    // Other initialisation to do:
-    // 1) Load ephemeris file?
-    // 2) Load existing calibration data?
-    //     - should really port this out to an initialisation function that both the headless and
-    //       GUI mode can use to load these to the state object.
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -96,8 +93,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // TODO
-    double expTime = 0.04; // 25 FPS
-
+    double expTimeSeconds = 0.04; // 25 FPS
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -105,7 +101,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calibration_intervals_frames = (1.0 / expTime) * 60 * state->calibration_interval;
+    calibration_intervals_frames = (1.0 / expTimeSeconds) * 60 * state->calibration_interval;
 
     fprintf(stderr, "Interval between calibration frames: %d\n", calibration_intervals_frames);
 
@@ -128,6 +124,16 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
+    //    Determine maximum number of frames for any clip    //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    max_clip_length_frames = (1.0 / expTimeSeconds) * 60 * state->clip_max_length;
+
+    fprintf(stderr, "Maximum length of a clip: %d frames\n", max_clip_length_frames);
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
     //  Determine memory requirements and allocate buffers   //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -145,7 +151,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
         state->bufferinfo->memory = V4L2_MEMORY_MMAP;
         state->bufferinfo->index = b;
 
-        if(ioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
             perror("VIDIOC_QUERYBUF");
             exit(1);
         }
@@ -162,8 +168,6 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
         memset(buffer_start[b], 0, state->bufferinfo->length);
     }
 
-    acqState = IDLE;
-    calState = NOT_CALIBRATING;
 }
 
 AcquisitionThread::~AcquisitionThread()
@@ -175,7 +179,7 @@ AcquisitionThread::~AcquisitionThread()
     wait();
 
     fprintf(stderr, "Deactivating streaming...\n");
-    if(ioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMOFF");
         exit(1);
     }
@@ -213,12 +217,25 @@ void AcquisitionThread::shutdown() {
     }
 }
 
-void AcquisitionThread::pause() {
+void AcquisitionThread::preview() {
     QMutexLocker locker(&mutex);
+    actions.push(PREVIEW);
 }
 
-void AcquisitionThread::resume() {
+void AcquisitionThread::pause() {
     QMutexLocker locker(&mutex);
+    actions.push(PAUSE);
+}
+
+void AcquisitionThread::detect() {
+    QMutexLocker locker(&mutex);
+    actions.push(DETECT);
+}
+
+void AcquisitionThread::transitionToState(AcquisitionThread::AcquisitionState newState) {
+    acqState = newState;
+    emit transitionedToState(acqState);
+    fprintf(stderr, "Transitioned to %s\n", AcquisitionThread::acquisitionStateNames[acqState].c_str());
 }
 
 void AcquisitionThread::run() {
@@ -229,31 +246,17 @@ void AcquisitionThread::run() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Add all buffers to the incoming queue
-    for(unsigned long i = 0; i<state->bufrequest->count; i++) {
-        state->bufferinfo->index = i;
-        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-
-        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
-            perror("VIDIOC_QBUF");
-            exit(1);
-        }
-    }
-
-    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
-        perror("VIDIOC_STREAMON");
-        exit(1);
-    }
-
-    acqState = DETECTING;
+    // Start in PAUSED state
+    acqState = PAUSED;
+    // ... queue up a DETECT action to initiate thread in DETECTING mode
+    actions.push(DETECT);
 
     // The number of frames recorded since the last trigger. Usually, there will be
     // multiple triggers during a single event, so we reset this counter to zero on each trigger
     // and terminate the recording when it exceeds the detection tail length.
     unsigned int nFramesSinceLastTrigger = 0;
 
-    // Counts the number of frames since we last
+    // Counts the number of frames since we last calibrated
     unsigned int nFramesSinceLastCalibration = 0;
 
     // Monitor the FPS using a ringbuffer to buffer the image capture times and get a moving average
@@ -264,14 +267,147 @@ void AcquisitionThread::run() {
     unsigned int totalFramesCounter = 0;
     unsigned int lastFrameSequence = 0;
 
-    for(unsigned long i = 0; ; i++) {
+    unsigned long i = 0;
+    forever {
 
         if(abort) {
             return;
         }
 
+        // TODO:
+        // Should plain old 'record' button be available? How would that interact with other controls?
+        // What about CALIBRATING? Should this run in PREVIEW state?
+        // What happens if we're recording a calibration stack when the user hits pause (?)
+        // What happens if we're recording a clip when the user hits pause?
+
+        // Check if there's an action to perform
+        Action action;
+        if(actions.pop(action)) {
+            // action now contains the action to perform
+            switch(action) {
+            case PREVIEW:
+                fprintf(stderr, "Performing action PREVIEW\n");
+                switch(acqState) {
+                case PREVIEWING:
+                    // No change
+                    break;
+                case PAUSED:
+                    // Turn on streaming; transition to PREVIEWING
+                    fprintf(stderr, "Adding buffers to incoming queue...\n");
+                    for(unsigned long k = 0; k<state->bufrequest->count; k++) {
+                        state->bufferinfo->index = k;
+                        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
+                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+                            perror("VIDIOC_QBUF");
+                            exit(1);
+                        }
+                    }
+                    fprintf(stderr, "Activating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMON");
+                        exit(1);
+                    }
+                    transitionToState(PREVIEWING);
+                    break;
+                case DETECTING:
+                    // Already streaming; transition to PREVIEWING
+                    transitionToState(PREVIEWING);
+                    break;
+                case RECORDING:
+                    // TODO:  WHAT TO DO IF WE'RE RECORDING A CLIP WHEN USER HITS PREVIEW?
+                    break;
+                case CALIBRATING:
+                    // TODO: WHAT TO DO IF WE'RE CALIBRATING WHEN USER HITS PREVIEW?
+                    break;
+                }
+
+                break;
+            case PAUSE:
+                fprintf(stderr, "Performing action PAUSE\n");
+                switch(acqState) {
+                case PREVIEWING:
+                    // Turn off streaming; transition to PAUSED
+                    fprintf(stderr, "Deactivating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMOFF");
+                        exit(1);
+                    }
+                    i=0;
+                    detectionHeadBuffer.clear();
+                    transitionToState(PAUSED);
+                    break;
+                case PAUSED:
+                    // No change
+                    break;
+                case DETECTING:
+                    // Turn off streaming; transition to PAUSED
+                    fprintf(stderr, "Deactivating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMOFF");
+                        exit(1);
+                    }
+                    i=0;
+                    detectionHeadBuffer.clear();
+                    transitionToState(PAUSED);
+                    break;
+                case RECORDING:
+                    // TODO: WHAT TO DO IF WE'RE RECORDING A CLIP WHEN USER HITS PAUSE?
+                    break;
+                case CALIBRATING:
+                    // TODO: WHAT TO DO IF WE'RE CALIBRATING WHEN USER HITS PAUSE?
+                    break;
+                }
+                break;
+            case DETECT:
+                fprintf(stderr, "Performing action DETECT\n");
+                switch(acqState) {
+                case PREVIEWING:
+                    // Already streaming; transition to DETECTING
+                    transitionToState(DETECTING);
+                    break;
+                case PAUSED:
+                    // Turn on streaming; transition to DETECTING
+                    fprintf(stderr, "Adding buffers to incoming queue...\n");
+                    for(unsigned long k = 0; k<state->bufrequest->count; k++) {
+                        state->bufferinfo->index = k;
+                        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
+                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+                            perror("VIDIOC_QBUF");
+                            exit(1);
+                        }
+                    }
+                    fprintf(stderr, "Activating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMON");
+                        exit(1);
+                    }
+                    transitionToState(DETECTING);
+                    break;
+                case DETECTING:
+                    // No change
+                    break;
+                case RECORDING:
+                    // No change
+                    break;
+                case CALIBRATING:
+                    // No change
+                    break;
+                }
+                break;
+            }
+        }
+
+        // Now proceed according to the current AcquisitionState
+        if(acqState==PAUSED) {
+            // TODO: set the delay correctly
+            QThread::msleep(40);
+            continue;
+        }
+
         // Index into circular buffer
-        unsigned int j = i % state->bufrequest->count;
+        unsigned int j = (i++) % state->bufrequest->count;
 
         state->bufferinfo->index = j;
         state->bufferinfo->memory = V4L2_MEMORY_MMAP;
@@ -312,38 +448,36 @@ void AcquisitionThread::run() {
 
         image->epochTimeUs = epochTimeStamp_us;
         image->field = state->format->fmt.pix.field;
+        // TODO: remove these fields from the Image class
         image->fps = fps;
         image->droppedFrames = droppedFramesCounter;
         image->totalFrames = totalFramesCounter;
 
-
         switch(state->format->fmt.pix.pixelformat) {
-        case V4L2_PIX_FMT_GREY: {
-            // Read the raw greyscale pixels to the image object
-            unsigned char * pBuf = buffer_start[j];
-            unsigned int nPix = state->width * state->height;
-            for(unsigned int p=0; p<nPix; p++) {
-                image->rawImage[p] = *(pBuf++);
+            case V4L2_PIX_FMT_GREY: {
+                // Read the raw greyscale pixels to the image object
+                unsigned char * pBuf = buffer_start[j];
+                unsigned int nPix = state->width * state->height;
+                for(unsigned int p=0; p<nPix; p++) {
+                    image->rawImage[p] = *(pBuf++);
+                }
+                break;
             }
-            break;
-        }
-        case V4L2_PIX_FMT_MJPEG: {
-            // Convert the JPEG image to greyscale
-            JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
-            break;
-        }
-        case V4L2_PIX_FMT_YUYV: {
-            // Convert the YUYV (luminance + chrominance) image to greyscale
-            JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
-            break;
-        }
-
+            case V4L2_PIX_FMT_MJPEG: {
+                // Convert the JPEG image to greyscale
+                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
+                break;
+            }
+            case V4L2_PIX_FMT_YUYV: {
+                // Convert the YUYV (luminance + chrominance) image to greyscale
+                JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
+                break;
+            }
         }
 
         // Write the grey pixels to the annotated image
         if(!state->headless) {
-            unsigned int nPix = state->width * state->height;
-            for(unsigned int p=0; p<nPix; p++) {
+            for(unsigned int p = 0; p < state->width * state->height; p++) {
                 unsigned char pixel = image->rawImage[p];
                 unsigned int pix32bit = (pixel << 24) + (pixel << 16) + (pixel << 8) + (255 << 0);
                 image->annotatedImage[p] = (pix32bit);
@@ -356,38 +490,34 @@ void AcquisitionThread::run() {
             exit(1);
         }
 
-        // Retrieve the previous image
+        // Retrieve the previous image...
         std::shared_ptr<Image> prev = detectionHeadBuffer.back();
+        // ...then add the current image to the buffer.
+        detectionHeadBuffer.push(image);
 
-        // Determine if an event has occurred between current frame and previous
+        if(acqState==PREVIEWING) {
+            // PREVIEWING - don't proceed to event detection and calibration.
+            emit acquiredImage(image);
+            continue;
+        }
+
+        // Any other state - DETECTING, RECORDING, CALIBRATING - we now check for event
+        // occurrence between the current frame and the previous one.
         bool event = false;
 
         if(prev) {
 
-            // Got a previous image
-
-            // Parameters for detection:
-            //  - maximum length of a single recording
-            //  - hot pixel map
-            //  - star field / real-time mask
-            //  - ...?
-
+            // Events are detected by counting the number of pixels with significant
+            // changes in brightness. If this is above a threshold then an event is detected.
             int nChangedPixels = 0;
 
-            unsigned int nPix = state->width * state->height;
-            for(unsigned int p=0; p<nPix; p++) {
+            for(unsigned int p=0; p< state->width * state->height; p++) {
 
                 unsigned char newPixel = image->rawImage[p];
                 unsigned char oldPixel = prev->rawImage[p];
 
                 if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
-
-                    // Coordinates of changed pixel
-                    // TODO: verify this - are the pixels packed by row?
-                    unsigned int x = p % state->width;
-                    unsigned int y = p / state->width;
-
                     // Indicate the changed pixel in the annotated image
                     if(!state->headless) {
                         image->annotatedImage[p] = 0x0000FFFF;
@@ -398,29 +528,29 @@ void AcquisitionThread::run() {
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
                 event = true;
                 if(state->headless && acqState != RECORDING) {
+                    // TODO: Instead, log whenever state changes
                     // Only print one event notification for each recording
                     fprintf(stderr, "EVENT! %s\n", utc.c_str());
-//                    std::cout << '\n' << "EVENT! " << utc.c_str() << '\n' << std::flush;
                 }
             }
         }
 
-        // We always accumulate the new images in the ring buffer regardless of whether
-        // we're currently recording an event. This supports two events in rapid succession.
-        detectionHeadBuffer.push(image);
+        nFramesSinceLastCalibration++;
 
         // Process the acquisition
-        if(acqState == IDLE) {
-            // Do nothing
-        }
-        else if(acqState == DETECTING) {
+        if(acqState == DETECTING) {
+            // Transition to RECORDING if we've detected an event
             if(event) {
-                // We're detecting and an event occurred - transition to recording mode
-                // and start accumulating images in the detection tail buffer
-                acqState = RECORDING;
+                transitionToState(RECORDING);
                 // Copy the detection head buffer contents to the event frames buffer
                 std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
                 eventFrames.insert(eventFrames.end(), detectionHeadFrames.begin(), detectionHeadFrames.end());
+            }
+
+            // Transition to CALIBRATING if counter has reached (or passed) limit
+            if(nFramesSinceLastCalibration >= calibration_intervals_frames) {
+                transitionToState(CALIBRATING);
+                nFramesSinceLastCalibration = 0;
             }
         }
         else if(acqState == RECORDING) {
@@ -428,25 +558,18 @@ void AcquisitionThread::run() {
             // Add the image to the event frames buffer
             eventFrames.push_back(image);
 
+            // Increment the counter
+            nFramesSinceLastTrigger++;
+
             if(event) {
                 // We're recording and an event occurred - reset the counter
                 nFramesSinceLastTrigger = 0;
             }
-            else {
-                // Event did not occur - increment the counter
-                nFramesSinceLastTrigger++;
-            }
 
-            // Check if enough frames have passed since last trigger to stop the recording
-            if(nFramesSinceLastTrigger > state->detection_tail) {
-                // Stop the recording; send the images to an analysis thread instance;
-                // reset the buffers and counters.
-                acqState = DETECTING;
-                nFramesSinceLastTrigger = 0;
-//                qInfo() << "Got " << eventFrames.size() << " frames from last event";
-
-                // TODO: store running analysis threads in a threadpool so can limit their number
-                // OR: use one single analysis thread, and queue up analysis jobs for serial processing
+            // Stop recording if we hit the upper limit on clip length, or when enough frames have passed
+            // since the last detected event.
+            if(eventFrames.size() >= max_clip_length_frames || nFramesSinceLastTrigger > state->detection_tail) {
+                // Create an AnalysisWorker to analyse the clip in a dedicated thread
                 QThread* thread = new QThread;
                 AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
                 worker->moveToThread(thread);
@@ -461,16 +584,27 @@ void AcquisitionThread::run() {
 
                 // Clear the event frame buffer
                 eventFrames.clear();
+
+                // Reset counter
+                nFramesSinceLastTrigger = 0;
+
+                // Back to DETECTING state
+                transitionToState(DETECTING);
             }
         }
+        else if(acqState == CALIBRATING) {
 
-        if(calState == CALIBRATING) {
+            if(event) {
+                // TODO: what happens if an event is detected while recording calibration frames?
+                // Should we terminate the calibration on the grounds that the images are compromised?
+            }
+
+            // Add the frame to the calibration set
+            calibrationFrames.push_back(image);
 
             // Determine if we've recorded all the calibration frames we need
-            if(calibrationFrames.size() > state->calibration_stack) {
-                // Spawn a new CalibrationThread
-                fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
-
+            if(calibrationFrames.size() >= state->calibration_stack) {
+                // Got enough frames: run calibration algorithm
                 QThread* thread = new QThread;
                 CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);
                 worker->moveToThread(thread);
@@ -483,30 +617,14 @@ void AcquisitionThread::run() {
                 // Clear the calibration buffer
                 calibrationFrames.clear();
 
-                // Back to NOT_CALIBRATING mode
-                calState = NOT_CALIBRATING;
-            }
-            else {
-                // Add the frame to the calibration set
-                calibrationFrames.push_back(image);
+                // Back to DETECTING state
+                transitionToState(DETECTING);
             }
 
         }
-        else if (calState = NOT_CALIBRATING) {
-            // Not yet time to perform calibration increment frame counter
-            nFramesSinceLastCalibration++;
-
-            // Determine if the calibration should be started on the next frame
-            if(nFramesSinceLastCalibration >= calibration_intervals_frames) {
-                calState = CALIBRATING;
-                nFramesSinceLastCalibration = 0;
-            }
-        }
-
 
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
-
     }
 
 }

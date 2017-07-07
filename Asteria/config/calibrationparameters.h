@@ -18,7 +18,7 @@ public:
         validators = new ParameterValidator*[numPar];
 
         // Create validators for each parameter
-        validators[0] = new ValidateWithinLimits<double>(0.0, 100.0);
+        validators[0] = new ValidateWithinLimits<double>(0.0, 10000.0);
         validators[1] = new ValidateWithinLimits<unsigned int>(0u, 100u);
 
         // Create parameters

@@ -182,6 +182,11 @@ public:
     unsigned int detection_tail;
 
     /**
+     * @brief Maximum clip length, excluding head [minutes]
+     */
+    double clip_max_length;
+
+    /**
      * @brief Difference between the digital levels of a pixel between frames that indicate
      * a significant change, i.e. one that counts towards an event trigger.
      */

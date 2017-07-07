@@ -7,6 +7,8 @@
 
 class AsteriaState;
 class GLMeteorDrawer;
+class QPushButton;
+class QLabel;
 
 class AcquisitionWidget : public QWidget
 {
@@ -20,11 +22,18 @@ public:
 
     AcquisitionThread * acqThread;
 
+    QPushButton *play_button;
+    QPushButton *detect_button;
+    QPushButton *pause_button;
+
+    QLabel *acqStateField;
+
 signals:
     // Forward the signal from the AcquisitionThread
     void acquiredClip(std::string utc);
 
 public slots:
+    void updateAcquisitionState(AcquisitionThread::AcquisitionState acqState);
 
 
 };

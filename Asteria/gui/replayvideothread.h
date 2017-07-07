@@ -8,11 +8,7 @@
 #include <QThread>
 #include <QMutex>
 
-/**
- * Current state of the replay viewer
- * @brief The ReplayState enum
- */
-enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB, FQUEUED};
+
 
 
 
@@ -22,6 +18,12 @@ class ReplayVideoThread : public QThread {
 public:
     ReplayVideoThread();
     ~ReplayVideoThread();
+
+    /**
+     * Current state of the replay viewer
+     * @brief The ReplayState enum
+     */
+    enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB, FQUEUED};
 
     // The clip we're playing
     std::vector<std::shared_ptr<Image>> frames;

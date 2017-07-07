@@ -51,7 +51,8 @@ public:
     }
 
     void clear() {
-        buffer.clear();
+        // NOTE: don't clear the underlying vector otherwise
+        // it will remove all the ring buffer elements.
         first = 0;
         last = -1;
         sz = 0;

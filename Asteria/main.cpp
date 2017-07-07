@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     qRegisterMetaType<std::shared_ptr<Image>>("std::shared_ptr<Image>");
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<TreeItem>("TreeItem");
+    qRegisterMetaType<AcquisitionThread::AcquisitionState>("AcquisitionThread::AcquisitionState");
 
     // Get the time difference between time of day and the frame timestamp. This needs
     // to be recomputed whenever the computer hibernates.

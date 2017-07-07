@@ -4,6 +4,7 @@
 #include <linux/videodev2.h>
 #include <vector>
 #include <memory>               // shared_ptr
+#include <string>
 
 #include <QThread>
 #include <QMutex>
@@ -11,19 +12,8 @@
 #include "infra/asteriastate.h"
 #include "infra/image.h"
 #include "infra/ringbuffer.h"
+#include "infra/concurrentqueue.h"
 
-/**
- * @brief The AcquisitionState enum enumerates the possible states of the
- * acquisition thread.
- */
-enum AcquisitionState{DETECTING, RECORDING, IDLE};
-
-/**
- * @brief The CalibrationState enum enumerates the possible states of the
- * calibration thread, which can be accumulating frames for processing with
- * the calibration routine, or can be idle.
- */
-enum CalibrationState{CALIBRATING, NOT_CALIBRATING};
 
 class AcquisitionThread : public QThread
 {
@@ -33,9 +23,25 @@ public:
     AcquisitionThread(QObject *parent = 0, AsteriaState * state = 0);
     ~AcquisitionThread();
 
+    /**
+     * @brief The AcquisitionState enum enumerates the possible states of the
+     * acquisition thread.
+     */
+    enum AcquisitionState{PREVIEWING, PAUSED, DETECTING, RECORDING, CALIBRATING};
+    static const std::string acquisitionStateNames[];
+
+    /**
+     * @brief The Action enum
+     * Enumerates actions supplied by user or conditions within the algorithm that cause the
+     * acqusition to transition between states.
+     */
+    enum Action{PREVIEW, PAUSE, DETECT};
+    static const std::string actionNames[];
+
 signals:
     void acquiredImage(std::shared_ptr<Image>);
     void acquiredClip(std::string utc);
+    void transitionedToState(AcquisitionThread::AcquisitionState);
 
 public slots:
 
@@ -47,15 +53,19 @@ public slots:
      * @brief shutdown Shutdown the thread and release all resources
      */
     void shutdown();
+
     /**
-     * @brief pause Pause image acquisition
+     * @brief preview Preview images live; don't run detection.
+     */
+    void preview();
+    /**
+     * @brief pause Pause image acquisition.
      */
     void pause();
     /**
-     * @brief resume Resume image acquisition from the paused state
+     * @brief detect Start auto-detection.
      */
-    void resume();
-
+    void detect();
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -98,10 +108,12 @@ private:
     AcquisitionState acqState;
 
     /**
-     * @brief calState
-     * The current state of the calibration procedure.
+     * @brief actions
+     * Queue of actions to perform. Implemented as a queue because more than one action may be
+     * provided within the space of one frame, and the thread should handle each in turn to avoid
+     * concurrency problems.
      */
-    CalibrationState calState;
+    ConcurrentQueue<Action> actions;
 
     /**
      * @brief calibration_intervals_frames
@@ -110,9 +122,21 @@ private:
     unsigned int calibration_intervals_frames;
 
     /**
+     * @brief max_clip_length_frames
+     * Maximum number of frames for a clip.
+     */
+    unsigned int max_clip_length_frames;
+
+    /**
      * @brief mutex used to control multithreaded use of instances of this class.
      */
     QMutex mutex;
+
+    /**
+     * @brief transitionToState
+     * Function used to perform state transitions internally, so we can log whenever they happen
+     */
+    void transitionToState(AcquisitionThread::AcquisitionState);
 };
 
 #endif // ACQUISITIONTHREAD_H

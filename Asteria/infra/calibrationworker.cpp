@@ -31,7 +31,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    std::cout << '\n' << "Calibration thread; iterating over " << calibrationFrames.size() << " images" << '\n';
+    fprintf(stderr, "Got %d frames for calibration", calibrationFrames.size());
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame

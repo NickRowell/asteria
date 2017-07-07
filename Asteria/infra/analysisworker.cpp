@@ -15,6 +15,10 @@
 #include <QGridLayout>
 #include <QThread>
 
+
+// TODO: add a parameter that prevents the frames being written to disk. This would allow us to
+//       re-run analyses using existing clips loaded from disk rather than directly from the camera.
+
 AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Image>> eventFrames)
     : QObject(parent), state(state), eventFrames(eventFrames) {
 
@@ -76,6 +80,13 @@ void AnalysisWorker::process() {
         }
 
     }
+
+    // Coordinates of changed pixel
+    // TODO: verify this - are the pixels packed by row?
+//    unsigned int x = p % state->width;
+//    unsigned int y = p / state->width;
+
+
 
     // Write out the peak hold image
     char filename [100];

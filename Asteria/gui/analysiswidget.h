@@ -6,7 +6,6 @@
 
 #include <QWidget>
 
-class QButtonGroup;
 class QPushButton;
 class AsteriaState;
 class GLMeteorDrawer;
