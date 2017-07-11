@@ -53,18 +53,6 @@ private:
     // Vertex buffer to store quad for rendering image as a texture
     QOpenGLBuffer vbo;
 
-    // Timestamp string of current image
-    std::string timestamp;
-
-    // Current frames-per-second
-    double fps;
-    // Dropped frame statistics
-    unsigned int droppedFrames;
-    unsigned int totalFrames;
-
-    // Font used to render timestamp
-    FTExtrudeFont * font;
-
 protected:
 
     void initializeGL() Q_DECL_OVERRIDE;

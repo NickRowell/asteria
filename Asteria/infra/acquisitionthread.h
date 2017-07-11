@@ -1,6 +1,12 @@
 #ifndef ACQUISITIONTHREAD_H
 #define ACQUISITIONTHREAD_H
 
+#include "infra/asteriastate.h"
+#include "infra/image.h"
+#include "infra/ringbuffer.h"
+#include "infra/concurrentqueue.h"
+#include "infra/videostats.h"
+
 #include <linux/videodev2.h>
 #include <vector>
 #include <memory>               // shared_ptr
@@ -8,12 +14,6 @@
 
 #include <QThread>
 #include <QMutex>
-
-#include "infra/asteriastate.h"
-#include "infra/image.h"
-#include "infra/ringbuffer.h"
-#include "infra/concurrentqueue.h"
-
 
 class AcquisitionThread : public QThread
 {
@@ -40,6 +40,7 @@ public:
 
 signals:
     void acquiredImage(std::shared_ptr<Image>);
+    void videoStats(const VideoStats &);
     void acquiredClip(std::string utc);
     void transitionedToState(AcquisitionThread::AcquisitionState);
 

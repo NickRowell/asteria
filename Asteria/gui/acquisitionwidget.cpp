@@ -1,6 +1,8 @@
 #include "acquisitionwidget.h"
 #include "gui/glmeteordrawer.h"
 
+#include <sstream>
+
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
@@ -33,10 +35,24 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
 
     QLabel * acqStateLabel = new QLabel("Acquisition state: ");
     acqStateField = new QLabel("");
+    QLabel * fpsLabel = new QLabel("Current FPS: ");
+    fpsField = new QLabel("");
+    QLabel * totalFramesLabel = new QLabel("Total frames: ");
+    totalFramesField = new QLabel("");
+    QLabel * droppedFramesLabel = new QLabel("Dropped frames: ");
+    droppedFramesField = new QLabel("");
+
     QWidget * acqStateDisplay = new QWidget(this);
     QHBoxLayout * acqStateDisplayLayout = new QHBoxLayout;
     acqStateDisplayLayout->addWidget(acqStateLabel);
     acqStateDisplayLayout->addWidget(acqStateField);
+    acqStateDisplayLayout->addWidget(fpsLabel);
+    acqStateDisplayLayout->addWidget(fpsField);
+    acqStateDisplayLayout->addWidget(totalFramesLabel);
+    acqStateDisplayLayout->addWidget(totalFramesField);
+    acqStateDisplayLayout->addWidget(droppedFramesLabel);
+    acqStateDisplayLayout->addWidget(droppedFramesField);
+
     acqStateDisplay->setLayout(acqStateDisplayLayout);
 
     connect(play_button, SIGNAL(pressed()), acqThread, SLOT(preview()));
@@ -50,6 +66,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     connect(acqThread, SIGNAL (acquiredClip(std::string)), this, SIGNAL (acquiredClip(std::string)));
 
     connect(acqThread, SIGNAL (transitionedToState(AcquisitionThread::AcquisitionState)), this, SLOT (updateAcquisitionState(AcquisitionThread::AcquisitionState)));
+    connect(acqThread, SIGNAL (videoStats(const VideoStats &)), this, SLOT (updateVideoStats(const VideoStats &)));
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -66,5 +83,15 @@ AcquisitionWidget::~AcquisitionWidget() {
 }
 
 void AcquisitionWidget::updateAcquisitionState(AcquisitionThread::AcquisitionState acqState) {
-    acqStateField->setText(QString::fromStdString(AcquisitionThread::acquisitionStateNames[acqState]));
+
+    std::ostringstream oss;
+    oss << "<b>" << AcquisitionThread::acquisitionStateNames[acqState] << "</b>";
+
+    acqStateField->setText(QString::fromStdString(oss.str()));
+}
+
+void AcquisitionWidget::updateVideoStats(const VideoStats &stats) {
+    fpsField->setText(QString::asprintf("%5.3f", stats.fps));
+    totalFramesField->setText(QString::asprintf("%5d", stats.totalFrames));
+    droppedFramesField->setText(QString::asprintf("%5d", stats.droppedFrames));
 }

@@ -46,11 +46,6 @@ public:
     // Not to be computed if it's not being displayed in real time.
     std::vector<unsigned int> annotatedImage;
 
-    // Some statistics of the image acquisition at the time the image was captured
-    double fps;
-    unsigned int droppedFrames;
-    unsigned int totalFrames;
-
     friend std::ostream &operator<<(std::ostream &output, const Image &image);
 
     friend std::istream &operator>>(std::istream  &input, Image &image);

@@ -37,7 +37,8 @@ SOURCES += \
     infra/calibrationworker.cpp \
     util/ioutil.cpp \
     util/v4l2util.cpp \
-    infra/concurrentqueue.cpp
+    infra/concurrentqueue.cpp \
+    infra/videostats.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -89,7 +90,8 @@ HEADERS += \
     infra/calibrationworker.h \
     util/ioutil.h \
     util/v4l2util.h \
-    infra/concurrentqueue.h
+    infra/concurrentqueue.h \
+    infra/videostats.h
 
 LIBS += -ljpeg \
         -lftgl \

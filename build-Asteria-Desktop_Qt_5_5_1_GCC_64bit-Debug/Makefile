@@ -78,7 +78,8 @@ SOURCES       = ../Asteria/main.cpp \
 		../Asteria/infra/calibrationworker.cpp \
 		../Asteria/util/ioutil.cpp \
 		../Asteria/util/v4l2util.cpp \
-		../Asteria/infra/concurrentqueue.cpp qrc_asteria.cpp \
+		../Asteria/infra/concurrentqueue.cpp \
+		../Asteria/infra/videostats.cpp qrc_asteria.cpp \
 		moc_cameraselectionwindow.cpp \
 		moc_configcreationwindow.cpp \
 		moc_mainwindow.cpp \
@@ -124,6 +125,7 @@ OBJECTS       = main.o \
 		ioutil.o \
 		v4l2util.o \
 		concurrentqueue.o \
+		videostats.o \
 		qrc_asteria.o \
 		moc_cameraselectionwindow.o \
 		moc_configcreationwindow.o \
@@ -328,7 +330,8 @@ DIST          = ../Asteria/shaders/f_screen.glsl \
 		../Asteria/infra/calibrationworker.h \
 		../Asteria/util/ioutil.h \
 		../Asteria/util/v4l2util.h \
-		../Asteria/infra/concurrentqueue.h ../Asteria/main.cpp \
+		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h ../Asteria/main.cpp \
 		../Asteria/gui/cameraselectionwindow.cpp \
 		../Asteria/gui/configcreationwindow.cpp \
 		../Asteria/gui/mainwindow.cpp \
@@ -358,7 +361,8 @@ DIST          = ../Asteria/shaders/f_screen.glsl \
 		../Asteria/infra/calibrationworker.cpp \
 		../Asteria/util/ioutil.cpp \
 		../Asteria/util/v4l2util.cpp \
-		../Asteria/infra/concurrentqueue.cpp
+		../Asteria/infra/concurrentqueue.cpp \
+		../Asteria/infra/videostats.cpp
 QMAKE_TARGET  = Asteria
 DESTDIR       = #avoid trailing-slash linebreak
 TARGET        = Asteria
@@ -691,8 +695,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents ../Asteria/asteria.qrc $(DISTDIR)/
-	$(COPY_FILE) --parents ../Asteria/math/mat2x2.h ../Asteria/math/mat3x3.h ../Asteria/math/mat4x4.h ../Asteria/math/quat.h ../Asteria/math/vec2.h ../Asteria/math/vec3.h ../Asteria/math/vec4.h ../Asteria/optics/GeometricOpticsModel.h ../Asteria/optics/PinholeCameraWithRadialDistortion.h ../Asteria/optics/Camera.h ../Asteria/gui/cameraselectionwindow.h ../Asteria/gui/configcreationwindow.h ../Asteria/gui/mainwindow.h ../Asteria/gui/glmeteordrawer.h ../Asteria/util/jpgutil.h ../Asteria/config/configparameter.h ../Asteria/config/configstore.h ../Asteria/config/parameterdouble.h ../Asteria/config/configparameterfamily.h ../Asteria/config/stationparameters.h ../Asteria/gui/configparameterfamilytab.h ../Asteria/config/systemparameters.h ../Asteria/config/cameraparameters.h ../Asteria/config/parameterdir.h ../Asteria/infra/image.h ../Asteria/config/parameteruint.h ../Asteria/config/validate.h ../Asteria/config/parameteruintarray.h ../Asteria/infra/ringbuffer.h ../Asteria/config/detectionparameters.h ../Asteria/util/timeutil.h ../Asteria/infra/analysisworker.h ../Asteria/optics/Camera.h ../Asteria/infra/referencestar.h ../Asteria/infra/acquisitionthread.h ../Asteria/gui/videodirectorymodel.h ../Asteria/infra/asteriastate.h ../Asteria/gui/treeitem.h ../Asteria/gui/treeitemaction.h ../Asteria/util/fileutil.h ../Asteria/gui/acquisitionwidget.h ../Asteria/gui/analysiswidget.h ../Asteria/infra/analysisinventory.h ../Asteria/gui/replayvideothread.h ../Asteria/config/analysisparameters.h ../Asteria/config/calibrationparameters.h ../Asteria/infra/calibrationworker.h ../Asteria/util/ioutil.h ../Asteria/util/v4l2util.h ../Asteria/infra/concurrentqueue.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../Asteria/main.cpp ../Asteria/gui/cameraselectionwindow.cpp ../Asteria/gui/configcreationwindow.cpp ../Asteria/gui/mainwindow.cpp ../Asteria/gui/glmeteordrawer.cpp ../Asteria/util/jpgutil.cpp ../Asteria/config/parameterdouble.cpp ../Asteria/config/configparameterfamily.cpp ../Asteria/config/configstore.cpp ../Asteria/gui/configparameterfamilytab.cpp ../Asteria/config/parameterdir.cpp ../Asteria/infra/image.cpp ../Asteria/config/parameteruint.cpp ../Asteria/config/parameteruintarray.cpp ../Asteria/util/timeutil.cpp ../Asteria/infra/analysisworker.cpp ../Asteria/infra/referencestar.cpp ../Asteria/infra/acquisitionthread.cpp ../Asteria/gui/videodirectorymodel.cpp ../Asteria/infra/asteriastate.cpp ../Asteria/gui/treeitem.cpp ../Asteria/gui/treeitemaction.cpp ../Asteria/util/fileutil.cpp ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/analysiswidget.cpp ../Asteria/infra/analysisinventory.cpp ../Asteria/gui/replayvideothread.cpp ../Asteria/infra/calibrationworker.cpp ../Asteria/util/ioutil.cpp ../Asteria/util/v4l2util.cpp ../Asteria/infra/concurrentqueue.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../Asteria/math/mat2x2.h ../Asteria/math/mat3x3.h ../Asteria/math/mat4x4.h ../Asteria/math/quat.h ../Asteria/math/vec2.h ../Asteria/math/vec3.h ../Asteria/math/vec4.h ../Asteria/optics/GeometricOpticsModel.h ../Asteria/optics/PinholeCameraWithRadialDistortion.h ../Asteria/optics/Camera.h ../Asteria/gui/cameraselectionwindow.h ../Asteria/gui/configcreationwindow.h ../Asteria/gui/mainwindow.h ../Asteria/gui/glmeteordrawer.h ../Asteria/util/jpgutil.h ../Asteria/config/configparameter.h ../Asteria/config/configstore.h ../Asteria/config/parameterdouble.h ../Asteria/config/configparameterfamily.h ../Asteria/config/stationparameters.h ../Asteria/gui/configparameterfamilytab.h ../Asteria/config/systemparameters.h ../Asteria/config/cameraparameters.h ../Asteria/config/parameterdir.h ../Asteria/infra/image.h ../Asteria/config/parameteruint.h ../Asteria/config/validate.h ../Asteria/config/parameteruintarray.h ../Asteria/infra/ringbuffer.h ../Asteria/config/detectionparameters.h ../Asteria/util/timeutil.h ../Asteria/infra/analysisworker.h ../Asteria/optics/Camera.h ../Asteria/infra/referencestar.h ../Asteria/infra/acquisitionthread.h ../Asteria/gui/videodirectorymodel.h ../Asteria/infra/asteriastate.h ../Asteria/gui/treeitem.h ../Asteria/gui/treeitemaction.h ../Asteria/util/fileutil.h ../Asteria/gui/acquisitionwidget.h ../Asteria/gui/analysiswidget.h ../Asteria/infra/analysisinventory.h ../Asteria/gui/replayvideothread.h ../Asteria/config/analysisparameters.h ../Asteria/config/calibrationparameters.h ../Asteria/infra/calibrationworker.h ../Asteria/util/ioutil.h ../Asteria/util/v4l2util.h ../Asteria/infra/concurrentqueue.h ../Asteria/infra/videostats.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../Asteria/main.cpp ../Asteria/gui/cameraselectionwindow.cpp ../Asteria/gui/configcreationwindow.cpp ../Asteria/gui/mainwindow.cpp ../Asteria/gui/glmeteordrawer.cpp ../Asteria/util/jpgutil.cpp ../Asteria/config/parameterdouble.cpp ../Asteria/config/configparameterfamily.cpp ../Asteria/config/configstore.cpp ../Asteria/gui/configparameterfamilytab.cpp ../Asteria/config/parameterdir.cpp ../Asteria/infra/image.cpp ../Asteria/config/parameteruint.cpp ../Asteria/config/parameteruintarray.cpp ../Asteria/util/timeutil.cpp ../Asteria/infra/analysisworker.cpp ../Asteria/infra/referencestar.cpp ../Asteria/infra/acquisitionthread.cpp ../Asteria/gui/videodirectorymodel.cpp ../Asteria/infra/asteriastate.cpp ../Asteria/gui/treeitem.cpp ../Asteria/gui/treeitemaction.cpp ../Asteria/util/fileutil.cpp ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/analysiswidget.cpp ../Asteria/infra/analysisinventory.cpp ../Asteria/gui/replayvideothread.cpp ../Asteria/infra/calibrationworker.cpp ../Asteria/util/ioutil.cpp ../Asteria/util/v4l2util.cpp ../Asteria/infra/concurrentqueue.cpp ../Asteria/infra/videostats.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -1537,11 +1541,14 @@ moc_analysisworker.cpp: ../Asteria/infra/asteriastate.h \
 		../Asteria/infra/analysisworker.h
 	/opt/Qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/Qt/5.5/gcc_64/mkspecs/linux-g++ -I/home/nrowell/workspace/git/asteria/Asteria -I/usr/include/freetype2 -I/opt/Qt/5.5/gcc_64/include -I/opt/Qt/5.5/gcc_64/include/QtOpenGL -I/opt/Qt/5.5/gcc_64/include/QtWidgets -I/opt/Qt/5.5/gcc_64/include/QtMultimedia -I/opt/Qt/5.5/gcc_64/include/QtGui -I/opt/Qt/5.5/gcc_64/include/QtNetwork -I/opt/Qt/5.5/gcc_64/include/QtCore -I. ../Asteria/infra/analysisworker.h -o moc_analysisworker.cpp
 
-moc_acquisitionthread.cpp: /opt/Qt/5.5/gcc_64/include/QtCore/QThread \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+moc_acquisitionthread.cpp: ../Asteria/infra/asteriastate.h \
+		../Asteria/infra/referencestar.h \
+		../Asteria/math/vec3.h \
+		../Asteria/infra/image.h \
+		../Asteria/infra/ringbuffer.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobal.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qconfig.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qfeatures.h \
@@ -1570,20 +1577,27 @@ moc_acquisitionthread.cpp: /opt/Qt/5.5/gcc_64/include/QtCore/QThread \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmutex.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qnumeric.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qchar.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qrefcount.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qarraydata.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qregexp.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmetatype.h \
@@ -1591,19 +1605,6 @@ moc_acquisitionthread.cpp: /opt/Qt/5.5/gcc_64/include/QtCore/QThread \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qisenum.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
-		../Asteria/infra/asteriastate.h \
-		../Asteria/infra/referencestar.h \
-		../Asteria/math/vec3.h \
-		../Asteria/infra/image.h \
-		../Asteria/infra/ringbuffer.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qlocale.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qvariant.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qshareddata.h \
@@ -1612,6 +1613,10 @@ moc_acquisitionthread.cpp: /opt/Qt/5.5/gcc_64/include/QtCore/QThread \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qset.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
 		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		../Asteria/infra/acquisitionthread.h
 	/opt/Qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/Qt/5.5/gcc_64/mkspecs/linux-g++ -I/home/nrowell/workspace/git/asteria/Asteria -I/usr/include/freetype2 -I/opt/Qt/5.5/gcc_64/include -I/opt/Qt/5.5/gcc_64/include/QtOpenGL -I/opt/Qt/5.5/gcc_64/include/QtWidgets -I/opt/Qt/5.5/gcc_64/include/QtMultimedia -I/opt/Qt/5.5/gcc_64/include/QtGui -I/opt/Qt/5.5/gcc_64/include/QtNetwork -I/opt/Qt/5.5/gcc_64/include/QtCore -I. ../Asteria/infra/acquisitionthread.h -o moc_acquisitionthread.cpp
 
@@ -1845,11 +1850,14 @@ moc_treeitemaction.cpp: ../Asteria/gui/treeitem.h \
 	/opt/Qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/Qt/5.5/gcc_64/mkspecs/linux-g++ -I/home/nrowell/workspace/git/asteria/Asteria -I/usr/include/freetype2 -I/opt/Qt/5.5/gcc_64/include -I/opt/Qt/5.5/gcc_64/include/QtOpenGL -I/opt/Qt/5.5/gcc_64/include/QtWidgets -I/opt/Qt/5.5/gcc_64/include/QtMultimedia -I/opt/Qt/5.5/gcc_64/include/QtGui -I/opt/Qt/5.5/gcc_64/include/QtNetwork -I/opt/Qt/5.5/gcc_64/include/QtCore -I. ../Asteria/gui/treeitemaction.h -o moc_treeitemaction.cpp
 
 moc_acquisitionwidget.cpp: ../Asteria/infra/acquisitionthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		../Asteria/infra/asteriastate.h \
+		../Asteria/infra/referencestar.h \
+		../Asteria/math/vec3.h \
+		../Asteria/infra/image.h \
+		../Asteria/infra/ringbuffer.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobal.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qconfig.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qfeatures.h \
@@ -1878,20 +1886,27 @@ moc_acquisitionwidget.cpp: ../Asteria/infra/acquisitionthread.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmutex.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qnumeric.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qchar.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qrefcount.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qarraydata.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qregexp.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmetatype.h \
@@ -1899,19 +1914,6 @@ moc_acquisitionwidget.cpp: ../Asteria/infra/acquisitionthread.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qisenum.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
-		../Asteria/infra/asteriastate.h \
-		../Asteria/infra/referencestar.h \
-		../Asteria/math/vec3.h \
-		../Asteria/infra/image.h \
-		../Asteria/infra/ringbuffer.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qlocale.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qvariant.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qshareddata.h \
@@ -1920,6 +1922,10 @@ moc_acquisitionwidget.cpp: ../Asteria/infra/acquisitionthread.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qset.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
 		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/QWidget \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/qwidget.h \
 		/opt/Qt/5.5/gcc_64/include/QtGui/qwindowdefs.h \
@@ -2393,11 +2399,12 @@ main.o: ../Asteria/main.cpp ../Asteria/gui/cameraselectionwindow.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
 		../Asteria/infra/image.h \
 		../Asteria/infra/acquisitionthread.h \
+		../Asteria/infra/ringbuffer.h \
+		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
-		../Asteria/infra/ringbuffer.h \
-		../Asteria/infra/concurrentqueue.h \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/QApplication \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/qapplication.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcoreapplication.h \
@@ -3031,13 +3038,14 @@ mainwindow.o: ../Asteria/gui/mainwindow.cpp ../Asteria/gui/mainwindow.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qabstractitemmodel.h \
 		../Asteria/gui/acquisitionwidget.h \
 		../Asteria/infra/acquisitionthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		../Asteria/infra/image.h \
 		../Asteria/infra/ringbuffer.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
 		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/QWidget \
 		../Asteria/gui/analysiswidget.h \
 		../Asteria/gui/replayvideothread.h \
@@ -4246,11 +4254,14 @@ referencestar.o: ../Asteria/infra/referencestar.cpp ../Asteria/infra/referencest
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o referencestar.o ../Asteria/infra/referencestar.cpp
 
 acquisitionthread.o: ../Asteria/infra/acquisitionthread.cpp ../Asteria/infra/acquisitionthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		../Asteria/infra/asteriastate.h \
+		../Asteria/infra/referencestar.h \
+		../Asteria/math/vec3.h \
+		../Asteria/infra/image.h \
+		../Asteria/infra/ringbuffer.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobal.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qconfig.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qfeatures.h \
@@ -4279,20 +4290,27 @@ acquisitionthread.o: ../Asteria/infra/acquisitionthread.cpp ../Asteria/infra/acq
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmutex.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qnumeric.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qchar.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qrefcount.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qarraydata.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qregexp.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmetatype.h \
@@ -4300,19 +4318,6 @@ acquisitionthread.o: ../Asteria/infra/acquisitionthread.cpp ../Asteria/infra/acq
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qisenum.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
-		../Asteria/infra/asteriastate.h \
-		../Asteria/infra/referencestar.h \
-		../Asteria/math/vec3.h \
-		../Asteria/infra/image.h \
-		../Asteria/infra/ringbuffer.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qlocale.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qvariant.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qshareddata.h \
@@ -4321,6 +4326,10 @@ acquisitionthread.o: ../Asteria/infra/acquisitionthread.cpp ../Asteria/infra/acq
 		/opt/Qt/5.5/gcc_64/include/QtCore/qset.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
 		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		../Asteria/infra/analysisworker.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/QObject \
 		../Asteria/infra/calibrationworker.h \
@@ -4795,11 +4804,14 @@ fileutil.o: ../Asteria/util/fileutil.cpp ../Asteria/util/fileutil.h \
 
 acquisitionwidget.o: ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/acquisitionwidget.h \
 		../Asteria/infra/acquisitionthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		../Asteria/infra/asteriastate.h \
+		../Asteria/infra/referencestar.h \
+		../Asteria/math/vec3.h \
+		../Asteria/infra/image.h \
+		../Asteria/infra/ringbuffer.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobal.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qconfig.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qfeatures.h \
@@ -4828,20 +4840,27 @@ acquisitionwidget.o: ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/acquisi
 		/opt/Qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmutex.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qnumeric.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qchar.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qrefcount.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qarraydata.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qlist.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiterator.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringlist.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qregexp.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qmetatype.h \
@@ -4849,19 +4868,6 @@ acquisitionwidget.o: ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/acquisi
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qisenum.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
-		../Asteria/infra/asteriastate.h \
-		../Asteria/infra/referencestar.h \
-		../Asteria/math/vec3.h \
-		../Asteria/infra/image.h \
-		../Asteria/infra/ringbuffer.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/QDebug \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qdebug.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qhash.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qpair.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qmap.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qtextstream.h \
-		/opt/Qt/5.5/gcc_64/include/QtCore/qiodevice.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qlocale.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qvariant.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qshareddata.h \
@@ -4870,6 +4876,10 @@ acquisitionwidget.o: ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/acquisi
 		/opt/Qt/5.5/gcc_64/include/QtCore/qset.h \
 		/opt/Qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
 		../Asteria/infra/concurrentqueue.h \
+		../Asteria/infra/videostats.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QThread \
+		/opt/Qt/5.5/gcc_64/include/QtCore/qthread.h \
+		/opt/Qt/5.5/gcc_64/include/QtCore/QMutex \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/QWidget \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/qwidget.h \
 		/opt/Qt/5.5/gcc_64/include/QtGui/qwindowdefs.h \
@@ -5123,7 +5133,10 @@ acquisitionwidget.o: ../Asteria/gui/acquisitionwidget.cpp ../Asteria/gui/acquisi
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/qgridlayout.h \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/QPushButton \
 		/opt/Qt/5.5/gcc_64/include/QtWidgets/qpushbutton.h \
-		/opt/Qt/5.5/gcc_64/include/QtWidgets/qabstractbutton.h
+		/opt/Qt/5.5/gcc_64/include/QtWidgets/qabstractbutton.h \
+		/opt/Qt/5.5/gcc_64/include/QtWidgets/QLabel \
+		/opt/Qt/5.5/gcc_64/include/QtWidgets/qlabel.h \
+		/opt/Qt/5.5/gcc_64/include/QtWidgets/qframe.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o acquisitionwidget.o ../Asteria/gui/acquisitionwidget.cpp
 
 analysiswidget.o: ../Asteria/gui/analysiswidget.cpp ../Asteria/gui/analysiswidget.h \
@@ -5777,6 +5790,9 @@ v4l2util.o: ../Asteria/util/v4l2util.cpp ../Asteria/util/v4l2util.h \
 
 concurrentqueue.o: ../Asteria/infra/concurrentqueue.cpp ../Asteria/infra/concurrentqueue.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o concurrentqueue.o ../Asteria/infra/concurrentqueue.cpp
+
+videostats.o: ../Asteria/infra/videostats.cpp ../Asteria/infra/videostats.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o videostats.o ../Asteria/infra/videostats.cpp
 
 qrc_asteria.o: qrc_asteria.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_asteria.o qrc_asteria.cpp

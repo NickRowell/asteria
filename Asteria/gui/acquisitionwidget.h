@@ -2,6 +2,7 @@
 #define ACQUISITIONWIDGET_H
 
 #include "infra/acquisitionthread.h"
+#include "infra/videostats.h"
 
 #include <QWidget>
 
@@ -27,6 +28,9 @@ public:
     QPushButton *pause_button;
 
     QLabel *acqStateField;
+    QLabel *fpsField;
+    QLabel *totalFramesField;
+    QLabel *droppedFramesField;
 
 signals:
     // Forward the signal from the AcquisitionThread
@@ -34,6 +38,7 @@ signals:
 
 public slots:
     void updateAcquisitionState(AcquisitionThread::AcquisitionState acqState);
+    void updateVideoStats(const VideoStats &);
 
 
 };

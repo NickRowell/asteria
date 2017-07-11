@@ -442,16 +442,13 @@ void AcquisitionThread::run() {
         }
         lastFrameSequence = state->bufferinfo->sequence;
 
+        VideoStats stats(fps, droppedFramesCounter, totalFramesCounter);
+
         string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
-
         image->epochTimeUs = epochTimeStamp_us;
         image->field = state->format->fmt.pix.field;
-        // TODO: remove these fields from the Image class
-        image->fps = fps;
-        image->droppedFrames = droppedFramesCounter;
-        image->totalFrames = totalFramesCounter;
 
         switch(state->format->fmt.pix.pixelformat) {
             case V4L2_PIX_FMT_GREY: {
@@ -498,6 +495,7 @@ void AcquisitionThread::run() {
         if(acqState==PREVIEWING) {
             // PREVIEWING - don't proceed to event detection and calibration.
             emit acquiredImage(image);
+            emit videoStats(stats);
             continue;
         }
 
@@ -625,6 +623,7 @@ void AcquisitionThread::run() {
 
         // Notify attached listeners that a new frame is available
         emit acquiredImage(image);
+        emit videoStats(stats);
     }
 
 }

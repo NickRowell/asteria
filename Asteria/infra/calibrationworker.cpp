@@ -31,7 +31,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    fprintf(stderr, "Got %d frames for calibration", calibrationFrames.size());
+    fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
