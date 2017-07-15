@@ -59,11 +59,14 @@ public:
 
     static string getV4l2FieldNameFromIndex(const unsigned int &field);
 
+    static void printUserControls(int & fd);
+
+
+
+
 
 
 	bool getInfos(int &);
-
-	bool createDevice(int id, int &);
 
 	bool setExposureTime(int & fd, double val);
 
@@ -71,9 +74,7 @@ public:
 
 	void getExposureBounds(int & fd, double &eMin, double &eMax);
 
-	void whatTypesOfStreamingDoesDeviceSupport(int & fd);
-
-	static void printUserControls(int & fd);
+    void whatTypesOfStreamingDoesDeviceSupport(int & fd);
 
 private:
 

@@ -239,59 +239,31 @@ string V4L2Util::getV4l2FieldNameFromIndex(const unsigned int &field) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 void V4L2Util::printUserControls(int & fd) {
+
+    fprintf(stderr, "Configurable controls provided by video driver:\n");
 
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_querymenu querymenu;
-
-//	static void enumerate_menu(__u32 id)
-//	{
-//	    printf("  Menu items:\\n");
-//
-//	    memset(&querymenu, 0, sizeof(querymenu));
-//	    querymenu.id = id;
-//
-//	    for (querymenu.index = queryctrl.minimum;
-//	         querymenu.index <= queryctrl.maximum;
-//	         querymenu.index++) {
-//	        if (0 == ioctl(fd, VIDIOC_QUERYMENU, &querymenu)) {
-//	            printf("  %s\\n", querymenu.name);
-//	        }
-//	    }
-//	}
 
 	memset(&queryctrl, 0, sizeof(queryctrl));
 
 	queryctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
 
-	while (0 == ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl)) {
+    while (IoUtil::xioctl(fd, VIDIOC_QUERYCTRL, &queryctrl) == 0) {
 
 	    if (!(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)) {
 
-	        printf("Control %s\n", queryctrl.name);
+            fprintf(stderr, " - Control %s\n", queryctrl.name);
 
 	        if (queryctrl.type == V4L2_CTRL_TYPE_MENU) {
-
-	        	printf("  Menu items:\n");
-
+                fprintf(stderr, "  -  Menu items:\n");
 				memset(&querymenu, 0, sizeof(querymenu));
 				querymenu.id = queryctrl.id;
 
 				for (querymenu.index = queryctrl.minimum; querymenu.index <= queryctrl.maximum; querymenu.index++) {
-					if (0 == ioctl(fd, VIDIOC_QUERYMENU, &querymenu)) {
-						printf("  %s\n", querymenu.name);
+                    if (IoUtil::xioctl(fd, VIDIOC_QUERYMENU, &querymenu) == 0) {
+                        fprintf(stderr, "  -  %s\n", querymenu.name);
 					}
 				}
 
@@ -510,45 +482,6 @@ void V4L2Util::getExposureBounds(int & fd, double &eMin, double &eMax) {
 
 }
 
-bool V4L2Util::createDevice(int id, int &fd) {
-
-    string deviceNameStr = "/dev/video" + IoUtil::intToString(id);
-
-    const char* mDeviceName = deviceNameStr.c_str();
-
-    struct stat st;
-
-    // Check if device exists
-    if (-1 == stat(mDeviceName, &st)) {
-        fprintf(stderr, "Cannot identify '%s': %d, %s\n", mDeviceName, errno, strerror(errno));
-        return false;
-    }
-
-    // Check if device is a 'character device', which is what graphics cards are.
-    if (!S_ISCHR(st.st_mode)) {
-        fprintf(stderr, "%s is no device\n", mDeviceName);
-        return false;
-    }
-
-    fd = open(mDeviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
-
-    if (-1 == fd) {
-        fprintf(stderr, "Cannot open '%s': %d, %s\n", mDeviceName, errno, strerror(errno));
-        return false;
-    }
-
-    struct v4l2_format mFormat;
-    memset(&mFormat, 0, sizeof(mFormat));
-    mFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    // Preserve original settings as set by v4l2-ctl for example
-    if (-1 == IoUtil::xioctl(fd, VIDIOC_G_FMT, &mFormat)){
-    	fprintf(stdout, "Failed to create device\n");
-        return false;
-    }
-    fprintf(stdout, "Created device\n");
-    return true;
-
-}
 
 double V4L2Util::getExposureTime(int & fd) {
 

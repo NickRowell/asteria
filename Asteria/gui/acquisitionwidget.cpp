@@ -26,12 +26,12 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     detect_button->setIcon(detectIcon);
 
     // A widget to contain the control buttons
-    QWidget * controls = new QWidget(this);
-    QHBoxLayout * controlsLayout = new QHBoxLayout;
-    controlsLayout->addWidget(play_button);
-    controlsLayout->addWidget(pause_button);
-    controlsLayout->addWidget(detect_button);
-    controls->setLayout(controlsLayout);
+//    QWidget * controls = new QWidget(this);
+//    QHBoxLayout * controlsLayout = new QHBoxLayout;
+//    controlsLayout->addWidget(play_button);
+//    controlsLayout->addWidget(pause_button);
+//    controlsLayout->addWidget(detect_button);
+//    controls->setLayout(controlsLayout);
 
     QLabel * acqStateLabel = new QLabel("Acquisition state: ");
     acqStateField = new QLabel("");
@@ -43,17 +43,34 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     droppedFramesField = new QLabel("");
 
     QWidget * acqStateDisplay = new QWidget(this);
-    QHBoxLayout * acqStateDisplayLayout = new QHBoxLayout;
-    acqStateDisplayLayout->addWidget(acqStateLabel);
-    acqStateDisplayLayout->addWidget(acqStateField);
-    acqStateDisplayLayout->addWidget(fpsLabel);
-    acqStateDisplayLayout->addWidget(fpsField);
-    acqStateDisplayLayout->addWidget(totalFramesLabel);
-    acqStateDisplayLayout->addWidget(totalFramesField);
-    acqStateDisplayLayout->addWidget(droppedFramesLabel);
-    acqStateDisplayLayout->addWidget(droppedFramesField);
 
-    acqStateDisplay->setLayout(acqStateDisplayLayout);
+//    QHBoxLayout * acqStateDisplayLayout = new QHBoxLayout;
+//    acqStateDisplayLayout->addWidget(acqStateLabel);
+//    acqStateDisplayLayout->addWidget(acqStateField);
+//    acqStateDisplayLayout->addWidget(fpsLabel);
+//    acqStateDisplayLayout->addWidget(fpsField);
+//    acqStateDisplayLayout->addWidget(totalFramesLabel);
+//    acqStateDisplayLayout->addWidget(totalFramesField);
+//    acqStateDisplayLayout->addWidget(droppedFramesLabel);
+//    acqStateDisplayLayout->addWidget(droppedFramesField);
+
+//    acqStateDisplay->setLayout(acqStateDisplayLayout);
+
+    QGridLayout *layout = new QGridLayout;
+    layout->addWidget(acqStateLabel, 0, 0);
+    layout->addWidget(acqStateField, 0, 1);
+    layout->addWidget(new QLabel(""), 0, 2);
+    layout->addWidget(fpsLabel, 1, 0);
+    layout->addWidget(fpsField, 1, 1);
+    layout->addWidget(play_button, 1, 2);
+    layout->addWidget(totalFramesLabel, 2, 0);
+    layout->addWidget(totalFramesField, 2, 1);
+    layout->addWidget(pause_button, 2, 2);
+    layout->addWidget(droppedFramesLabel, 3, 0);
+    layout->addWidget(droppedFramesField, 3, 1);
+    layout->addWidget(detect_button, 3, 2);
+
+    acqStateDisplay->setLayout(layout);
 
     connect(play_button, SIGNAL(pressed()), acqThread, SLOT(preview()));
     connect(pause_button, SIGNAL(pressed()), acqThread, SLOT(pause()));
@@ -72,7 +89,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(live);
     mainLayout->addWidget(acqStateDisplay);
-    mainLayout->addWidget(controls);
+//    mainLayout->addWidget(controls);
     this->setLayout(mainLayout);
 
     acqThread->launch();

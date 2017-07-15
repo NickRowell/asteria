@@ -88,12 +88,41 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
-    //  Determine exposure time & whether it's configurable  //
+    //        Determine nominal period between frames        //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO
-    double expTimeSeconds = 0.04; // 25 FPS
+    // There are several uses for this:
+    //  - detection of dropped frames, from the time interval between consecutive frames
+    //  - setting the maximum number of frames in a clip from the maximum allowed time
+    //  - setting the number of frames between calibration runs
+
+    struct v4l2_streamparm parm;
+    memset(&parm, 0, sizeof(parm));
+    parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_G_PARM, &parm) < 0) {
+        perror("VIDIOC_G_PARM");
+        ::close(*(this->state->fd));
+        exit(1);
+    }
+    // This struct holds the stream capture parameters
+    v4l2_captureparm cparm = parm.parm.capture;
+    unsigned int numerator = cparm.timeperframe.numerator;
+    unsigned int denominator = cparm.timeperframe.denominator;
+
+    double framePeriodSecs = (double)numerator / (double)denominator;
+    // Assume shutter speed (exposure time) is the same as the frame period
+    double exposureTimeSecs = framePeriodSecs;
+
+    fprintf(stderr, "Time per frame = %d / %d  (%f) [seconds] \n", numerator, denominator, framePeriodSecs);
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    // Determine any relevant image parameters from V4L2 API //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    V4L2Util::printUserControls(*(this->state->fd));
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -101,9 +130,19 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calibration_intervals_frames = (1.0 / expTimeSeconds) * 60 * state->calibration_interval;
+    calibration_intervals_frames = (1.0 / framePeriodSecs) * 60 * state->calibration_interval;
 
-    fprintf(stderr, "Interval between calibration frames: %d\n", calibration_intervals_frames);
+    fprintf(stderr, "Interval between calibration runs = %d [frames]\n", calibration_intervals_frames);
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //    Determine maximum number of frames for any clip    //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    max_clip_length_frames = (1.0 / framePeriodSecs) * 60 * state->clip_max_length;
+
+    fprintf(stderr, "Maximum length of a clip = %d [frames]\n", max_clip_length_frames);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -124,23 +163,12 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
-    //    Determine maximum number of frames for any clip    //
-    //                                                       //
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    max_clip_length_frames = (1.0 / expTimeSeconds) * 60 * state->clip_max_length;
-
-    fprintf(stderr, "Maximum length of a clip: %d frames\n", max_clip_length_frames);
-
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-    //                                                       //
     //  Determine memory requirements and allocate buffers   //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Here, the device informs us how much memory is required for the buffers
     // given the image format, frame dimensions and number of buffers.
-
 
     // Array of pointers to the start of each buffer in memory
     buffer_start = new unsigned char*[state->bufrequest->count];
@@ -267,18 +295,14 @@ void AcquisitionThread::run() {
     unsigned int totalFramesCounter = 0;
     unsigned int lastFrameSequence = 0;
 
+    long long lastFrameCaptureTime = 0ll;
+
     unsigned long i = 0;
     forever {
 
         if(abort) {
             return;
         }
-
-        // TODO:
-        // Should plain old 'record' button be available? How would that interact with other controls?
-        // What about CALIBRATING? Should this run in PREVIEW state?
-        // What happens if we're recording a calibration stack when the user hits pause (?)
-        // What happens if we're recording a clip when the user hits pause?
 
         // Check if there's an action to perform
         Action action;
@@ -321,7 +345,6 @@ void AcquisitionThread::run() {
                     // TODO: WHAT TO DO IF WE'RE CALIBRATING WHEN USER HITS PREVIEW?
                     break;
                 }
-
                 break;
             case PAUSE:
                 fprintf(stderr, "Performing action PAUSE\n");
@@ -334,6 +357,7 @@ void AcquisitionThread::run() {
                         exit(1);
                     }
                     i=0;
+                    frameCaptureTimes.clear();
                     detectionHeadBuffer.clear();
                     transitionToState(PAUSED);
                     break;
@@ -348,6 +372,7 @@ void AcquisitionThread::run() {
                         exit(1);
                     }
                     i=0;
+                    frameCaptureTimes.clear();
                     detectionHeadBuffer.clear();
                     transitionToState(PAUSED);
                     break;
@@ -426,8 +451,13 @@ void AcquisitionThread::run() {
         // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
-        // Monitor FPS and dropped FPS, skipping the first 2 frames as these seem to often have incorrect sequence numbers and/or time stamps
-        if(i > 1) {
+        long long captureDelay = epochTimeStamp_us - lastFrameCaptureTime;
+//        if(captureDelay > 50000LL) {
+            fprintf(stderr, "+++ Sequence = %06u Time since last frame = %llu +++\n", state->bufferinfo->sequence, captureDelay);
+//        }
+
+        // Monitor FPS and dropped FPS, skipping the first 2 frames as these seem to have incorrect sequence
+        if(i > 2) {
             // Difference of more than 1 between consecutive frames indicates that frame(s) have been dropped
             droppedFramesCounter += state->bufferinfo->sequence - (lastFrameSequence + 1);
             totalFramesCounter += state->bufferinfo->sequence - lastFrameSequence;
@@ -435,12 +465,15 @@ void AcquisitionThread::run() {
             double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
             fps = (frameCaptureTimes.size()-1) / timeDiffSec;
 
+
+
             if(state->headless) {
                 // Headless mode: print frame stats to console
                 fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, totalFramesCounter);
             }
         }
         lastFrameSequence = state->bufferinfo->sequence;
+        lastFrameCaptureTime = epochTimeStamp_us;
 
         VideoStats stats(fps, droppedFramesCounter, totalFramesCounter);
 
