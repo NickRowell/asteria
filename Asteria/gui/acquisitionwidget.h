@@ -28,6 +28,7 @@ public:
     QPushButton *pause_button;
 
     QLabel *acqStateField;
+    QLabel *utcField;
     QLabel *fpsField;
     QLabel *totalFramesField;
     QLabel *droppedFramesField;

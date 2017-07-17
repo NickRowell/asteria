@@ -11,6 +11,7 @@
 #include <sys/mman.h>           // mmap etc
 #include <memory>               // shared_ptr
 #include <sstream>              // ostringstream
+#include <cmath>                // round(...)
 
 #include <fstream>
 #include <iostream>
@@ -111,10 +112,12 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     unsigned int denominator = cparm.timeperframe.denominator;
 
     double framePeriodSecs = (double)numerator / (double)denominator;
-    // Assume shutter speed (exposure time) is the same as the frame period
-    double exposureTimeSecs = framePeriodSecs;
+    this->state->nominalFramePeriodUs = framePeriodSecs * 1000000;
 
-    fprintf(stderr, "Time per frame = %d / %d  (%f) [seconds] \n", numerator, denominator, framePeriodSecs);
+    // Assume shutter speed (exposure time) is the same as the frame period
+    this->state->nominalExposureTimeUs = this->state->nominalFramePeriodUs;
+
+    fprintf(stderr, "Time per frame = %d / %d  (%f) [seconds] (%d [microseconds]) \n", numerator, denominator, framePeriodSecs, this->state->nominalFramePeriodUs);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -122,6 +125,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    // TODO: do I want to use any of these?
     V4L2Util::printUserControls(*(this->state->fd));
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -290,11 +294,9 @@ void AcquisitionThread::run() {
     // Monitor the FPS using a ringbuffer to buffer the image capture times and get a moving average
     RingBuffer<long long> frameCaptureTimes(100u);
     double fps = 0.0;
-    // Monitor dropped FPS: more tricky as we don't know the capture times of the dropped frames
+    // Counter for dropped frames
     unsigned int droppedFramesCounter = 0;
-    unsigned int totalFramesCounter = 0;
-    unsigned int lastFrameSequence = 0;
-
+    // Records capture time of the previous frame, for detecting frame drops
     long long lastFrameCaptureTime = 0ll;
 
     unsigned long i = 0;
@@ -426,8 +428,7 @@ void AcquisitionThread::run() {
 
         // Now proceed according to the current AcquisitionState
         if(acqState==PAUSED) {
-            // TODO: set the delay correctly
-            QThread::msleep(40);
+            QThread::usleep(state->nominalFramePeriodUs);
             continue;
         }
 
@@ -450,32 +451,6 @@ void AcquisitionThread::run() {
         long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
         // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
-
-        long long captureDelay = epochTimeStamp_us - lastFrameCaptureTime;
-//        if(captureDelay > 50000LL) {
-            fprintf(stderr, "+++ Sequence = %06u Time since last frame = %llu +++\n", state->bufferinfo->sequence, captureDelay);
-//        }
-
-        // Monitor FPS and dropped FPS, skipping the first 2 frames as these seem to have incorrect sequence
-        if(i > 2) {
-            // Difference of more than 1 between consecutive frames indicates that frame(s) have been dropped
-            droppedFramesCounter += state->bufferinfo->sequence - (lastFrameSequence + 1);
-            totalFramesCounter += state->bufferinfo->sequence - lastFrameSequence;
-            frameCaptureTimes.push(epochTimeStamp_us);
-            double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
-            fps = (frameCaptureTimes.size()-1) / timeDiffSec;
-
-
-
-            if(state->headless) {
-                // Headless mode: print frame stats to console
-                fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, totalFramesCounter);
-            }
-        }
-        lastFrameSequence = state->bufferinfo->sequence;
-        lastFrameCaptureTime = epochTimeStamp_us;
-
-        VideoStats stats(fps, droppedFramesCounter, totalFramesCounter);
 
         string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
 
@@ -513,6 +488,30 @@ void AcquisitionThread::run() {
                 image->annotatedImage[p] = (pix32bit);
             }
         }
+
+        // Monitor FPS and dropped FPS, after the first 10 frames
+        if(i > 2) {
+            frameCaptureTimes.push(epochTimeStamp_us);
+        }
+        if(i > 10) {
+
+            long long observedFramePeriodUs = epochTimeStamp_us - lastFrameCaptureTime;
+            // Number of frames periods since the last frame was captured; detects dropped frames
+            unsigned int frames = std::round((float)observedFramePeriodUs / (float)state->nominalFramePeriodUs);
+            // Difference of more than 1 between consecutive frames indicates that frame(s) have been dropped
+            droppedFramesCounter += (frames - 1);
+            // Compute FPS
+            double timeDiffSec = (frameCaptureTimes.back() - frameCaptureTimes.front()) / 1000000.0;
+            fps = (frameCaptureTimes.size()-1) / timeDiffSec;
+
+            if(state->headless) {
+                // Headless mode: print frame stats to console
+                fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, i);
+            }
+        }
+        lastFrameCaptureTime = epochTimeStamp_us;
+
+        VideoStats stats(fps, droppedFramesCounter, i, utc);
 
         // Re-enqueue the buffer now we've extracted all the image data
         if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){

@@ -35,12 +35,15 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
 
     QLabel * acqStateLabel = new QLabel("Acquisition state: ");
     acqStateField = new QLabel("");
+    QLabel * utcLabel = new QLabel("UTC: ");
+    utcField = new QLabel("");
     QLabel * fpsLabel = new QLabel("Current FPS: ");
     fpsField = new QLabel("");
     QLabel * totalFramesLabel = new QLabel("Total frames: ");
     totalFramesField = new QLabel("");
     QLabel * droppedFramesLabel = new QLabel("Dropped frames: ");
     droppedFramesField = new QLabel("");
+
 
     QWidget * acqStateDisplay = new QWidget(this);
 
@@ -60,15 +63,18 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     layout->addWidget(acqStateLabel, 0, 0);
     layout->addWidget(acqStateField, 0, 1);
     layout->addWidget(new QLabel(""), 0, 2);
-    layout->addWidget(fpsLabel, 1, 0);
-    layout->addWidget(fpsField, 1, 1);
-    layout->addWidget(play_button, 1, 2);
-    layout->addWidget(totalFramesLabel, 2, 0);
-    layout->addWidget(totalFramesField, 2, 1);
-    layout->addWidget(pause_button, 2, 2);
-    layout->addWidget(droppedFramesLabel, 3, 0);
-    layout->addWidget(droppedFramesField, 3, 1);
-    layout->addWidget(detect_button, 3, 2);
+    layout->addWidget(utcLabel, 1, 0);
+    layout->addWidget(utcField, 1, 1);
+    layout->addWidget(new QLabel(""), 1, 2);
+    layout->addWidget(fpsLabel, 2, 0);
+    layout->addWidget(fpsField, 2, 1);
+    layout->addWidget(play_button, 2, 2);
+    layout->addWidget(totalFramesLabel, 3, 0);
+    layout->addWidget(totalFramesField, 3, 1);
+    layout->addWidget(pause_button, 3, 2);
+    layout->addWidget(droppedFramesLabel, 4, 0);
+    layout->addWidget(droppedFramesField, 4, 1);
+    layout->addWidget(detect_button, 4, 2);
 
     acqStateDisplay->setLayout(layout);
 
@@ -108,6 +114,7 @@ void AcquisitionWidget::updateAcquisitionState(AcquisitionThread::AcquisitionSta
 }
 
 void AcquisitionWidget::updateVideoStats(const VideoStats &stats) {
+    utcField->setText(QString::fromStdString(stats.utc));
     fpsField->setText(QString::asprintf("%5.3f", stats.fps));
     totalFramesField->setText(QString::asprintf("%5d", stats.totalFrames));
     droppedFramesField->setText(QString::asprintf("%5d", stats.droppedFrames));

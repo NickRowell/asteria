@@ -116,6 +116,23 @@ public:
      */
     double roll;
 
+    // Cannot be loaded from config file: must be created programmatically,
+    // either by user selection or automated selection of default camera.
+
+    /**
+     * @brief frameperiodUs
+     * Nominal interval between frames in microseconds. The actual period as determined by the
+     * capture times of individual frames may vary by up to 10% or so.
+     */
+    unsigned int nominalFramePeriodUs;
+
+    /**
+     * @brief nominalExposureTimeUs
+     * Nominal exposure time for frames in microseconds.
+     */
+    unsigned int nominalExposureTimeUs;
+
+
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                              //
     //                      System parameters                       //
