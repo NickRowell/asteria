@@ -25,14 +25,6 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     detect_button = new QPushButton(this);
     detect_button->setIcon(detectIcon);
 
-    // A widget to contain the control buttons
-//    QWidget * controls = new QWidget(this);
-//    QHBoxLayout * controlsLayout = new QHBoxLayout;
-//    controlsLayout->addWidget(play_button);
-//    controlsLayout->addWidget(pause_button);
-//    controlsLayout->addWidget(detect_button);
-//    controls->setLayout(controlsLayout);
-
     QLabel * acqStateLabel = new QLabel("Acquisition state: ");
     acqStateField = new QLabel("");
     QLabel * utcLabel = new QLabel("UTC: ");
@@ -44,20 +36,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     QLabel * droppedFramesLabel = new QLabel("Dropped frames: ");
     droppedFramesField = new QLabel("");
 
-
     QWidget * acqStateDisplay = new QWidget(this);
-
-//    QHBoxLayout * acqStateDisplayLayout = new QHBoxLayout;
-//    acqStateDisplayLayout->addWidget(acqStateLabel);
-//    acqStateDisplayLayout->addWidget(acqStateField);
-//    acqStateDisplayLayout->addWidget(fpsLabel);
-//    acqStateDisplayLayout->addWidget(fpsField);
-//    acqStateDisplayLayout->addWidget(totalFramesLabel);
-//    acqStateDisplayLayout->addWidget(totalFramesField);
-//    acqStateDisplayLayout->addWidget(droppedFramesLabel);
-//    acqStateDisplayLayout->addWidget(droppedFramesField);
-
-//    acqStateDisplay->setLayout(acqStateDisplayLayout);
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(acqStateLabel, 0, 0);
@@ -95,7 +74,6 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(display);
     mainLayout->addWidget(acqStateDisplay);
-//    mainLayout->addWidget(controls);
     this->setLayout(mainLayout);
 
     acqThread->launch();

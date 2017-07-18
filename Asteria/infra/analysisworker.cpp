@@ -56,6 +56,7 @@ void AnalysisWorker::process() {
 
     // Write all the images to file and create a peak hold image
     Image peakHold(state->width, state->height, static_cast<unsigned char>(0));
+    peakHold.epochTimeUs = eventFrames[0]->epochTimeUs;
 
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
 
@@ -78,15 +79,12 @@ void AnalysisWorker::process() {
                 peakHold.rawImage[offset] = std::max(peakHold.rawImage[offset], image.rawImage[offset]);
             }
         }
-
     }
 
     // Coordinates of changed pixel
     // TODO: verify this - are the pixels packed by row?
 //    unsigned int x = p % state->width;
 //    unsigned int y = p / state->width;
-
-
 
     // Write out the peak hold image
     char filename [100];

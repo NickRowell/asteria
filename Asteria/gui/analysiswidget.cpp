@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QSlider>
+#include <QLabel>
 
 AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
 
@@ -48,6 +49,22 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     controlsLayout->addWidget(dicheckbox);
     controls->setLayout(controlsLayout);
 
+    // A widget to present the stats of the video clip
+    clipLengthSecsField = new QLabel("");
+    clipLengthFramesField = new QLabel("");
+    utcField = new QLabel("");
+
+    QWidget * statsDisplay = new QWidget(this);
+    QHBoxLayout *statsLayout = new QHBoxLayout;
+    statsLayout->addWidget(clipLengthSecsField);
+    statsLayout->addWidget(clipLengthFramesField);
+    statsDisplay->setLayout(statsLayout);
+
+    QWidget * utcDisplay = new QWidget(this);
+    QHBoxLayout *utcLayout = new QHBoxLayout;
+    utcLayout->addWidget(utcField);
+    utcDisplay->setLayout(utcLayout);
+
     connect(play_button, SIGNAL(pressed()), replayThread, SLOT(play()));
     connect(pause_button, SIGNAL(pressed()), replayThread, SLOT(pause()));
     connect(stop_button, SIGNAL(pressed()), replayThread, SLOT(stop()));
@@ -62,10 +79,13 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
 
     // Display image when one is queued
     connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), display, SLOT(newFrame(std::shared_ptr<Image>)));
+    connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(display);
+    mainLayout->addWidget(statsDisplay);
+    mainLayout->addWidget(utcDisplay);
     mainLayout->addWidget(slider);
     mainLayout->addWidget(controls);
     this->setLayout(mainLayout);
@@ -98,5 +118,11 @@ void AnalysisWidget::loadClip(QString path) {
 }
 
 void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
-
+    utcField->setText(QString::fromStdString(stats.utc));
+    QString clipLengthSecsStr;
+    clipLengthSecsStr.sprintf("%05.2f / %05.2f", stats.framePositionSecs, stats.clipLengthSecs);
+    clipLengthSecsField->setText(clipLengthSecsStr);
+    QString clipLengthFramesStr;
+    clipLengthFramesStr.sprintf("%d / %d", stats.framePositionFrames, stats.clipLengthFrames);
+    clipLengthFramesField->setText(clipLengthFramesStr);
 }

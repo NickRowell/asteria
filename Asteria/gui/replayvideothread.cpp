@@ -1,4 +1,6 @@
 #include "gui/replayvideothread.h"
+#include "util/timeutil.h"
+
 
 ReplayVideoThread::ReplayVideoThread(const unsigned int &framePeriodUs) : frames(0), idx(0), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
     // Start the thread
@@ -58,7 +60,13 @@ void ReplayVideoThread::queueFrameIndex(int fIdx) {
 void ReplayVideoThread::processFrame(int fIdx, std::shared_ptr<Image> image) {
 
     // Compute AnalysisVideoStats
-    AnalysisVideoStats stats;
+
+    // Time of this frame in the clip
+    long long framePositionUs = image->epochTimeUs - frames.front()->epochTimeUs;
+    double framePositionSecs = (double) framePositionUs / 1000000.0;
+    std::string utc = TimeUtil::convertToUtcString(image->epochTimeUs);
+
+    AnalysisVideoStats stats(clipLengthSecs, frames.size(), framePositionSecs, fIdx, true, true, utc);
 
     emit videoStats(stats);
     emit queueNewFrame(image);

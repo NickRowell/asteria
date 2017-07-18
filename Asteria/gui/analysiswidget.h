@@ -13,6 +13,7 @@ class GLMeteorDrawer;
 class AnalysisInventory;
 class QCheckBox;
 class QSlider;
+class QLabel;
 
 class AnalysisWidget : public QWidget
 {
@@ -39,6 +40,11 @@ public:
     QPushButton *stepb_button;
     QSlider * slider;
     QCheckBox *dicheckbox;
+
+    QLabel * clipLengthSecsField;
+    QLabel * clipLengthFramesField;
+    QLabel * utcField;
+
 
 signals:
 
