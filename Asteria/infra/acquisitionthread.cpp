@@ -49,12 +49,14 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    state->format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    state->format->fmt.pix.pixelformat = state->selectedFormat;
-    state->format->fmt.pix.width = state->width;
-    state->format->fmt.pix.height = state->height;
+    format = new v4l2_format();
+    memset(format, 0, sizeof(*format));
+    format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    format->fmt.pix.pixelformat = state->selectedFormat;
+    format->fmt.pix.width = state->width;
+    format->fmt.pix.height = state->height;
 
-    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_S_FMT, state->format) < 0) {
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_S_FMT, format) < 0) {
         perror("VIDIOC_S_FMT");
         ::close(*(this->state->fd));
         exit(1);
@@ -66,7 +68,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    switch(state->format->fmt.pix.field) {
+    switch(format->fmt.pix.field) {
     case V4L2_FIELD_ANY:
     case V4L2_FIELD_TOP:
     case V4L2_FIELD_BOTTOM:
@@ -74,7 +76,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     case V4L2_FIELD_SEQ_BT:
     case V4L2_FIELD_ALTERNATE:
         // Not supported!
-        fprintf(stderr, "Image field format %s not supported!\n", V4L2Util::getV4l2FieldNameFromIndex(state->format->fmt.pix.field).c_str());
+        fprintf(stderr, "Image field format %s not supported!\n", V4L2Util::getV4l2FieldNameFromIndex(format->fmt.pix.field).c_str());
         ::close(*(this->state->fd));
         exit(1);
         break;
@@ -83,7 +85,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     case V4L2_FIELD_INTERLACED_TB:
     case V4L2_FIELD_INTERLACED_BT:
         // Supported!
-        fprintf(stderr, "Image field format %s is supported\n", V4L2Util::getV4l2FieldNameFromIndex(state->format->fmt.pix.field).c_str());
+        fprintf(stderr, "Image field format %s is supported\n", V4L2Util::getV4l2FieldNameFromIndex(format->fmt.pix.field).c_str());
         break;
     }
 
@@ -155,11 +157,13 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     // Inform device about buffers to use
-    state->bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    state->bufrequest->memory = V4L2_MEMORY_MMAP;
-    state->bufrequest->count = 32;
+    bufrequest = new v4l2_requestbuffers();
+    memset(bufrequest, 0, sizeof(*bufrequest));
+    bufrequest->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    bufrequest->memory = V4L2_MEMORY_MMAP;
+    bufrequest->count = 32;
 
-    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_REQBUFS, state->bufrequest) < 0){
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_REQBUFS, bufrequest) < 0){
         perror("VIDIOC_REQBUFS");
         ::close(*(this->state->fd));
         exit(1);
@@ -174,30 +178,33 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     // Here, the device informs us how much memory is required for the buffers
     // given the image format, frame dimensions and number of buffers.
 
+    bufferinfo = new v4l2_buffer();
+    memset(bufferinfo, 0, sizeof(*bufferinfo));
+
     // Array of pointers to the start of each buffer in memory
-    buffer_start = new unsigned char*[state->bufrequest->count];
+    buffer_start = new unsigned char*[bufrequest->count];
 
-    for(unsigned int b = 0; b < state->bufrequest->count; b++) {
+    for(unsigned int b = 0; b < bufrequest->count; b++) {
 
-        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-        state->bufferinfo->index = b;
+        bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        bufferinfo->memory = V4L2_MEMORY_MMAP;
+        bufferinfo->index = b;
 
-        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QUERYBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QUERYBUF, bufferinfo) < 0){
             perror("VIDIOC_QUERYBUF");
             exit(1);
         }
 
         // bufferinfo.length: number of bytes of memory required for the buffer
         // bufferinfo.m.offset: offset from the start of the device memory for this buffer
-        buffer_start[b] = (unsigned char *)mmap(NULL, state->bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), state->bufferinfo->m.offset);
+        buffer_start[b] = (unsigned char *)mmap(NULL, bufferinfo->length, PROT_READ | PROT_WRITE, MAP_SHARED, *(this->state->fd), bufferinfo->m.offset);
 
         if(buffer_start[b] == MAP_FAILED){
             perror("mmap");
             exit(1);
         }
 
-        memset(buffer_start[b], 0, state->bufferinfo->length);
+        memset(buffer_start[b], 0, bufferinfo->length);
     }
 
 }
@@ -211,18 +218,23 @@ AcquisitionThread::~AcquisitionThread()
     wait();
 
     fprintf(stderr, "Deactivating streaming...\n");
-    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
         perror("VIDIOC_STREAMOFF");
         exit(1);
     }
 
     fprintf(stderr, "Deallocating image buffers...\n");
-    for(unsigned int b = 0; b < state->bufrequest->count; b++) {
-        if(munmap(buffer_start[b], state->bufferinfo->length) < 0) {
+    for(unsigned int b = 0; b < bufrequest->count; b++) {
+        if(munmap(buffer_start[b], bufferinfo->length) < 0) {
             perror("munmap");
         }
     }
     delete buffer_start;
+
+    fprintf(stderr, "Deleting V4L2 structs...\n");
+    delete bufferinfo;
+    delete format;
+    delete bufrequest;
 
     fprintf(stderr, "Closing the camera...\n");
     ::close(*(this->state->fd));
@@ -320,17 +332,17 @@ void AcquisitionThread::run() {
                 case PAUSED:
                     // Turn on streaming; transition to PREVIEWING
                     fprintf(stderr, "Adding buffers to incoming queue...\n");
-                    for(unsigned long k = 0; k<state->bufrequest->count; k++) {
-                        state->bufferinfo->index = k;
-                        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+                    for(unsigned long k = 0; k<bufrequest->count; k++) {
+                        bufferinfo->index = k;
+                        bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                        bufferinfo->memory = V4L2_MEMORY_MMAP;
+                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){
                             perror("VIDIOC_QBUF");
                             exit(1);
                         }
                     }
                     fprintf(stderr, "Activating streaming...\n");
-                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(bufferinfo->type)) < 0){
                         perror("VIDIOC_STREAMON");
                         exit(1);
                     }
@@ -354,7 +366,7 @@ void AcquisitionThread::run() {
                 case PREVIEWING:
                     // Turn off streaming; transition to PAUSED
                     fprintf(stderr, "Deactivating streaming...\n");
-                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
                         perror("VIDIOC_STREAMOFF");
                         exit(1);
                     }
@@ -369,7 +381,7 @@ void AcquisitionThread::run() {
                 case DETECTING:
                     // Turn off streaming; transition to PAUSED
                     fprintf(stderr, "Deactivating streaming...\n");
-                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(state->bufferinfo->type)) < 0){
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
                         perror("VIDIOC_STREAMOFF");
                         exit(1);
                     }
@@ -396,17 +408,17 @@ void AcquisitionThread::run() {
                 case PAUSED:
                     // Turn on streaming; transition to DETECTING
                     fprintf(stderr, "Adding buffers to incoming queue...\n");
-                    for(unsigned long k = 0; k<state->bufrequest->count; k++) {
-                        state->bufferinfo->index = k;
-                        state->bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
-                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+                    for(unsigned long k = 0; k<bufrequest->count; k++) {
+                        bufferinfo->index = k;
+                        bufferinfo->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                        bufferinfo->memory = V4L2_MEMORY_MMAP;
+                        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){
                             perror("VIDIOC_QBUF");
                             exit(1);
                         }
                     }
                     fprintf(stderr, "Activating streaming...\n");
-                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(state->bufferinfo->type)) < 0){
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMON, &(bufferinfo->type)) < 0){
                         perror("VIDIOC_STREAMON");
                         exit(1);
                     }
@@ -433,13 +445,13 @@ void AcquisitionThread::run() {
         }
 
         // Index into circular buffer
-        unsigned int j = (i++) % state->bufrequest->count;
+        unsigned int j = (i++) % bufrequest->count;
 
-        state->bufferinfo->index = j;
-        state->bufferinfo->memory = V4L2_MEMORY_MMAP;
+        bufferinfo->index = j;
+        bufferinfo->memory = V4L2_MEMORY_MMAP;
 
         // Wait for this buffer to be dequeued then retrieve the image
-        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_DQBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_DQBUF, bufferinfo) < 0){
             perror("VIDIOC_DQBUF");
             exit(1);
         }
@@ -448,7 +460,7 @@ void AcquisitionThread::run() {
         // which is mapped into application address space at buffer_start[j]
 
         // System clock time (since startup/hibernation) of time first byte of data was captured [microseconds]
-        long long temp_us = 1000000LL * state->bufferinfo->timestamp.tv_sec + (long long) round(  state->bufferinfo->timestamp.tv_usec);
+        long long temp_us = 1000000LL * bufferinfo->timestamp.tv_sec + (long long) round(bufferinfo->timestamp.tv_usec);
         // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
@@ -456,9 +468,9 @@ void AcquisitionThread::run() {
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
         image->epochTimeUs = epochTimeStamp_us;
-        image->field = state->format->fmt.pix.field;
+        image->field = format->fmt.pix.field;
 
-        switch(state->format->fmt.pix.pixelformat) {
+        switch(format->fmt.pix.pixelformat) {
             case V4L2_PIX_FMT_GREY: {
                 // Read the raw greyscale pixels to the image object
                 unsigned char * pBuf = buffer_start[j];
@@ -470,12 +482,12 @@ void AcquisitionThread::run() {
             }
             case V4L2_PIX_FMT_MJPEG: {
                 // Convert the JPEG image to greyscale
-                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
+                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->rawImage);
                 break;
             }
             case V4L2_PIX_FMT_YUYV: {
                 // Convert the YUYV (luminance + chrominance) image to greyscale
-                JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], state->bufferinfo->bytesused, image->rawImage);
+                JpgUtil::convertYuyv422((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->rawImage);
                 break;
             }
         }
@@ -514,7 +526,7 @@ void AcquisitionThread::run() {
         VideoStats stats(fps, droppedFramesCounter, i, utc);
 
         // Re-enqueue the buffer now we've extracted all the image data
-        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, state->bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){
             perror("VIDIOC_QBUF");
             exit(1);
         }

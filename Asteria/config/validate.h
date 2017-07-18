@@ -2,6 +2,7 @@
 #define VALIDATE_H
 
 #include "infra/asteriastate.h"
+#include "util/ioutil.h"
 
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
@@ -11,6 +12,7 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <fstream>
+
 /**
  * Base class for general purpose parameter value checker and validation utility classes.
  */
@@ -235,26 +237,30 @@ public:
         unsigned int height = value[1];
 
         // Check that the chosen camera & pixel format etc can support the requested image size
-        state->format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        state->format->fmt.pix.pixelformat = state->selectedFormat;
-        state->format->fmt.pix.width = width;
-        state->format->fmt.pix.height = height;
+        v4l2_format * format = new v4l2_format();
+        memset(format, 0, sizeof(*format));
+        format->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        format->fmt.pix.pixelformat = state->selectedFormat;
+        format->fmt.pix.width = width;
+        format->fmt.pix.height = height;
 
-        if(ioctl(*(this->state->fd), VIDIOC_S_FMT, state->format) < 0) {
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_S_FMT, format) < 0) {
             perror("VIDIOC_S_FMT");
             ::close(*(this->state->fd));
             exit(1);
         }
 
-        if(state->format->fmt.pix.width != width || state->format->fmt.pix.height != height ) {
+        if(format->fmt.pix.width != width || format->fmt.pix.height != height ) {
             // Driver couldn't support requested image width
-            strs << "Closest support image width and height is \'" << state->format->fmt.pix.width << " " << state->format->fmt.pix.height << "\'";
+            strs << "Closest support image width and height is \'" << format->fmt.pix.width << " " << format->fmt.pix.height << "\'";
             return false;
         }
 
         // Image size is good - set the fields in the state object
         state->width = width;
         state->height = height;
+
+        delete format;
 
         return true;
     }

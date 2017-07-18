@@ -75,6 +75,26 @@ private:
 
     AsteriaState * state;
 
+    /**
+     * \brief Information about the video buffer(s) in use.
+     * See https://www.linuxtv.org/downloads/legacy/video4linux/API/V4L2_API/spec/ch03s05.html
+     */
+    struct v4l2_buffer * bufferinfo;
+
+    /**
+     * \brief The pixel format in use.
+     */
+    struct v4l2_format * format;
+
+    /**
+     * \brief Information about requested & allocated buffers.
+     */
+    struct v4l2_requestbuffers * bufrequest;
+
+    /**
+     * @brief abort
+     * Flag used to abort the acquisition thread and shutdown.
+     */
     bool abort;
 
     /**
