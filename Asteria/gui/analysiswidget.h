@@ -27,9 +27,9 @@ public:
      */
     AnalysisInventory * inv;
 
-    GLMeteorDrawer * replay;
+    GLMeteorDrawer * display;
 
-    ReplayVideoThread * player;
+    ReplayVideoThread * replayThread;
 
     QPushButton *play_button;
     QPushButton *stop_button;

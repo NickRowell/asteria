@@ -1,6 +1,6 @@
 #include "gui/replayvideothread.h"
 
-ReplayVideoThread::ReplayVideoThread() : frames(0), idx(0), state(STOPPED), abort(false), fperiodms(40) {
+ReplayVideoThread::ReplayVideoThread(const unsigned int &framePeriodUs) : frames(0), idx(0), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
     // Start the thread
     start(NormalPriority);
 }
@@ -12,7 +12,7 @@ ReplayVideoThread::~ReplayVideoThread() {
     wait();
 }
 
-void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images) {
+void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> peakHold) {
 
     // Stop any current replay
     stop();
@@ -21,6 +21,8 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images) {
     frames.clear();
     // Push new frames
     frames.insert(frames.end(), images.begin(), images.end());
+    // Store peakHold
+    this->peakHold = peakHold;
     // Reset counter
     idx = 0;
 }
@@ -69,7 +71,7 @@ void ReplayVideoThread::run() {
                     // Reset to start; stop playing
                     idx=0;
                     state = STOPPED;
-                    emit queueNewFrame(frames[idx]);
+                    emit queueNewFrame(peakHold);
                     emit queuedFrameIndex(idx);
                 }
                 else {
@@ -80,7 +82,7 @@ void ReplayVideoThread::run() {
                 break;
             case STOPPED:
                 idx=0;
-                emit queueNewFrame(frames[idx]);
+                emit queueNewFrame(peakHold);
                 emit queuedFrameIndex(idx);
                 break;
             case PAUSED:
@@ -113,6 +115,6 @@ void ReplayVideoThread::run() {
         }
 
         // Delay for one frame period
-        QThread::msleep(fperiodms);
+        QThread::usleep(framePeriodUs);
     }
 }

@@ -16,7 +16,7 @@ class ReplayVideoThread : public QThread {
     Q_OBJECT
 
 public:
-    ReplayVideoThread();
+    ReplayVideoThread(const unsigned int &framePeriodUs);
     ~ReplayVideoThread();
 
     /**
@@ -28,6 +28,9 @@ public:
     // The clip we're playing
     std::vector<std::shared_ptr<Image>> frames;
 
+    // Peak hold image, to display before the clip starts and whenever it stops
+    std::shared_ptr<Image> peakHold;
+
     // The index of the frame to display next
     unsigned int idx;
 
@@ -37,8 +40,8 @@ public:
     // Flag used to close down the thread
     bool abort;
 
-    // Delay between frames for 25 FPS or whatever
-    unsigned long fperiodms;
+    // Delay between frames [microseconds]
+    unsigned int framePeriodUs;
 
     /**
      * @brief mutex used to control multithreaded use of instances of this class.
@@ -49,7 +52,7 @@ protected:
     void run() Q_DECL_OVERRIDE;
 
 public slots:
-    void loadClip(std::vector<std::shared_ptr<Image>>);
+    void loadClip(std::vector<std::shared_ptr<Image>>, std::shared_ptr<Image>);
 
     void play();
     void pause();

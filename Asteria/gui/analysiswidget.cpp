@@ -1,6 +1,7 @@
 #include "gui/analysiswidget.h"
 #include "gui/glmeteordrawer.h"
 #include "infra/analysisinventory.h"
+#include "infra/asteriastate.h"
 
 #include <memory>
 
@@ -10,9 +11,9 @@
 #include <QCheckBox>
 #include <QSlider>
 
-AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), replay(0) {
+AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
 
-    replay = new GLMeteorDrawer(this, this->state, false);
+    display = new GLMeteorDrawer(this, this->state, false);
 
     // Display the usual symbols for each button
     QIcon playIcon(":/images/play.png");
@@ -34,7 +35,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     slider = new QSlider(Qt::Horizontal, this);
     dicheckbox = new QCheckBox("&De-interlaced stepping", this);
 
-    player = new ReplayVideoThread;
+    replayThread = new ReplayVideoThread(this->state->nominalFramePeriodUs);
 
     // A widget to contain the control buttons
     QWidget * controls = new QWidget(this);
@@ -47,24 +48,24 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     controlsLayout->addWidget(dicheckbox);
     controls->setLayout(controlsLayout);
 
-    connect(play_button, SIGNAL(pressed()), player, SLOT(play()));
-    connect(pause_button, SIGNAL(pressed()), player, SLOT(pause()));
-    connect(stop_button, SIGNAL(pressed()), player, SLOT(stop()));
-    connect(stepb_button, SIGNAL(pressed()), player, SLOT(stepb()));
-    connect(stepf_button, SIGNAL(pressed()), player, SLOT(stepf()));
+    connect(play_button, SIGNAL(pressed()), replayThread, SLOT(play()));
+    connect(pause_button, SIGNAL(pressed()), replayThread, SLOT(pause()));
+    connect(stop_button, SIGNAL(pressed()), replayThread, SLOT(stop()));
+    connect(stepb_button, SIGNAL(pressed()), replayThread, SLOT(stepb()));
+    connect(stepf_button, SIGNAL(pressed()), replayThread, SLOT(stepf()));
 
     // Slider response to user actions in the player
-    connect(player, SIGNAL(queuedFrameIndex(int)), slider, SLOT(setValue(int)));
+    connect(replayThread, SIGNAL(queuedFrameIndex(int)), slider, SLOT(setValue(int)));
 
     // Player response to user moving the slider
-    connect(slider, SIGNAL(sliderMoved(int)), player, SLOT(queueFrameIndex(int)));
+    connect(slider, SIGNAL(sliderMoved(int)), replayThread, SLOT(queueFrameIndex(int)));
 
     // Display image when one is queued
-    connect(player, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), replay, SLOT(newFrame(std::shared_ptr<Image>)));
+    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), display, SLOT(newFrame(std::shared_ptr<Image>)));
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(replay);
+    mainLayout->addWidget(display);
     mainLayout->addWidget(slider);
     mainLayout->addWidget(controls);
     this->setLayout(mainLayout);
@@ -86,12 +87,12 @@ void AnalysisWidget::loadClip(QString path) {
     }
 
     // Pass the clip to the player
-    player->loadClip(inv->eventFrames);
+    replayThread->loadClip(inv->eventFrames, inv->peakHold);
 
     // Set the range of the slider according to how many frames we have
     slider->setRange(0, inv->eventFrames.size()-1);
     slider->setValue(0);
 
     // Initialise it with the peak hold image
-    replay->newFrame(inv->peakHold);
+    display->newFrame(inv->peakHold);
 }

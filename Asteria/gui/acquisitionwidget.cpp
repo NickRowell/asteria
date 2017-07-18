@@ -9,7 +9,7 @@
 
 AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QWidget(parent), state(state) {
 
-    live = new GLMeteorDrawer(this, this->state, true);
+    display = new GLMeteorDrawer(this, this->state, true);
 
     acqThread = new AcquisitionThread(this, this->state);
 
@@ -83,7 +83,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     connect(detect_button, SIGNAL(pressed()), acqThread, SLOT(detect()));
 
     // Connect image acquisition signal to image display slot
-    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), live, SLOT (newFrame(std::shared_ptr<Image>)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>)), display, SLOT (newFrame(std::shared_ptr<Image>)));
 
     // Forward the acquiredClip signal
     connect(acqThread, SIGNAL (acquiredClip(std::string)), this, SIGNAL (acquiredClip(std::string)));
@@ -93,7 +93,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(live);
+    mainLayout->addWidget(display);
     mainLayout->addWidget(acqStateDisplay);
 //    mainLayout->addWidget(controls);
     this->setLayout(mainLayout);

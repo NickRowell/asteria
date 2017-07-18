@@ -19,7 +19,7 @@ public:
     ~AcquisitionWidget();
 
     AsteriaState * state;
-    GLMeteorDrawer * live;
+    GLMeteorDrawer * display;
 
     AcquisitionThread * acqThread;
 
