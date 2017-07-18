@@ -2,14 +2,12 @@
 #define REPLAYVIDEOTHREAD_H
 
 #include "infra/image.h"
+#include "infra/analysisvideostats.h"
 
 #include <memory>
 
 #include <QThread>
 #include <QMutex>
-
-
-
 
 
 class ReplayVideoThread : public QThread {
@@ -31,6 +29,9 @@ public:
     // Peak hold image, to display before the clip starts and whenever it stops
     std::shared_ptr<Image> peakHold;
 
+    // The total length of the clip [secs]
+    double clipLengthSecs;
+
     // The index of the frame to display next
     unsigned int idx;
 
@@ -51,6 +52,8 @@ public:
 protected:
     void run() Q_DECL_OVERRIDE;
 
+    void processFrame(int fIdx, std::shared_ptr<Image> image);
+
 public slots:
     void loadClip(std::vector<std::shared_ptr<Image>>, std::shared_ptr<Image>);
 
@@ -62,6 +65,7 @@ public slots:
     void queueFrameIndex(int fIdx);
 
 signals:
+    void videoStats(const AnalysisVideoStats &);
     void queueNewFrame(std::shared_ptr<Image> image);
     void queuedFrameIndex(int fIdx);
 };

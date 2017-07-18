@@ -89,7 +89,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     connect(acqThread, SIGNAL (acquiredClip(std::string)), this, SIGNAL (acquiredClip(std::string)));
 
     connect(acqThread, SIGNAL (transitionedToState(AcquisitionThread::AcquisitionState)), this, SLOT (updateAcquisitionState(AcquisitionThread::AcquisitionState)));
-    connect(acqThread, SIGNAL (videoStats(const VideoStats &)), this, SLOT (updateVideoStats(const VideoStats &)));
+    connect(acqThread, SIGNAL (videoStats(const AcquisitionVideoStats &)), this, SLOT (updateVideoStats(const AcquisitionVideoStats &)));
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -113,7 +113,7 @@ void AcquisitionWidget::updateAcquisitionState(AcquisitionThread::AcquisitionSta
     acqStateField->setText(QString::fromStdString(oss.str()));
 }
 
-void AcquisitionWidget::updateVideoStats(const VideoStats &stats) {
+void AcquisitionWidget::updateVideoStats(const AcquisitionVideoStats &stats) {
     utcField->setText(QString::fromStdString(stats.utc));
     fpsField->setText(QString::asprintf("%5.3f", stats.fps));
     totalFramesField->setText(QString::asprintf("%5d", stats.totalFrames));

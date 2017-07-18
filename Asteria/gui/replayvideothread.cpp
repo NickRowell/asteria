@@ -25,6 +25,9 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     this->peakHold = peakHold;
     // Reset counter
     idx = 0;
+    // Compute clip length
+    long long clipLengthUs = frames.back()->epochTimeUs - frames.front()->epochTimeUs;
+    clipLengthSecs = (double) clipLengthUs / 1000000.0;
 }
 
 void ReplayVideoThread::play() {
@@ -52,6 +55,16 @@ void ReplayVideoThread::queueFrameIndex(int fIdx) {
     idx = fIdx;
 }
 
+void ReplayVideoThread::processFrame(int fIdx, std::shared_ptr<Image> image) {
+
+    // Compute AnalysisVideoStats
+    AnalysisVideoStats stats;
+
+    emit videoStats(stats);
+    emit queueNewFrame(image);
+    emit queuedFrameIndex(fIdx);
+}
+
 void ReplayVideoThread::run() {
 
     forever {
@@ -68,22 +81,17 @@ void ReplayVideoThread::run() {
             case PLAYING:
                 // Check we've not yet reached the end
                 if(idx==frames.size()) {
-                    // Reset to start; stop playing
-                    idx=0;
+                    // Stop playing
                     state = STOPPED;
-                    emit queueNewFrame(peakHold);
-                    emit queuedFrameIndex(idx);
                 }
                 else {
-                    emit queueNewFrame(frames[idx]);
-                    emit queuedFrameIndex(idx);
+                    processFrame(idx, frames[idx]);
                     idx++;
                 }
                 break;
             case STOPPED:
                 idx=0;
-                emit queueNewFrame(peakHold);
-                emit queuedFrameIndex(idx);
+                processFrame(idx, peakHold);
                 break;
             case PAUSED:
                 break;
@@ -91,8 +99,7 @@ void ReplayVideoThread::run() {
                 // Check we've not yet reached the start
                 if(idx > 0) {
                     --idx;
-                    emit queueNewFrame(frames[idx]);
-                    emit queuedFrameIndex(idx);
+                    processFrame(idx, frames[idx]);
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
@@ -101,15 +108,13 @@ void ReplayVideoThread::run() {
                 // Check we've not yet reached the end
                 if(idx < (frames.size()-1)) {
                     ++idx;
-                    emit queueNewFrame(frames[idx]);
-                    emit queuedFrameIndex(idx);
+                    processFrame(idx, frames[idx]);
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
                 break;
             case FQUEUED:
-                emit queueNewFrame(frames[idx]);
-                emit queuedFrameIndex(idx);
+                processFrame(idx, frames[idx]);
                 break;
             }
         }
@@ -118,3 +123,5 @@ void ReplayVideoThread::run() {
         QThread::usleep(framePeriodUs);
     }
 }
+
+

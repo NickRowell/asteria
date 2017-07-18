@@ -523,7 +523,7 @@ void AcquisitionThread::run() {
         }
         lastFrameCaptureTime = epochTimeStamp_us;
 
-        VideoStats stats(fps, droppedFramesCounter, i, utc);
+        AcquisitionVideoStats stats(fps, droppedFramesCounter, i, utc);
 
         // Re-enqueue the buffer now we've extracted all the image data
         if(IoUtil::xioctl(*(this->state->fd), VIDIOC_QBUF, bufferinfo) < 0){

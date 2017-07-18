@@ -5,7 +5,7 @@
 #include "infra/image.h"
 #include "infra/ringbuffer.h"
 #include "infra/concurrentqueue.h"
-#include "infra/videostats.h"
+#include "infra/acquisitionvideostats.h"
 
 #include <linux/videodev2.h>
 #include <vector>
@@ -40,7 +40,7 @@ public:
 
 signals:
     void acquiredImage(std::shared_ptr<Image>);
-    void videoStats(const VideoStats &);
+    void videoStats(const AcquisitionVideoStats &);
     void acquiredClip(std::string utc);
     void transitionedToState(AcquisitionThread::AcquisitionState);
 

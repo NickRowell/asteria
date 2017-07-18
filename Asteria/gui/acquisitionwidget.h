@@ -2,7 +2,7 @@
 #define ACQUISITIONWIDGET_H
 
 #include "infra/acquisitionthread.h"
-#include "infra/videostats.h"
+#include "infra/acquisitionvideostats.h"
 
 #include <QWidget>
 
@@ -39,7 +39,7 @@ signals:
 
 public slots:
     void updateAcquisitionState(AcquisitionThread::AcquisitionState acqState);
-    void updateVideoStats(const VideoStats &);
+    void updateVideoStats(const AcquisitionVideoStats &);
 
 
 };

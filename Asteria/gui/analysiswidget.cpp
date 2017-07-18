@@ -96,3 +96,7 @@ void AnalysisWidget::loadClip(QString path) {
     // Initialise it with the peak hold image
     display->newFrame(inv->peakHold);
 }
+
+void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
+
+}

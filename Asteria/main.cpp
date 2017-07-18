@@ -8,7 +8,8 @@
 #include "util/v4l2util.h"
 #include "infra/image.h"
 #include "infra/acquisitionthread.h"
-#include "infra/videostats.h"
+#include "infra/acquisitionvideostats.h"
+#include "infra/analysisvideostats.h"
 
 #include <signal.h>
 #include <getopt.h>
@@ -35,7 +36,8 @@ int main(int argc, char **argv)
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<TreeItem>("TreeItem");
     qRegisterMetaType<AcquisitionThread::AcquisitionState>("AcquisitionThread::AcquisitionState");
-    qRegisterMetaType<VideoStats>("VideoStats");
+    qRegisterMetaType<AcquisitionVideoStats>("AcquisitionVideoStats");
+    qRegisterMetaType<AnalysisVideoStats>("AnalysisVideoStats");
 
     // Get the time difference between time of day and the frame timestamp. This needs
     // to be recomputed whenever the computer hibernates.

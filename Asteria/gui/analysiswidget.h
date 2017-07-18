@@ -3,6 +3,7 @@
 
 #include "infra/image.h"
 #include "gui/replayvideothread.h"
+#include "infra/analysisvideostats.h"
 
 #include <QWidget>
 
@@ -44,6 +45,7 @@ signals:
 public slots:
     // Load a clip for display
     void loadClip(QString path);
+    void updateVideoStats(const AnalysisVideoStats &stats);
 
 private slots:
 };
