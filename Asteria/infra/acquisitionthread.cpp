@@ -353,10 +353,15 @@ void AcquisitionThread::run() {
                     transitionToState(PREVIEWING);
                     break;
                 case RECORDING:
-                    // TODO:  WHAT TO DO IF WE'RE RECORDING A CLIP WHEN USER HITS PREVIEW?
+                    // Abort recording; don't save the partial results
+                    eventFrames.clear();
+                    nFramesSinceLastTrigger = 0;
+                    transitionToState(PREVIEWING);
                     break;
                 case CALIBRATING:
-                    // TODO: WHAT TO DO IF WE'RE CALIBRATING WHEN USER HITS PREVIEW?
+                    // Abort calibration; don't save the partial results
+                    calibrationFrames.clear();
+                    transitionToState(PREVIEWING);
                     break;
                 }
                 break;
@@ -391,10 +396,33 @@ void AcquisitionThread::run() {
                     transitionToState(PAUSED);
                     break;
                 case RECORDING:
-                    // TODO: WHAT TO DO IF WE'RE RECORDING A CLIP WHEN USER HITS PAUSE?
+                    // Turn off streaming; transition to PAUSED
+                    fprintf(stderr, "Deactivating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMOFF");
+                        exit(1);
+                    }
+                    i=0;
+                    frameCaptureTimes.clear();
+                    detectionHeadBuffer.clear();
+                    // Abort recording; don't save the partial results
+                    eventFrames.clear();
+                    nFramesSinceLastTrigger = 0;
+                    transitionToState(PAUSED);
                     break;
                 case CALIBRATING:
-                    // TODO: WHAT TO DO IF WE'RE CALIBRATING WHEN USER HITS PAUSE?
+                    // Turn off streaming; transition to PAUSED
+                    fprintf(stderr, "Deactivating streaming...\n");
+                    if(IoUtil::xioctl(*(this->state->fd), VIDIOC_STREAMOFF, &(bufferinfo->type)) < 0){
+                        perror("VIDIOC_STREAMOFF");
+                        exit(1);
+                    }
+                    i=0;
+                    frameCaptureTimes.clear();
+                    detectionHeadBuffer.clear();
+                    // Abort calibration; don't save the partial results
+                    calibrationFrames.clear();
+                    transitionToState(PAUSED);
                     break;
                 }
                 break;

@@ -9,7 +9,6 @@
 #include <iostream>
 #include <algorithm>    // std::max
 
-#include <QDebug>
 #include <QString>
 #include <QCloseEvent>
 #include <QGridLayout>
@@ -48,7 +47,7 @@ void CalibrationWorker::process() {
     string path = state->videoDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
 
     if(!FileUtil::createDirs(state->videoDirPath, subLevels)) {
-        qInfo() << "Couldn't create directory " << path.c_str() << "!";
+        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
         return;
     }
 

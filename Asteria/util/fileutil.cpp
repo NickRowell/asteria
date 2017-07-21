@@ -6,13 +6,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// TODO: this is only used for strcmp; try using cstring instead BUT be very careful that
+// it's the same function because there's a risk of recursively deleting everything in the
+// filesystem if it doesn't work in the same way!
 #include <QDebug>
 
 FileUtil::FileUtil()
 {
 
 }
-
 
 bool FileUtil::deleteFilePath(std::string path) {
 
@@ -30,31 +32,31 @@ bool FileUtil::deleteFilePath(std::string path) {
     // What type of object is this?
     if(S_ISCHR(info.st_mode)) {
         // Character device - don't touch it
-        qInfo() << "Not deleting character device " << path.c_str();
+        fprintf(stderr, "Not deleting character device %s\n", path.c_str());
         return false;
     }
 
     if(S_ISBLK(info.st_mode)) {
         // Block device - don't touch it
-        qInfo() << "Not deleting block device " << path.c_str();
+        fprintf(stderr, "Not deleting block device %s\n", path.c_str());
         return false;
     }
 
     if(S_ISFIFO(info.st_mode)) {
         // FIFO (named pipe) - don't touch it
-        qInfo() << "Not deleting FIFO " << path.c_str();
+        fprintf(stderr, "Not deleting FIFO %s\n", path.c_str());
         return false;
     }
 
     if(S_ISLNK(info.st_mode)) {
         // Symbolic link - don't touch it
-        qInfo() << "Not deleting link " << path.c_str();
+        fprintf(stderr, "Not deleting link %s\n", path.c_str());
         return false;
     }
 
     if(S_ISSOCK(info.st_mode)) {
         // Socket - don't touch it
-        qInfo() << "Not deleting socket " << path.c_str();
+        fprintf(stderr, "Not deleting socket %s\n", path.c_str());
         return false;
     }
 
@@ -110,7 +112,6 @@ bool FileUtil::createDir(std::string parent, std::string child) {
     if( stat( newDirPath.c_str(), &info ) != 0 ) {
         // Path does not exist; create it.
         if(mkdir(newDirPath.c_str(), S_IRWXU) == -1) {
-//            qInfo() << "Could not create directory " << yearPath.c_str();
             return false;
         }
         else {
@@ -124,12 +125,10 @@ bool FileUtil::createDir(std::string parent, std::string child) {
     }
     else if( S_ISREG(info.st_mode)) {
         // Exists and is a regular file.
-//        qInfo() << "Found a regular file at " << yearPath.c_str() << "; can't create directory!";
         return false;
     }
     else {
         // Exists and is neither a directory or regular file
-//        qInfo() << "Found an existing file of unknown type at " << yearPath.c_str() << "; can't create directory!";
         return false;
     }
 }

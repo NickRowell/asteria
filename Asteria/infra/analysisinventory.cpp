@@ -81,5 +81,6 @@ void AnalysisInventory::saveToDir(std::string path) {
 }
 
 void AnalysisInventory::deleteClip() {
-
+    // TODO: use this to delete each file of an analysis specifically rather than
+    // relying on deleting everything in the directory, which is unsafe.
 }
