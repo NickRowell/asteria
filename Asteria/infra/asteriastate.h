@@ -129,6 +129,11 @@ public:
     string videoDirPath;
 
     /**
+     * @brief calibrationDirPath
+     */
+    string calibrationDirPath;
+
+    /**
      * @brief refStarCataloguePath
      */
     string refStarCataloguePath;

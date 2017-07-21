@@ -44,9 +44,9 @@ void CalibrationWorker::process() {
     subLevels.push_back(mm);
     subLevels.push_back(dd);
     subLevels.push_back(utc);
-    string path = state->videoDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+    string path = state->calibrationDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
 
-    if(!FileUtil::createDirs(state->videoDirPath, subLevels)) {
+    if(!FileUtil::createDirs(state->calibrationDirPath, subLevels)) {
         fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
         return;
     }
