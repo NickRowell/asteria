@@ -5,8 +5,6 @@
 #include "config/parameterdouble.h"
 #include "infra/asteriastate.h"
 
-#include <QDebug>
-
 class AnalysisParameters : public ConfigParameterFamily {
 
 public:

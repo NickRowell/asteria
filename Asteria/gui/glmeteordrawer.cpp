@@ -13,8 +13,8 @@
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
 
-GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state, bool rgb)
-    : QOpenGLWidget(parent), state(state), rgb(rgb), program(0) {
+GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state)
+    : QOpenGLWidget(parent), state(state), program(0) {
 
 }
 
@@ -31,21 +31,18 @@ QSize GLMeteorDrawer::sizeHint() const {
 
 void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
 
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
-
     unsigned int width = state->width;
     unsigned int height = state->height;
 
-    if(rgb) {
-        // For displaying the RGBA annotated image with 32bit pixels:
-        unsigned int* a = &(image->annotatedImage[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, a);
-    }
-    else {
-        // For displaying the greyscale image:
-        unsigned char* a = &(image->rawImage[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, a);
-    }
+    // For displaying the RGBA annotated image with 32bit pixels:
+    glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
+    unsigned int* annotated = &(image->annotatedImage[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, annotated);
+
+    // For displaying the greyscale image:
+    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+    unsigned char* acquired = &(image->rawImage[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, acquired);
 
     // Post redraw
     update();
@@ -110,24 +107,30 @@ void GLMeteorDrawer::initializeGL() {
     vbo.bind();
     vbo.allocate(vertData.constData(), vertData.count() * sizeof(GLfloat));
 
-    // Use underlying GL texture API
-    glGenTextures(1, &VideoImageTexture);
+    unsigned int width = state->width;
+    unsigned int height = state->height;
 
+    // Create textures using underlying GL API
+    GLuint texHandles[2];
+    glGenTextures(2, texHandles);
+    VideoImageTexture = texHandles[0];
+    OverlayImageTexture = texHandles[1];
+
+    // Create VideoImageTexture
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    unsigned int width = state->width;
-    unsigned int height = state->height;
+    // For displaying greyscale image from a texture:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
 
-    if(rgb) {
-        // For displaying RGB annotated image from a texture, 32bit pixels:
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
-    }
-    else {
-        // For displaying greyscale image from a texture:
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
-    }
+    // Create OverlayImageTexture
+    glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // For displaying RGB annotated image from a texture, 32bit pixels:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
 
     // Set identity modelview and projection matrices. These are only relevant for rendering the
     // bitmapped timestamp into the image, for which the raster position is transformed and projected
@@ -136,7 +139,7 @@ void GLMeteorDrawer::initializeGL() {
     glPushMatrix();
     glLoadIdentity();
 
-    glMatrixMode( GL_PROJECTION );
+    glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
     gluOrtho2D( 0, state->width, 0, state->height );
@@ -157,8 +160,13 @@ void GLMeteorDrawer::paintGL() {
     program->setAttributeBuffer(PositionAttributeIndex, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     program->setAttributeBuffer(TexCoordAttributeIndex, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Bind the texture then render it onto screen-aligned quad
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindTexture(GL_TEXTURE_2D, 0);
     program->disableAttributeArray(PositionAttributeIndex);

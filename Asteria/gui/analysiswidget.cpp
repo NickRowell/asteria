@@ -14,7 +14,7 @@
 
 AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
 
-    display = new GLMeteorDrawer(this, this->state, false);
+    display = new GLMeteorDrawer(this, this->state);
 
     // Display the usual symbols for each button
     QIcon playIcon(":/images/play.png");
@@ -112,6 +112,27 @@ void AnalysisWidget::loadClip(QString path) {
     // Set the range of the slider according to how many frames we have
     slider->setRange(0, inv->eventFrames.size()-1);
     slider->setValue(0);
+
+    // Enable/disable the de-interlaced stepping checkbox depending on whether the clip consists of
+    // interlaced-scan type images
+    switch(inv->eventFrames[0]->field) {
+    case V4L2_FIELD_NONE:
+        // progressive format; not interlaced
+        dicheckbox->setEnabled(false);
+        break;
+    case V4L2_FIELD_INTERLACED:
+        // interleaved/interlaced format
+        dicheckbox->setEnabled(true);
+        break;
+    case V4L2_FIELD_INTERLACED_TB:
+        // interleaved/interlaced format; top field is transmitted first
+        dicheckbox->setEnabled(true);
+        break;
+    case V4L2_FIELD_INTERLACED_BT:
+        // interleaved/interlaced format; bottom field is transmitted first
+        dicheckbox->setEnabled(true);
+        break;
+    }
 
     // Initialise it with the peak hold image
     display->newFrame(inv->peakHold);

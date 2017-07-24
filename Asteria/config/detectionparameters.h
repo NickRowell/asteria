@@ -6,8 +6,6 @@
 #include "config/parameterdouble.h"
 #include "infra/asteriastate.h"
 
-#include <QDebug>
-
 class DetectionParameters : public ConfigParameterFamily {
 
 public:

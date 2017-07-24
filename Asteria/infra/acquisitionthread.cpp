@@ -529,6 +529,9 @@ void AcquisitionThread::run() {
             }
         }
 
+        // TODO: if the frame number i is less than the number of frames to flush, skip the rest of the
+        // loop.
+
         // Monitor FPS and dropped FPS, after the first 10 frames
         if(i > 2) {
             frameCaptureTimes.push(epochTimeStamp_us);
@@ -593,6 +596,13 @@ void AcquisitionThread::run() {
                         image->annotatedImage[p] = 0x0000FFFF;
                     }
                 }
+                else {
+                    // No change - overlay is transparent
+                    if(!state->headless) {
+                        image->annotatedImage[p] = 0x00000000;
+                    }
+                }
+
             }
 
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {

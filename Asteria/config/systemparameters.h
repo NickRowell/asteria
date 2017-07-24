@@ -5,8 +5,6 @@
 #include "config/parameterdir.h"
 #include "infra/asteriastate.h"
 
-#include <QDebug>
-
 class SystemParameters : public ConfigParameterFamily {
 
 public:

@@ -9,7 +9,7 @@
 
 AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QWidget(parent), state(state) {
 
-    display = new GLMeteorDrawer(this, this->state, true);
+    display = new GLMeteorDrawer(this, this->state);
 
     acqThread = new AcquisitionThread(this, this->state);
 

@@ -39,6 +39,12 @@ public:
     QPushButton *stepf_button;
     QPushButton *stepb_button;
     QSlider * slider;
+
+    /**
+    * @brief dicheckbox
+    * Checkbox for enabling/disabling de-interlaced stepping of frames, for clips composed of interlaced
+    * scan type images.
+    */
     QCheckBox *dicheckbox;
 
     QLabel * clipLengthSecsField;

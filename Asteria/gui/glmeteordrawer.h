@@ -30,7 +30,7 @@ class GLMeteorDrawer : public QOpenGLWidget {
 
 public:
 
-    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0, bool rgb = true);
+    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0);
     ~GLMeteorDrawer();
 
     QSize sizeHint() const Q_DECL_OVERRIDE;
@@ -41,11 +41,14 @@ private:
     // The MeteorCaptureState object
     AsteriaState * state;
 
-    // Handle to GL texture object used to store video frame
+    // Texture handle for (width*height) acquired image display
     GLuint VideoImageTexture;
 
+    // Texture handle for (width*height) annotated image display
+    GLuint OverlayImageTexture;
+
     // Indicates RGB texture (true) or grey texture (false)
-    bool rgb;
+//    bool rgb;
 
     // Shader program used to render textured quad
     QOpenGLShaderProgram * program;

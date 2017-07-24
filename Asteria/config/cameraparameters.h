@@ -5,8 +5,6 @@
 #include "config/parameteruintarray.h"
 #include "infra/asteriastate.h"
 
-#include <QDebug>
-
 class CameraParameters : public ConfigParameterFamily {
 
 public:
