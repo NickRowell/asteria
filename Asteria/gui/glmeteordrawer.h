@@ -44,11 +44,17 @@ private:
     // Texture handle for (width*height) acquired image display
     GLuint VideoImageTexture;
 
+    // Texture handle for (width * height/2) acquired image when interlaced scan
+    // mode was in use and we're doing de-interlaced stepping.
+    GLuint VideoFieldTexture;
+
     // Texture handle for (width*height) annotated image display
     GLuint OverlayImageTexture;
 
-    // Indicates RGB texture (true) or grey texture (false)
-//    bool rgb;
+    // Flags used to indicate whether each of the textures should be rendered
+    bool renderVideoImageTexture;
+    bool renderVideoFieldTexture;
+    bool renderOverlayImageTexture;
 
     // Shader program used to render textured quad
     QOpenGLShaderProgram * program;
@@ -68,7 +74,7 @@ protected:
 
 public slots:
 
-    void newFrame(std::shared_ptr<Image> image);
+    void newFrame(std::shared_ptr<Image> image, bool renderTopField, bool renderBottomField);
 };
 
 #endif // GLMETEORDRAWER_H

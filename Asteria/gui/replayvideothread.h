@@ -32,8 +32,15 @@ public:
     // The total length of the clip [secs]
     double clipLengthSecs;
 
-    // The index of the frame to display next
+    // The index of the frame currently being displayed
     unsigned int idx;
+
+    // Indicates whether we're in de-interlaced stepping mode
+    bool deinterlacedStepping;
+
+    // Indicates the field (top=true/bottom=false) currently being displayed. This is only relevant when in
+    // de-interlaced stepping mode
+    bool topField = true;
 
     // Current state
     ReplayState state;
@@ -52,10 +59,11 @@ public:
 protected:
     void run() Q_DECL_OVERRIDE;
 
-    void processFrame(int fIdx, std::shared_ptr<Image> image);
+    void processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField);
 
 public slots:
     void loadClip(std::vector<std::shared_ptr<Image>>, std::shared_ptr<Image>);
+    void toggleDiStepping(int);
 
     void play();
     void pause();
@@ -66,7 +74,7 @@ public slots:
 
 signals:
     void videoStats(const AnalysisVideoStats &);
-    void queueNewFrame(std::shared_ptr<Image> image);
+    void queueNewFrame(std::shared_ptr<Image> image, bool, bool);
     void queuedFrameIndex(int fIdx);
 };
 

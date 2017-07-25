@@ -569,7 +569,7 @@ void AcquisitionThread::run() {
 
         if(acqState==PREVIEWING) {
             // PREVIEWING - don't proceed to event detection and calibration.
-            emit acquiredImage(image);
+            emit acquiredImage(image, true, true);
             emit videoStats(stats);
             continue;
         }
@@ -704,7 +704,7 @@ void AcquisitionThread::run() {
         }
 
         // Notify attached listeners that a new frame is available
-        emit acquiredImage(image);
+        emit acquiredImage(image, true, true);
         emit videoStats(stats);
     }
 

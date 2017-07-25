@@ -29,20 +29,52 @@ QSize GLMeteorDrawer::sizeHint() const {
     return QSize(state->width, state->height);
 }
 
-void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image) {
+void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderTopField, bool renderBottomField) {
 
     unsigned int width = state->width;
     unsigned int height = state->height;
 
-    // For displaying the RGBA annotated image with 32bit pixels:
-    glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
-    unsigned int* annotated = &(image->annotatedImage[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, annotated);
+    if(renderTopField && renderBottomField) {
+        // For displaying the greyscale image:
+        unsigned char* acquired = &(image->rawImage[0]);
+        glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, acquired);
+        renderVideoImageTexture = true;
+    }
+    else {
+        renderVideoImageTexture = false;
+    }
+    // Render one or the other field
+    if(renderTopField != renderBottomField) {
 
-    // For displaying the greyscale image:
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
-    unsigned char* acquired = &(image->rawImage[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, acquired);
+        // Skip every second row in order to load just the odd or even pixel rows to the texture
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 2*width);
+        if(renderBottomField) {
+            glPixelStorei(GL_UNPACK_SKIP_PIXELS, width);
+        }
+
+        unsigned char* acquired = &(image->rawImage[0]);
+        glBindTexture(GL_TEXTURE_2D, VideoFieldTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height/2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, acquired);
+
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        renderVideoFieldTexture = true;
+    }
+    else {
+        renderVideoFieldTexture = false;
+    }
+
+    // For displaying the RGBA annotated image with 32bit pixels:
+    if(!image->annotatedImage.empty()) {
+        glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
+        unsigned int* annotated = &(image->annotatedImage[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, annotated);
+        renderOverlayImageTexture = true;
+    }
+    else {
+        renderOverlayImageTexture = false;
+    }
 
     // Post redraw
     update();
@@ -111,10 +143,11 @@ void GLMeteorDrawer::initializeGL() {
     unsigned int height = state->height;
 
     // Create textures using underlying GL API
-    GLuint texHandles[2];
-    glGenTextures(2, texHandles);
+    GLuint texHandles[3];
+    glGenTextures(3, texHandles);
     VideoImageTexture = texHandles[0];
-    OverlayImageTexture = texHandles[1];
+    VideoFieldTexture = texHandles[1];
+    OverlayImageTexture = texHandles[2];
 
     // Create VideoImageTexture
     glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
@@ -124,12 +157,20 @@ void GLMeteorDrawer::initializeGL() {
     // For displaying greyscale image from a texture:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
 
+    // Create VideoFieldTexture
+    glBindTexture(GL_TEXTURE_2D, VideoFieldTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // For displaying greyscale image from a texture:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height/2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+
     // Create OverlayImageTexture
     glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    // For displaying RGB annotated image from a texture, 32bit pixels:
+    // For displaying RGBA annotated image from a texture, 32bit pixels:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
 
     // Set identity modelview and projection matrices. These are only relevant for rendering the
@@ -163,11 +204,23 @@ void GLMeteorDrawer::paintGL() {
     glEnable (GL_BLEND);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Bind the texture then render it onto screen-aligned quad
-    glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    // For each texture to be rendered, bind the texture then render it onto screen-aligned quad
+
+    if(renderVideoImageTexture) {
+        glBindTexture(GL_TEXTURE_2D, VideoImageTexture);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+
+    if(renderVideoFieldTexture) {
+        glBindTexture(GL_TEXTURE_2D, VideoFieldTexture);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+
+    if(renderOverlayImageTexture) {
+        glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+
     glBindTexture(GL_TEXTURE_2D, 0);
     program->disableAttributeArray(PositionAttributeIndex);
     program->disableAttributeArray(TexCoordAttributeIndex);

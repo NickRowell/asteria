@@ -32,6 +32,17 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     clipLengthSecs = (double) clipLengthUs / 1000000.0;
 }
 
+void ReplayVideoThread::toggleDiStepping(int state) {
+    switch(state) {
+    case Qt::Checked:
+        deinterlacedStepping = true;
+        break;
+    case Qt::Unchecked:
+        deinterlacedStepping = false;
+        break;
+    }
+}
+
 void ReplayVideoThread::play() {
     state = PLAYING;
 }
@@ -57,7 +68,7 @@ void ReplayVideoThread::queueFrameIndex(int fIdx) {
     idx = fIdx;
 }
 
-void ReplayVideoThread::processFrame(int fIdx, std::shared_ptr<Image> image) {
+void ReplayVideoThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField) {
 
     // Compute AnalysisVideoStats
 
@@ -66,10 +77,10 @@ void ReplayVideoThread::processFrame(int fIdx, std::shared_ptr<Image> image) {
     double framePositionSecs = (double) framePositionUs / 1000000.0;
     std::string utc = TimeUtil::convertToUtcString(image->epochTimeUs);
 
-    AnalysisVideoStats stats(clipLengthSecs, frames.size(), framePositionSecs, fIdx, true, true, utc);
+    AnalysisVideoStats stats(clipLengthSecs, frames.size(), framePositionSecs, fIdx, isTopField, isBottomField, utc);
 
     emit videoStats(stats);
-    emit queueNewFrame(image);
+    emit queueNewFrame(image, isTopField, isBottomField);
     emit queuedFrameIndex(fIdx);
 }
 
@@ -93,36 +104,60 @@ void ReplayVideoThread::run() {
                     state = STOPPED;
                 }
                 else {
-                    processFrame(idx, frames[idx]);
+                    processFrame(idx, frames[idx], true, true);
                     idx++;
                 }
                 break;
             case STOPPED:
                 idx=0;
-                processFrame(idx, peakHold);
+                processFrame(idx, peakHold, true, true);
                 break;
             case PAUSED:
                 break;
             case STEPB:
-                // Check we've not yet reached the start
-                if(idx > 0) {
+                // Step backwards to previous frame, or previous field if we're in de-interlaced stepping mode
+                if(deinterlacedStepping && !topField) {
+                    // Step back to the top field in the same frame
+                    topField = true;
+                    processFrame(idx, frames[idx], topField, !topField);
+                }
+                else if(idx > 0) {
                     --idx;
-                    processFrame(idx, frames[idx]);
+                    if(deinterlacedStepping) {
+                        // Stepping backwards - start on bottom field of previous frame
+                        topField = false;
+                        processFrame(idx, frames[idx], topField, !topField);
+                    }
+                    else {
+                        processFrame(idx, frames[idx], true, true);
+                    }
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
                 break;
             case STEPF:
-                // Check we've not yet reached the end
-                if(idx < (frames.size()-1)) {
+                // Step forwards to next frame, or next field if we're in de-interlaced stepping mode
+                if(deinterlacedStepping && topField) {
+                    // Step forwards to the bottom field in the same frame
+                    topField = false;
+                    processFrame(idx, frames[idx], topField, !topField);
+                }
+                else if(idx < (frames.size()-1)) {
                     ++idx;
-                    processFrame(idx, frames[idx]);
+                    if(deinterlacedStepping) {
+                        // Stepping forwards - start on top field of next frame
+                        topField = true;
+                        processFrame(idx, frames[idx], topField, !topField);
+                    }
+                    else {
+                        processFrame(idx, frames[idx], true, true);
+                    }
                 }
                 // Return to PAUSED state to prevent recurrence of step
                 state = PAUSED;
                 break;
             case FQUEUED:
-                processFrame(idx, frames[idx]);
+                processFrame(idx, frames[idx], true, true);
                 break;
             }
         }

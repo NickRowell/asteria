@@ -70,6 +70,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(stop_button, SIGNAL(pressed()), replayThread, SLOT(stop()));
     connect(stepb_button, SIGNAL(pressed()), replayThread, SLOT(stepb()));
     connect(stepf_button, SIGNAL(pressed()), replayThread, SLOT(stepf()));
+    connect(dicheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleDiStepping(int)));
 
     // Slider response to user actions in the player
     connect(replayThread, SIGNAL(queuedFrameIndex(int)), slider, SLOT(setValue(int)));
@@ -78,7 +79,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(slider, SIGNAL(sliderMoved(int)), replayThread, SLOT(queueFrameIndex(int)));
 
     // Display image when one is queued
-    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>)), display, SLOT(newFrame(std::shared_ptr<Image>)));
+    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool)));
     connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Arrange layout
@@ -135,7 +136,7 @@ void AnalysisWidget::loadClip(QString path) {
     }
 
     // Initialise it with the peak hold image
-    display->newFrame(inv->peakHold);
+    display->newFrame(inv->peakHold, true, true);
 }
 
 void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
@@ -143,7 +144,18 @@ void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
     QString clipLengthSecsStr;
     clipLengthSecsStr.sprintf("%05.2f / %05.2f", stats.framePositionSecs, stats.clipLengthSecs);
     clipLengthSecsField->setText(clipLengthSecsStr);
-    QString clipLengthFramesStr;
-    clipLengthFramesStr.sprintf("%d / %d", stats.framePositionFrames, stats.clipLengthFrames);
-    clipLengthFramesField->setText(clipLengthFramesStr);
+
+    // Unicode symbols to use when displaying full frame, top field & bottom field
+    QString both = QString::fromUtf8("\u25CF");
+    QString top = QString::fromUtf8("\u25D3");
+    QString bottom = QString::fromUtf8("\u25D2");
+
+    QString symbol = (stats.isTopField && stats.isBottomField) ? both : (stats.isTopField ? top : bottom);
+    clipLengthFramesField->setText(QString("%1 %2 / %3").arg(QString::number(stats.framePositionFrames), symbol, QString::number(stats.clipLengthFrames)));
+
+    // Alternatively, place an icon inline with the text:
+//    QString clipLengthFramesStr;
+//    clipLengthFramesStr.sprintf("%d <img src=\":/images/stop.png\">/ %d", stats.framePositionFrames, stats.clipLengthFrames);
+//    clipLengthFramesField->setTextFormat(Qt::RichText);
+//    clipLengthFramesField->setText(clipLengthFramesStr);
 }
