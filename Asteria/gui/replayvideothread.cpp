@@ -30,6 +30,9 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     // Compute clip length
     long long clipLengthUs = frames.back()->epochTimeUs - frames.front()->epochTimeUs;
     clipLengthSecs = (double) clipLengthUs / 1000000.0;
+
+    // Reset de-interlaced stepping
+    deinterlacedStepping = false;
 }
 
 void ReplayVideoThread::toggleDiStepping(int state) {
@@ -104,8 +107,8 @@ void ReplayVideoThread::run() {
                     state = STOPPED;
                 }
                 else {
-                    processFrame(idx, frames[idx], true, true);
                     idx++;
+                    processFrame(idx, frames[idx], true, true);
                 }
                 break;
             case STOPPED:

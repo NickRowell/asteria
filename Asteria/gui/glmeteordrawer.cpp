@@ -34,6 +34,7 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderTopField,
     unsigned int width = state->width;
     unsigned int height = state->height;
 
+    // Render the full frame
     if(renderTopField && renderBottomField) {
         // For displaying the greyscale image:
         unsigned char* acquired = &(image->rawImage[0]);
@@ -47,7 +48,11 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderTopField,
     // Render one or the other field
     if(renderTopField != renderBottomField) {
 
-        // Skip every second row in order to load just the odd or even pixel rows to the texture
+        isTopField = renderTopField;
+
+        // Skip every second row in order to load just the odd or even pixel rows to the texture. We apply a small
+        // vertical shift correction to the texture coordinates at the rendering stage to compensate for the slight
+        // displacement in the displayed image that would otherwise occur.
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 2*width);
         if(renderBottomField) {
             glPixelStorei(GL_UNPACK_SKIP_PIXELS, width);
@@ -102,9 +107,11 @@ void GLMeteorDrawer::initializeGL() {
         // Simple pass-through fragment shader used to render quad textures.
         "varying vec2 texCoord;\n"           // <-- Texture coordinate of this fragment
         "uniform sampler2D texture;\n"
+        "uniform float voffset;\n"           // <-- Offset applied to u texture coordinate to align top and bottom fields when displaying interlaced scan images
         "void main()\n"
         "{\n"
-        "    gl_FragColor = texture2D(texture, texCoord);\n"
+        "    vec2 texUpdated = vec2(texCoord.x, texCoord.y + voffset);\n"
+        "    gl_FragColor = texture2D(texture, texUpdated);\n"
         "}\n";
     fshader->compileSourceCode(fsrc);
 
@@ -116,6 +123,7 @@ void GLMeteorDrawer::initializeGL() {
     program->link();
     program->bind();
     program->setUniformValue("texture", 0);
+    program->setUniformValue("voffset", 0.0f);
     program->release();
 
     // Contains position and texture coordinates for each of four vertices, in
@@ -173,6 +181,9 @@ void GLMeteorDrawer::initializeGL() {
     // For displaying RGBA annotated image from a texture, 32bit pixels:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
 
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Set identity modelview and projection matrices. These are only relevant for rendering the
     // bitmapped timestamp into the image, for which the raster position is transformed and projected
     // into window coordinates using these.
@@ -183,7 +194,7 @@ void GLMeteorDrawer::initializeGL() {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D( 0, state->width, 0, state->height );
+    gluOrtho2D( 0, width, 0, height);
 }
 
 void GLMeteorDrawer::resizeGL(int w, int h) {
@@ -201,9 +212,6 @@ void GLMeteorDrawer::paintGL() {
     program->setAttributeBuffer(PositionAttributeIndex, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     program->setAttributeBuffer(TexCoordAttributeIndex, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
-    glEnable (GL_BLEND);
-    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     // For each texture to be rendered, bind the texture then render it onto screen-aligned quad
 
     if(renderVideoImageTexture) {
@@ -212,8 +220,21 @@ void GLMeteorDrawer::paintGL() {
     }
 
     if(renderVideoFieldTexture) {
+
+        // Apply vertical shift to compensate for top/bottom field displacement.
+        // Shift is quarter of one texture pixel, normalised to texture coordinates.
+        float shift = 1.0 / (2.0 * state->height);
+
+        if(isTopField) {
+            program->setUniformValue("voffset", shift);
+        }
+        else {
+            program->setUniformValue("voffset", -shift);
+        }
+
         glBindTexture(GL_TEXTURE_2D, VideoFieldTexture);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        program->setUniformValue("voffset", 0.0f);
     }
 
     if(renderOverlayImageTexture) {
@@ -237,7 +258,7 @@ int GLMeteorDrawer::printOpenGLError() {
 
     glErr = glGetError ();
     while (glErr != GL_NO_ERROR) {
-        fprintf(stderr, "glError: %s\n", glErr);
+        fprintf(stderr, "glError: %d\n", glErr);
         retCode = 1;
         glErr = glGetError ();
     }

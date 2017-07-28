@@ -119,18 +119,22 @@ void AnalysisWidget::loadClip(QString path) {
     switch(inv->eventFrames[0]->field) {
     case V4L2_FIELD_NONE:
         // progressive format; not interlaced
+        dicheckbox->setChecked(false);
         dicheckbox->setEnabled(false);
         break;
     case V4L2_FIELD_INTERLACED:
         // interleaved/interlaced format
+        dicheckbox->setChecked(false);
         dicheckbox->setEnabled(true);
         break;
     case V4L2_FIELD_INTERLACED_TB:
         // interleaved/interlaced format; top field is transmitted first
+        dicheckbox->setChecked(false);
         dicheckbox->setEnabled(true);
         break;
     case V4L2_FIELD_INTERLACED_BT:
         // interleaved/interlaced format; bottom field is transmitted first
+        dicheckbox->setChecked(false);
         dicheckbox->setEnabled(true);
         break;
     }
@@ -152,10 +156,4 @@ void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
 
     QString symbol = (stats.isTopField && stats.isBottomField) ? both : (stats.isTopField ? top : bottom);
     clipLengthFramesField->setText(QString("%1 %2 / %3").arg(QString::number(stats.framePositionFrames), symbol, QString::number(stats.clipLengthFrames)));
-
-    // Alternatively, place an icon inline with the text:
-//    QString clipLengthFramesStr;
-//    clipLengthFramesStr.sprintf("%d <img src=\":/images/stop.png\">/ %d", stats.framePositionFrames, stats.clipLengthFrames);
-//    clipLengthFramesField->setTextFormat(Qt::RichText);
-//    clipLengthFramesField->setText(clipLengthFramesStr);
 }

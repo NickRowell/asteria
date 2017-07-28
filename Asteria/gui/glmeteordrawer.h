@@ -54,6 +54,7 @@ private:
     // Flags used to indicate whether each of the textures should be rendered
     bool renderVideoImageTexture;
     bool renderVideoFieldTexture;
+    bool isTopField;
     bool renderOverlayImageTexture;
 
     // Shader program used to render textured quad
