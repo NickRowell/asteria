@@ -102,7 +102,7 @@ void ReplayVideoThread::run() {
             switch(state) {
             case PLAYING:
                 // Check we've not yet reached the end
-                if(idx==frames.size()) {
+                if(idx==frames.size()-1) {
                     // Stop playing
                     state = STOPPED;
                 }
