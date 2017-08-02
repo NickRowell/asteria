@@ -520,15 +520,6 @@ void AcquisitionThread::run() {
             }
         }
 
-        // Write the grey pixels to the annotated image
-        if(!state->headless) {
-            for(unsigned int p = 0; p < state->width * state->height; p++) {
-                unsigned char pixel = image->rawImage[p];
-                unsigned int pix32bit = (pixel << 24) + (pixel << 16) + (pixel << 8) + (255 << 0);
-                image->annotatedImage[p] = (pix32bit);
-            }
-        }
-
         // TODO: if the frame number i is less than the number of frames to flush, skip the rest of the
         // loop.
 
@@ -582,7 +573,7 @@ void AcquisitionThread::run() {
 
             // Events are detected by counting the number of pixels with significant
             // changes in brightness. If this is above a threshold then an event is detected.
-            int nChangedPixels = 0;
+            unsigned int nChangedPixels = 0;
 
             for(unsigned int p=0; p< state->width * state->height; p++) {
 
@@ -593,7 +584,14 @@ void AcquisitionThread::run() {
                     nChangedPixels++;
                     // Indicate the changed pixel in the annotated image
                     if(!state->headless) {
-                        image->annotatedImage[p] = 0x0000FFFF;
+                        if(newPixel - oldPixel > 0) {
+                            // Pixel got brighter - blue
+                            image->annotatedImage[p] = 0x0000FFFF;
+                        }
+                        else {
+                            // Pixel got fainter - green
+                            image->annotatedImage[p] = 0x00FF00FF;
+                        }
                     }
                 }
                 else {

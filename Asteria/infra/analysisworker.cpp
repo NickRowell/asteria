@@ -35,6 +35,85 @@ void AnalysisWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    // Steps:
+    // 1) Detect thresholded changed pixels from one image to the next
+    // 2) Rough localisation based on changed pixels, maybe median and 3*MAD to place a box around the meteor
+    // 3) Precise localisation by centre of flux within the box region
+    // 4) Later: best localisation by PSF fitting to centre of flux
+
+    // Only frames that cover the meteor event can be processed; need to apply some threshold
+    // at the early stage that rules out an image from being used in the analysis.
+
+    // For each frame that can be processed, localise the meteor; if these are interlaced
+    // scan then there are two localisations applied to the odd and even pixels separately.
+
+    // The location in each frame and the time of the frame is used to compute the model fit.
+
+    // How to detect non-meteors?
+    //  - dark blob on bright background
+    //  - shape of individual images not elliptical etc
+    //  - path deviates from model fit
+    //  -
+
+    for(unsigned int i = 1; i < eventFrames.size(); ++i) {
+
+        // Get the current frame and the previous one
+        Image &prev = *eventFrames[i-1];
+        Image &image = *eventFrames[i];
+
+        vector<unsigned int> changedPixels;
+
+        for(unsigned int p=0; p< state->width * state->height; p++) {
+            if(abs(image.rawImage[p] - prev.rawImage[p]) > state->pixel_difference_threshold) {
+                changedPixels.push_back(p);
+            }
+        }
+
+        if(changedPixels.size() > state->n_changed_pixels_for_trigger) {
+            // Event detected! Trigger localisation algorithm(s)
+            image.coarse_localisation_success = true;
+
+            // Get borders of square enclosing the changed pixels. Origin is at top left of image.
+            image.bb_xmin=state->width;
+            image.bb_xmax=0;
+            image.bb_ymin=state->height;
+            image.bb_ymax=0;
+            for(unsigned int p = 0; p < changedPixels.size(); ++p) {
+
+                // Get the pixel index
+                unsigned int pIdx = changedPixels[p];
+                unsigned int x = pIdx % state->width;
+                unsigned int y = pIdx / state->width;
+
+                image.bb_xmin = std::min(x, image.bb_xmin);
+                image.bb_xmax = std::max(x, image.bb_xmax);
+                image.bb_ymin = std::min(y, image.bb_ymin);
+                image.bb_ymax = std::max(y, image.bb_ymax);
+            }
+        }
+        else {
+            image.coarse_localisation_success = false;
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
     std::string utc = TimeUtil::convertToUtcString(eventFrames[0u]->epochTimeUs);
@@ -80,11 +159,6 @@ void AnalysisWorker::process() {
             }
         }
     }
-
-    // Coordinates of changed pixel
-    // TODO: verify this - are the pixels packed by row?
-//    unsigned int x = p % state->width;
-//    unsigned int y = p / state->width;
 
     // Write out the peak hold image
     char filename [100];

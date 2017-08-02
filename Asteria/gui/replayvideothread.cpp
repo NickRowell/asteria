@@ -169,5 +169,3 @@ void ReplayVideoThread::run() {
         QThread::usleep(framePeriodUs);
     }
 }
-
-

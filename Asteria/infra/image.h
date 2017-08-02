@@ -1,6 +1,7 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include <memory>
 #include <vector>
 #include <iostream>
 #include <linux/videodev2.h>
@@ -40,6 +41,18 @@ public:
      */
     unsigned int field;
 
+    /**
+     * Positions of the edges of the bounding box that encloses the set of changed pixels for this image,
+     * with respect to the earlier image. Outlier filtering is used so the bounding box may not contain
+     * all of the changed pixels, but should provide a better localisation of the event trigger.
+     */
+    bool coarse_localisation_success;
+    unsigned int bb_xmin;
+    unsigned int bb_xmax;
+    unsigned int bb_ymin;
+    unsigned int bb_ymax;
+
+
     // Remaining fields are transient (not serialised)
 
     // Optional RGBA overlay image with annotations, for display.
@@ -59,6 +72,21 @@ public:
      * @return
      */
     bool operator < (const Image& image) const;
+
+    /**
+     * @brief comparePtrToImage
+     * Used to sort a vector of pointers to Images.
+     * @param a
+     * @param b
+     * @return
+     */
+    static bool comparePtrToImage(std::shared_ptr<Image> a, std::shared_ptr<Image> b);
+
+    /**
+     * @brief generateAnnotatedImage
+     * Function used to create the annotated image showing the analysis results.
+     */
+    void generateAnnotatedImage();
 
 };
 

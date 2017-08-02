@@ -10,23 +10,27 @@ Image::Image() {
 
 Image::Image(const Image& copyme) : width(copyme.width), height(copyme.height), rawImage(copyme.rawImage), annotatedImage(copyme.annotatedImage),
     epochTimeUs(copyme.epochTimeUs), field(copyme.field) {
-
+    coarse_localisation_success = false;
 }
 
 Image::Image(unsigned int &width, unsigned int &height) : width(width), height(height), rawImage(width * height), annotatedImage(width * height) {
-
+    coarse_localisation_success = false;
 }
 
 Image::Image(unsigned int &width, unsigned int &height, unsigned char val) : width(width), height(height), rawImage(width * height, val), annotatedImage(width * height, val) {
-
+    coarse_localisation_success = false;
 }
 
 Image::~Image() {
-
+    coarse_localisation_success = false;
 }
 
 bool Image::operator < (const Image& str) const {
     return (epochTimeUs < str.epochTimeUs);
+}
+
+bool Image::comparePtrToImage(std::shared_ptr<Image> a, std::shared_ptr<Image> b) {
+    return (*a < *b);
 }
 
 std::ostream &operator<<(std::ostream &output, const Image &image) {
@@ -42,6 +46,15 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
     output << "# v4l2_field_index=" << std::to_string(image.field) << "\n";
     // Human-readable version (not deserialised; this is for manual inspection of files only)
     output << "# v4l2_field_name=" << V4L2Util::getV4l2FieldNameFromIndex(image.field) << "\n";
+
+    // Analysis results
+    output << "# coarse_localisation_success=" << image.coarse_localisation_success << "\n";
+    if(image.coarse_localisation_success) {
+        output << "# bb_xmin=" << image.bb_xmin << "\n";
+        output << "# bb_xmax=" << image.bb_xmax << "\n";
+        output << "# bb_ymin=" << image.bb_ymin << "\n";
+        output << "# bb_ymax=" << image.bb_ymax << "\n";
+    }
 
     // TODO: write additional header info
 
@@ -127,6 +140,52 @@ std::istream &operator>>(std::istream &input, Image &image) {
                 return input;
             }
         }
+        if(!key.compare("coarse_localisation_success")) {
+            try {
+                image.coarse_localisation_success = std::stoll(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse coarse_localisation_success from %s\n", val.c_str());
+                return input;
+            }
+        }
+        if(!key.compare("bb_xmin")) {
+            try {
+                image.bb_xmin = std::stoul(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse bb_xmin from %s\n", val.c_str());
+                return input;
+            }
+        }
+        if(!key.compare("bb_xmax")) {
+            try {
+                image.bb_xmax = std::stoul(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse bb_xmax from %s\n", val.c_str());
+                return input;
+            }
+        }
+        if(!key.compare("bb_ymin")) {
+            try {
+                image.bb_ymin = std::stoul(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse bb_ymin from %s\n", val.c_str());
+                return input;
+            }
+        }
+        if(!key.compare("bb_ymax")) {
+            try {
+                image.bb_ymax = std::stoul(val);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse bb_ymax from %s\n", val.c_str());
+                return input;
+            }
+        }
+
     }
 
     // TODO: read any additional header info
@@ -140,7 +199,7 @@ std::istream &operator>>(std::istream &input, Image &image) {
 
         // Check we found the right amount of elements:
         if(x.size() != 3) {
-            fprintf(stderr, "Expected to read width, height and pixel limit, found %d numbers!\n", x.size());
+            fprintf(stderr, "Expected to read width, height and pixel limit, found %lu numbers!\n", x.size());
             return input;
         }
 
@@ -179,5 +238,32 @@ std::istream &operator>>(std::istream &input, Image &image) {
         image.rawImage.push_back(pix);
     }
 
+    // Create the annotated image showing analysis results
+    image.generateAnnotatedImage();
+
     return input;
+}
+
+
+void Image::generateAnnotatedImage() {
+
+    annotatedImage.clear();
+    annotatedImage.reserve(width * height);
+
+    // Initialise to full transparency
+    for(unsigned int p = 0; p < width * height; p++) {
+        annotatedImage.push_back(0x00000000);
+    }
+
+    // Add features
+    if(this->coarse_localisation_success) {
+        for(unsigned int x = bb_xmin; x<=bb_xmax; x++) {
+            annotatedImage[bb_ymin*width + x] = 0xFF0000FF;
+            annotatedImage[bb_ymax*width + x] = 0xFF0000FF;
+        }
+        for(unsigned int y = bb_ymin; y<=bb_ymax; y++) {
+            annotatedImage[y*width + bb_xmin] = 0xFF0000FF;
+            annotatedImage[y*width + bb_xmax] = 0xFF0000FF;
+        }
+    }
 }
