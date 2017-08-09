@@ -75,7 +75,7 @@ protected:
 
 public slots:
 
-    void newFrame(std::shared_ptr<Image> image, bool renderTopField, bool renderBottomField);
+    void newFrame(std::shared_ptr<Image> image, bool renderOverlay, bool renderTopField, bool renderBottomField);
 };
 
 #endif // GLMETEORDRAWER_H

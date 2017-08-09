@@ -62,7 +62,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     connect(detect_button, SIGNAL(pressed()), acqThread, SLOT(detect()));
 
     // Connect image acquisition signal to image display slot
-    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>, bool, bool)), display, SLOT (newFrame(std::shared_ptr<Image>, bool, bool)));
+    connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT (newFrame(std::shared_ptr<Image>, bool, bool, bool)));
 
     // Forward the acquiredClip signal
     connect(acqThread, SIGNAL (acquiredClip(std::string)), this, SIGNAL (acquiredClip(std::string)));

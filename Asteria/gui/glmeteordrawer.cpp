@@ -29,7 +29,7 @@ QSize GLMeteorDrawer::sizeHint() const {
     return QSize(state->width, state->height);
 }
 
-void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderTopField, bool renderBottomField) {
+void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderOverlay, bool renderTopField, bool renderBottomField) {
 
     unsigned int width = state->width;
     unsigned int height = state->height;
@@ -71,7 +71,7 @@ void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderTopField,
     }
 
     // For displaying the RGBA annotated image with 32bit pixels:
-    if(!image->annotatedImage.empty()) {
+    if(!image->annotatedImage.empty() && renderOverlay) {
         glBindTexture(GL_TEXTURE_2D, OverlayImageTexture);
         unsigned int* annotated = &(image->annotatedImage[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, annotated);

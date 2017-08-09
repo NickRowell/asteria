@@ -1,6 +1,8 @@
 #ifndef ANALYSISWIDGET_H
 #define ANALYSISWIDGET_H
 
+#define REANALYSE
+
 #include "infra/image.h"
 #include "gui/replayvideothread.h"
 #include "infra/analysisvideostats.h"
@@ -40,12 +42,18 @@ public:
     QPushButton *stepb_button;
     QSlider * slider;
 
+#ifdef REANALYSE
+    QPushButton *reanalyse_button;
+#endif
+
     /**
     * @brief dicheckbox
     * Checkbox for enabling/disabling de-interlaced stepping of frames, for clips composed of interlaced
     * scan type images.
     */
     QCheckBox *dicheckbox;
+
+    QCheckBox *overlaycheckbox;
 
     QLabel * clipLengthSecsField;
     QLabel * clipLengthFramesField;
@@ -58,6 +66,11 @@ public slots:
     // Load a clip for display
     void loadClip(QString path);
     void updateVideoStats(const AnalysisVideoStats &stats);
+
+#ifdef REANALYSE
+    void reanalyse();
+    void reanalysisComplete(std::string);
+#endif
 
 private slots:
 };

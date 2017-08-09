@@ -39,7 +39,7 @@ public:
     static const std::string actionNames[];
 
 signals:
-    void acquiredImage(std::shared_ptr<Image>, bool, bool);
+    void acquiredImage(std::shared_ptr<Image>, bool, bool, bool);
     void videoStats(const AcquisitionVideoStats &);
     void acquiredClip(std::string utc);
     void transitionedToState(AcquisitionThread::AcquisitionState);

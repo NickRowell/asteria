@@ -35,8 +35,8 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     deinterlacedStepping = false;
 }
 
-void ReplayVideoThread::toggleDiStepping(int state) {
-    switch(state) {
+void ReplayVideoThread::toggleDiStepping(int checkBoxState) {
+    switch(checkBoxState) {
     case Qt::Checked:
         deinterlacedStepping = true;
         break;
@@ -44,6 +44,18 @@ void ReplayVideoThread::toggleDiStepping(int state) {
         deinterlacedStepping = false;
         break;
     }
+}
+
+void ReplayVideoThread::toggleOverlay(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        showOverlayImage = true;
+        break;
+    case Qt::Unchecked:
+        showOverlayImage = false;
+        break;
+    }
+    state = FQUEUED;
 }
 
 void ReplayVideoThread::play() {
@@ -83,7 +95,7 @@ void ReplayVideoThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> i
     AnalysisVideoStats stats(clipLengthSecs, frames.size(), framePositionSecs, fIdx, isTopField, isBottomField, utc);
 
     emit videoStats(stats);
-    emit queueNewFrame(image, isTopField, isBottomField);
+    emit queueNewFrame(image, showOverlayImage, isTopField, isBottomField);
     emit queuedFrameIndex(fIdx);
 }
 

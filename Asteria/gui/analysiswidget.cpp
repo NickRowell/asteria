@@ -3,6 +3,10 @@
 #include "infra/analysisinventory.h"
 #include "infra/asteriastate.h"
 
+#ifdef REANALYSE
+    #include "infra/analysisworker.h"
+#endif
+
 #include <memory>
 
 #include <QHBoxLayout>
@@ -35,6 +39,11 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     stepf_button->setIcon(stepfIcon);
     slider = new QSlider(Qt::Horizontal, this);
     dicheckbox = new QCheckBox("&De-interlaced stepping", this);
+    overlaycheckbox = new QCheckBox("&Show overlay image", this);
+
+#ifdef REANALYSE
+    reanalyse_button = new QPushButton("Reanalyse", this);
+#endif
 
     replayThread = new ReplayVideoThread(this->state->nominalFramePeriodUs);
 
@@ -46,7 +55,19 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     controlsLayout->addWidget(stop_button);
     controlsLayout->addWidget(stepb_button);
     controlsLayout->addWidget(stepf_button);
-    controlsLayout->addWidget(dicheckbox);
+
+    QWidget * boxes = new QWidget(this);
+    QVBoxLayout * boxesLayout = new QVBoxLayout;
+    boxesLayout->addWidget(dicheckbox);
+    boxesLayout->addWidget(overlaycheckbox);
+
+#ifdef REANALYSE
+    boxesLayout->addWidget(reanalyse_button);
+#endif
+
+    boxes->setLayout(boxesLayout);
+    controlsLayout->addWidget(boxes);
+
     controls->setLayout(controlsLayout);
 
     // A widget to present the stats of the video clip
@@ -71,6 +92,11 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(stepb_button, SIGNAL(pressed()), replayThread, SLOT(stepb()));
     connect(stepf_button, SIGNAL(pressed()), replayThread, SLOT(stepf()));
     connect(dicheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleDiStepping(int)));
+    connect(overlaycheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleOverlay(int)));
+
+#ifdef REANALYSE
+    connect(reanalyse_button, SIGNAL(pressed()), this, SLOT(reanalyse()));
+#endif
 
     // Slider response to user actions in the player
     connect(replayThread, SIGNAL(queuedFrameIndex(int)), slider, SLOT(setValue(int)));
@@ -79,7 +105,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(slider, SIGNAL(sliderMoved(int)), replayThread, SLOT(queueFrameIndex(int)));
 
     // Display image when one is queued
-    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool)));
+    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool, bool)));
     connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Arrange layout
@@ -107,8 +133,9 @@ void AnalysisWidget::loadClip(QString path) {
         return;
     }
 
-    // Pass the clip to the player
-    replayThread->loadClip(inv->eventFrames, inv->peakHold);
+    // Initialise the overlay image switch
+    overlaycheckbox->setEnabled(true);
+    overlaycheckbox->setChecked(true);
 
     // Set the range of the slider according to how many frames we have
     slider->setRange(0, inv->eventFrames.size()-1);
@@ -139,8 +166,11 @@ void AnalysisWidget::loadClip(QString path) {
         break;
     }
 
+    // Pass the clip to the player
+    replayThread->loadClip(inv->eventFrames, inv->peakHold);
+
     // Initialise it with the peak hold image
-    display->newFrame(inv->peakHold, true, true);
+    display->newFrame(inv->peakHold, true, true, true);
 }
 
 void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
@@ -157,3 +187,27 @@ void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
     QString symbol = (stats.isTopField && stats.isBottomField) ? both : (stats.isTopField ? top : bottom);
     clipLengthFramesField->setText(QString("%1 %2 / %3").arg(QString::number(stats.framePositionFrames), symbol, QString::number(stats.clipLengthFrames)));
 }
+
+#ifdef REANALYSE
+    void AnalysisWidget::reanalyse() {
+        fprintf(stderr, "Reanalysing...\n");
+        // If there's no clip loaded, bail
+        if(!inv) {
+            fprintf(stderr, "No clip to analyse!\n");
+            return;
+        }
+        QThread* thread = new QThread;
+        AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, inv->eventFrames);
+        worker->moveToThread(thread);
+        connect(thread, SIGNAL(started()), worker, SLOT(process()));
+        connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
+        connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
+        connect(worker, SIGNAL(finished(std::string)), this, SLOT(reanalysisComplete(std::string)));
+        connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+        thread->start();
+    }
+
+    void AnalysisWidget::reanalysisComplete(std::string utc) {
+        fprintf(stderr, "Finished reanalysing %s\n", utc.c_str());
+    }
+#endif

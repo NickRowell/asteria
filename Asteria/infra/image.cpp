@@ -5,7 +5,7 @@
 #include <numeric>
 
 Image::Image() {
-
+    coarse_localisation_success = false;
 }
 
 Image::Image(const Image& copyme) : width(copyme.width), height(copyme.height), rawImage(copyme.rawImage), annotatedImage(copyme.annotatedImage),

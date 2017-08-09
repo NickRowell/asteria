@@ -38,6 +38,9 @@ public:
     // Indicates whether we're in de-interlaced stepping mode
     bool deinterlacedStepping;
 
+    // Indicates whether we're displaying the overlay image
+    bool showOverlayImage;
+
     // Indicates the field (top=true/bottom=false) currently being displayed. This is only relevant when in
     // de-interlaced stepping mode
     bool topField = true;
@@ -63,7 +66,8 @@ protected:
 
 public slots:
     void loadClip(std::vector<std::shared_ptr<Image>>, std::shared_ptr<Image>);
-    void toggleDiStepping(int);
+    void toggleDiStepping(int checkBoxState);
+    void toggleOverlay(int checkBoxState);
 
     void play();
     void pause();
@@ -74,7 +78,7 @@ public slots:
 
 signals:
     void videoStats(const AnalysisVideoStats &);
-    void queueNewFrame(std::shared_ptr<Image> image, bool, bool);
+    void queueNewFrame(std::shared_ptr<Image> image, bool, bool, bool);
     void queuedFrameIndex(int fIdx);
 };
 
