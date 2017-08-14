@@ -9,7 +9,7 @@ Image::Image() {
 }
 
 Image::Image(const Image& copyme) : width(copyme.width), height(copyme.height), rawImage(copyme.rawImage), annotatedImage(copyme.annotatedImage),
-    epochTimeUs(copyme.epochTimeUs), field(copyme.field) {
+    epochTimeUs(copyme.epochTimeUs), field(copyme.field), changedPixelsPositive(copyme.changedPixelsPositive), changedPixelsNegative(copyme.changedPixelsNegative) {
     coarse_localisation_success = false;
 }
 
@@ -33,6 +33,15 @@ bool Image::comparePtrToImage(std::shared_ptr<Image> a, std::shared_ptr<Image> b
     return (*a < *b);
 }
 
+/**
+ * Serialises the Image to a ostream. The philosophy is that any valid fields are written, except for transient ones
+ * such as the overlay image which are generated on-the-fly at runtime.
+ *
+ * @brief operator <<
+ * @param output
+ * @param image
+ * @return
+ */
 std::ostream &operator<<(std::ostream &output, const Image &image) {
 
     // Function to write an Image to file
@@ -48,6 +57,23 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
     output << "# v4l2_field_name=" << V4L2Util::getV4l2FieldNameFromIndex(image.field) << "\n";
 
     // Analysis results
+    if(!image.changedPixelsPositive.empty()) {
+        output << "# changed_pixels_positive=";
+        for(unsigned int p = 0; p < image.changedPixelsPositive.size(); ++p) {
+            unsigned int pIdx = image.changedPixelsPositive[p];
+            output << pIdx << ",";
+        }
+        output << "\n";
+    }
+    if(!image.changedPixelsNegative.empty()) {
+        output << "# changed_pixels_negative=";
+        for(unsigned int p = 0; p < image.changedPixelsNegative.size(); ++p) {
+            unsigned int pIdx = image.changedPixelsNegative[p];
+            output << pIdx << ",";
+        }
+        output << "\n";
+    }
+
     output << "# coarse_localisation_success=" << image.coarse_localisation_success << "\n";
     if(image.coarse_localisation_success) {
         output << "# bb_xmin=" << image.bb_xmin << "\n";
@@ -117,7 +143,7 @@ std::istream &operator>>(std::istream &input, Image &image) {
         std::vector<std::string> y = IoUtil::split(keyValue, '=');
         if(y.size() != 2) {
             fprintf(stderr, "Couldn't parse key-value pair from %s\n", keyValue.c_str());
-            return input;
+            continue;
         }
         std::string key = y[0];
         std::string val = y[1];
@@ -138,6 +164,20 @@ std::istream &operator>>(std::istream &input, Image &image) {
             catch(std::exception& e) {
                 fprintf(stderr, "Couldn't parse v4l2_field_index from %s\n", val.c_str());
                 return input;
+            }
+        }
+        if(!key.compare("changed_pixels_positive")) {
+            std::vector<std::string> x = IoUtil::split(val, ',');
+            for(unsigned int p = 0; p < x.size(); ++p) {
+                unsigned int pIdx = std::stoul(x[p]);
+                image.changedPixelsPositive.push_back(pIdx);
+            }
+        }
+        if(!key.compare("changed_pixels_negative")) {
+            std::vector<std::string> x = IoUtil::split(val, ',');
+            for(unsigned int p = 0; p < x.size(); ++p) {
+                unsigned int pIdx = std::stoul(x[p]);
+                image.changedPixelsNegative.push_back(pIdx);
             }
         }
         if(!key.compare("coarse_localisation_success")) {
@@ -253,6 +293,16 @@ void Image::generateAnnotatedImage() {
     // Initialise to full transparency
     for(unsigned int p = 0; p < width * height; p++) {
         annotatedImage.push_back(0x00000000);
+    }
+
+    // Indicate changed pixels
+    for(auto const& p: changedPixelsPositive) {
+        // Positive changed pixels - blue
+        annotatedImage[p] = 0x0000FFFF;
+    }
+    for(auto const& p: changedPixelsNegative) {
+        // Negative changed pixels - green
+        annotatedImage[p] = 0x00FF00FF;
     }
 
     // Add features

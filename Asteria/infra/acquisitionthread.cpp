@@ -276,6 +276,17 @@ void AcquisitionThread::detect() {
     actions.push(DETECT);
 }
 
+void AcquisitionThread::toggleOverlay(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        showOverlayImage = true;
+        break;
+    case Qt::Unchecked:
+        showOverlayImage = false;
+        break;
+    }
+}
+
 void AcquisitionThread::transitionToState(AcquisitionThread::AcquisitionState newState) {
     acqState = newState;
     emit transitionedToState(acqState);
@@ -540,7 +551,7 @@ void AcquisitionThread::run() {
 
             if(state->headless) {
                 // Headless mode: print frame stats to console
-                fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06d +++\n", fps, droppedFramesCounter, i);
+                fprintf(stderr, "+++ FPS: %06f Dropped: %06d Total: %06lu +++\n", fps, droppedFramesCounter, i);
             }
         }
         lastFrameCaptureTime = epochTimeStamp_us;
@@ -582,32 +593,18 @@ void AcquisitionThread::run() {
 
                 if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
-                    // Indicate the changed pixel in the annotated image
-                    if(!state->headless) {
-                        if(newPixel - oldPixel > 0) {
-                            // Pixel got brighter - blue
-                            image->annotatedImage[p] = 0x0000FFFF;
-                        }
-                        else {
-                            // Pixel got fainter - green
-                            image->annotatedImage[p] = 0x00FF00FF;
-                        }
+                    if(newPixel - oldPixel > 0) {
+                        image->changedPixelsPositive.push_back(p);
+                    }
+                    else {
+                        image->changedPixelsNegative.push_back(p);
                     }
                 }
-                else {
-                    // No change - overlay is transparent
-                    if(!state->headless) {
-                        image->annotatedImage[p] = 0x00000000;
-                    }
-                }
-
             }
 
             if(nChangedPixels > state->n_changed_pixels_for_trigger) {
                 event = true;
-                if(state->headless && acqState != RECORDING) {
-                    // TODO: Instead, log whenever state changes
-                    // Only print one event notification for each recording
+                if(acqState != RECORDING) {
                     fprintf(stderr, "EVENT! %s\n", utc.c_str());
                 }
             }
@@ -701,8 +698,12 @@ void AcquisitionThread::run() {
 
         }
 
+        if(!state->headless && showOverlayImage) {
+            image->generateAnnotatedImage();
+        }
+
         // Notify attached listeners that a new frame is available
-        emit acquiredImage(image, true, true, true);
+        emit acquiredImage(image, showOverlayImage, true, true);
         emit videoStats(stats);
     }
 

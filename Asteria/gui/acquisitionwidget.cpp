@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
+#include <QCheckBox>
 
 AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QWidget(parent), state(state) {
 
@@ -24,6 +25,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     pause_button->setIcon(pauseIcon);
     detect_button = new QPushButton(this);
     detect_button->setIcon(detectIcon);
+    overlaycheckbox = new QCheckBox("&Show overlay image", this);
 
     QLabel * acqStateLabel = new QLabel("Acquisition state: ");
     acqStateField = new QLabel("");
@@ -44,22 +46,23 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     layout->addWidget(new QLabel(""), 0, 2);
     layout->addWidget(utcLabel, 1, 0);
     layout->addWidget(utcField, 1, 1);
-    layout->addWidget(new QLabel(""), 1, 2);
+    layout->addWidget(play_button, 1, 2);
     layout->addWidget(fpsLabel, 2, 0);
     layout->addWidget(fpsField, 2, 1);
-    layout->addWidget(play_button, 2, 2);
+    layout->addWidget(pause_button, 2, 2);
     layout->addWidget(totalFramesLabel, 3, 0);
     layout->addWidget(totalFramesField, 3, 1);
-    layout->addWidget(pause_button, 3, 2);
+    layout->addWidget(detect_button, 3, 2);
     layout->addWidget(droppedFramesLabel, 4, 0);
     layout->addWidget(droppedFramesField, 4, 1);
-    layout->addWidget(detect_button, 4, 2);
+    layout->addWidget(overlaycheckbox, 4, 2);
 
     acqStateDisplay->setLayout(layout);
 
     connect(play_button, SIGNAL(pressed()), acqThread, SLOT(preview()));
     connect(pause_button, SIGNAL(pressed()), acqThread, SLOT(pause()));
     connect(detect_button, SIGNAL(pressed()), acqThread, SLOT(detect()));
+    connect(overlaycheckbox, SIGNAL(stateChanged(int)), acqThread, SLOT(toggleOverlay(int)));
 
     // Connect image acquisition signal to image display slot
     connect(acqThread, SIGNAL (acquiredImage(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT (newFrame(std::shared_ptr<Image>, bool, bool, bool)));
@@ -69,6 +72,10 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
 
     connect(acqThread, SIGNAL (transitionedToState(AcquisitionThread::AcquisitionState)), this, SLOT (updateAcquisitionState(AcquisitionThread::AcquisitionState)));
     connect(acqThread, SIGNAL (videoStats(const AcquisitionVideoStats &)), this, SLOT (updateVideoStats(const AcquisitionVideoStats &)));
+
+    // Initialise the overlay image switch
+    overlaycheckbox->setEnabled(true);
+    overlaycheckbox->setChecked(true);
 
     // Arrange layout
     QVBoxLayout *mainLayout = new QVBoxLayout;

@@ -2,13 +2,14 @@
 #include "util/timeutil.h"
 #include "util/ioutil.h"
 #include "util/fileutil.h"
+#include "util/mathutil.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
 #include <sys/stat.h>
 #include <iostream>
-#include <algorithm>    // std::max
+#include <algorithm>    // std::max, std::min_element, std::max_element
 
 #include <QString>
 #include <QCloseEvent>
@@ -55,63 +56,81 @@ void AnalysisWorker::process() {
     //  - path deviates from model fit
     //  -
 
+    for(unsigned int i = 0; i < eventFrames.size(); ++i) {
+        // Clear any localisation etc fields filled by acquisition thread. We prefer to recompute everything.
+        eventFrames[i]->changedPixelsPositive.clear();
+        eventFrames[i]->changedPixelsNegative.clear();
+    }
+
     for(unsigned int i = 1; i < eventFrames.size(); ++i) {
 
         // Get the current frame and the previous one
         Image &prev = *eventFrames[i-1];
         Image &image = *eventFrames[i];
-
-        vector<unsigned int> changedPixels;
-
         for(unsigned int p=0; p< state->width * state->height; p++) {
-            if(abs(image.rawImage[p] - prev.rawImage[p]) > state->pixel_difference_threshold) {
-                changedPixels.push_back(p);
+            unsigned char newPixel = image.rawImage[p];
+            unsigned char oldPixel = prev.rawImage[p];
+            if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
+                if(newPixel - oldPixel > 0) {
+                    image.changedPixelsPositive.push_back(p);
+                }
+                else {
+                    image.changedPixelsNegative.push_back(p);
+                }
             }
         }
 
-        if(changedPixels.size() > state->n_changed_pixels_for_trigger) {
+        if(image.changedPixelsPositive.size() + image.changedPixelsNegative.size() > state->n_changed_pixels_for_trigger) {
             // Event detected! Trigger localisation algorithm(s)
             image.coarse_localisation_success = true;
 
-            // Get borders of square enclosing the changed pixels. Origin is at top left of image.
-            image.bb_xmin=state->width;
-            image.bb_xmax=0;
-            image.bb_ymin=state->height;
-            image.bb_ymax=0;
-            for(unsigned int p = 0; p < changedPixels.size(); ++p) {
+            // X and Y coordinates of changed pixels
+            std::vector<unsigned int> xs;
+            std::vector<unsigned int> ys;
 
-                // Get the pixel index
-                unsigned int pIdx = changedPixels[p];
+            for(unsigned int p = 0; p < image.changedPixelsPositive.size(); ++p) {
+                unsigned int pIdx = image.changedPixelsPositive[p];
                 unsigned int x = pIdx % state->width;
                 unsigned int y = pIdx / state->width;
-
-                image.bb_xmin = std::min(x, image.bb_xmin);
-                image.bb_xmax = std::max(x, image.bb_xmax);
-                image.bb_ymin = std::min(y, image.bb_ymin);
-                image.bb_ymax = std::max(y, image.bb_ymax);
+                xs.push_back(x);
+                ys.push_back(y);
             }
+
+            for(unsigned int p = 0; p < image.changedPixelsNegative.size(); ++p) {
+                unsigned int pIdx = image.changedPixelsNegative[p];
+                unsigned int x = pIdx % state->width;
+                unsigned int y = pIdx / state->width;
+                xs.push_back(x);
+                ys.push_back(y);
+            }
+
+            // Coarse localisation: bounding box of changed pixels
+//            auto xrange = std::minmax_element(xs.begin(), xs.end());
+//            auto yrange = std::minmax_element(ys.begin(), ys.end());
+
+//            image.bb_xmin=*xrange.first;
+//            image.bb_xmax=*xrange.second;
+//            image.bb_ymin=*yrange.first;
+//            image.bb_ymax=*yrange.second;
+
+            // Alternatively - robust localisation using median and MAD
+            int x_med, x_mad, y_med, y_mad;
+            MathUtil::getMedianMad(xs, x_med, x_mad);
+            MathUtil::getMedianMad(ys, y_med, y_mad);
+
+            image.bb_xmin=std::max(x_med - 3*x_mad, 0);
+            image.bb_xmax=std::min(x_med + 3*x_mad, (int)state->width-1);
+            image.bb_ymin=std::max(y_med - 3*y_mad, 0);
+            image.bb_ymax=std::min(y_med + 3*y_mad, (int)state->height-1);
+
+            // TODO: now perform finer localisation
+
         }
         else {
             image.coarse_localisation_success = false;
         }
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // Create new directory to store results for this clip. The path is set by the

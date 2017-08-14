@@ -13,10 +13,17 @@
  * @param delim The token delimiter
  * @return Vector of string tokens
  */
-std::vector<std::string> IoUtil::split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, std::back_inserter(elems));
-    return elems;
+std::vector<std::string> IoUtil::split(const std::string &s, const char &delim) {
+
+    std::vector<std::string> tokens;
+    std::stringstream   mySstream(s);
+    std::string         temp;
+
+    while( std::getline( mySstream, temp, delim ) ) {
+        tokens.push_back( temp );
+    }
+
+    return tokens;
 }
 
 /**

@@ -241,7 +241,7 @@ static void catchUnixSignals() {
 
     for (unsigned i=0; i < quitSignals.size(); i++) {
         auto handler = [](int sig) ->void {
-            fprintf(stderr, "\nReceived %s signal; quitting...\n", strsignal(sig));
+            fprintf(stderr, "Received %s signal; quitting...\n", strsignal(sig));
             QCoreApplication::quit();
         };
         signal(quitSignals[i], handler);

@@ -39,7 +39,7 @@ public:
     static const std::string actionNames[];
 
 signals:
-    void acquiredImage(std::shared_ptr<Image>, bool, bool, bool);
+    void acquiredImage(std::shared_ptr<Image>, bool renderOverlay, bool renderTopField, bool renderBottomField);
     void videoStats(const AcquisitionVideoStats &);
     void acquiredClip(std::string utc);
     void transitionedToState(AcquisitionThread::AcquisitionState);
@@ -67,6 +67,13 @@ public slots:
      * @brief detect Start auto-detection.
      */
     void detect();
+
+    /**
+     * @brief toggleOverlay Used to toggle the rendering of the overlay image, in GUI mode. Sometimes it's
+     * useful to turn it off.
+     * @param checkBoxState
+     */
+    void toggleOverlay(int checkBoxState);
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -147,6 +154,12 @@ private:
      * Maximum number of frames for a clip.
      */
     unsigned int max_clip_length_frames;
+
+    /**
+     * @bIndicates whether we're displaying the overlay imagerief showOverlayImage
+     *
+     */
+    bool showOverlayImage;
 
     /**
      * @brief mutex used to control multithreaded use of instances of this class.

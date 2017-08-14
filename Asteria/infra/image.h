@@ -52,6 +52,12 @@ public:
     unsigned int bb_ymin;
     unsigned int bb_ymax;
 
+    /**
+     * @brief changedPixelsPositive
+     * Indices of the pixels with a significant positive change between this image and the previous one.
+     */
+    std::vector<unsigned int> changedPixelsPositive;
+    std::vector<unsigned int> changedPixelsNegative;
 
     // Remaining fields are transient (not serialised)
 

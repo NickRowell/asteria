@@ -10,6 +10,7 @@ class AsteriaState;
 class GLMeteorDrawer;
 class QPushButton;
 class QLabel;
+class QCheckBox;
 
 class AcquisitionWidget : public QWidget
 {
@@ -26,6 +27,8 @@ public:
     QPushButton *play_button;
     QPushButton *detect_button;
     QPushButton *pause_button;
+
+    QCheckBox *overlaycheckbox;
 
     QLabel *acqStateField;
     QLabel *utcField;
