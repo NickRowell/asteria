@@ -53,6 +53,13 @@ public:
     unsigned int bb_ymax;
 
     /**
+     * @brief x_flux_centroid
+     * Coordinates of the centre of flux of the object.
+     */
+    double x_flux_centroid;
+    double y_flux_centroid;
+
+    /**
      * @brief changedPixelsPositive
      * Indices of the pixels with a significant positive change between this image and the previous one.
      */

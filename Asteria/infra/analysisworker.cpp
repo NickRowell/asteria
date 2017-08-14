@@ -81,8 +81,12 @@ void AnalysisWorker::process() {
         }
 
         if(image.changedPixelsPositive.size() + image.changedPixelsNegative.size() > state->n_changed_pixels_for_trigger) {
+
             // Event detected! Trigger localisation algorithm(s)
-            image.coarse_localisation_success = true;
+
+            // Coarse localisation: bounding box defined by median and MAD of changed pixels.
+            // Note that this is a combination of pixels that got brighter (that the meteor moved into)
+            // and pixels that got darker (that the meteor moved out of).
 
             // X and Y coordinates of changed pixels
             std::vector<unsigned int> xs;
@@ -117,11 +121,28 @@ void AnalysisWorker::process() {
             int x_med, x_mad, y_med, y_mad;
             MathUtil::getMedianMad(xs, x_med, x_mad);
             MathUtil::getMedianMad(ys, y_med, y_mad);
-
+            image.coarse_localisation_success = true;
             image.bb_xmin=std::max(x_med - 3*x_mad, 0);
             image.bb_xmax=std::min(x_med + 3*x_mad, (int)state->width-1);
             image.bb_ymin=std::max(y_med - 3*y_mad, 0);
             image.bb_ymax=std::min(y_med + 3*y_mad, (int)state->height-1);
+
+            // Finer localisation: centre of flux of pixels within the coarse box
+            double sum = 0.0;
+            image.x_flux_centroid = 0.0;
+            image.y_flux_centroid = 0.0;
+            for(double x = image.bb_xmin; x <= image.bb_xmax; x++) {
+                for(double y = image.bb_ymin; y <= image.bb_ymax; y++) {
+                    unsigned int pIdx = y*image.width + x;
+                    unsigned int pixel = image.rawImage[pIdx];
+                    sum += pixel;
+                    // TODO: do we need the 0.5 offset here?
+                    image.x_flux_centroid += (x+0.5)*pixel;
+                    image.y_flux_centroid += (y+0.5)*pixel;
+                }
+            }
+            image.x_flux_centroid /= sum;
+            image.y_flux_centroid /= sum;
 
             // TODO: now perform finer localisation
 

@@ -80,6 +80,7 @@ std::ostream &operator<<(std::ostream &output, const Image &image) {
         output << "# bb_xmax=" << image.bb_xmax << "\n";
         output << "# bb_ymin=" << image.bb_ymin << "\n";
         output << "# bb_ymax=" << image.bb_ymax << "\n";
+        output << "# centre_of_flux=" << image.x_flux_centroid << "," << image.y_flux_centroid << "\n";
     }
 
     // TODO: write additional header info
@@ -222,6 +223,27 @@ std::istream &operator>>(std::istream &input, Image &image) {
             }
             catch(std::exception& e) {
                 fprintf(stderr, "Couldn't parse bb_ymax from %s\n", val.c_str());
+                return input;
+            }
+        }
+        if(!key.compare("centre_of_flux")) {
+            std::vector<std::string> x = IoUtil::split(val, ',');
+            if(x.size() != 2) {
+                fprintf(stderr, "Expected to read centre of flux X and Y coordinates, found %lu numbers!\n", x.size());
+                return input;
+            }
+            try {
+                image.x_flux_centroid = std::stod(x[0]);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse x_flux_centroid from %s\n", x[0].c_str());
+                return input;
+            }
+            try {
+                image.y_flux_centroid = std::stod(x[1]);
+            }
+            catch(std::exception& e) {
+                fprintf(stderr, "Couldn't parse y_flux_centroid from %s\n", x[1].c_str());
                 return input;
             }
         }
