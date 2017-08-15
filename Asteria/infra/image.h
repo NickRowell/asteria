@@ -97,9 +97,17 @@ public:
 
     /**
      * @brief generateAnnotatedImage
-     * Function used to create the annotated image showing the analysis results.
+     * Function used to create the annotated image showing the analysis results for the current frame.
      */
     void generateAnnotatedImage();
+
+    /**
+     * @brief generatePeakholdAnnotatedImage
+     * @param eventFrames
+     * Function used to create the annotated image for the peakHold image showing the analysis
+     * results for the entire clip.
+     */
+    void generatePeakholdAnnotatedImage(std::vector<std::shared_ptr<Image> > &eventFrames);
 
 };
 

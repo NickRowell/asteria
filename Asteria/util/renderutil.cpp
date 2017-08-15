@@ -9,7 +9,7 @@ RenderUtil::RenderUtil()
 }
 
 void RenderUtil::drawLine(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
-                          unsigned int x0, unsigned int x1, unsigned int y0, unsigned int y1, unsigned int colour) {
+                          int x0, int x1, int y0, int y1, unsigned int colour) {
 
     // If point is at the same coordinates in both frames, r=0 and the
     // trig terms here are NaN. Skip the rest of the drawing method.
@@ -23,6 +23,12 @@ void RenderUtil::drawLine(std::vector<unsigned int> &annotatedImage, unsigned in
 
     // Absolute shift in position
     double r_max = std::sqrt(delta_j * delta_j + delta_i * delta_i);
+
+    fprintf(stderr, "(x0,y0) = (%d,%d)\n", x0, y0);
+    fprintf(stderr, "(x1,y1) = (%d,%d)\n", x1, y1);
+    fprintf(stderr, "delta_i = %f\n", delta_i);
+    fprintf(stderr, "delta_j = %f\n", delta_j);
+    fprintf(stderr, "r_max = %f\n", r_max);
 
     // Use polar representation to draw a straight line from (x0,y0) to (x1,y1)
     double sin_theta = delta_j / r_max;

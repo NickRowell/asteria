@@ -4,6 +4,7 @@
 #include <regex>
 #include <fstream>
 #include <iostream>
+#include <functional>
 
 AnalysisInventory::AnalysisInventory() {
 
@@ -65,6 +66,13 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
 
     // Sort the image sequence into ascending order of capture time
     std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Image::comparePtrToImage);
+
+    // Generate annnotated images for each raw image, showing analysis of individual frame
+    for(unsigned int i=0; i<inv->eventFrames.size(); i++) {
+        inv->eventFrames[i]->generateAnnotatedImage();
+    }
+    // Generate annotated image for the peakHold image, showing analysis of clip
+    inv->peakHold->generatePeakholdAnnotatedImage(inv->eventFrames);
 
     return inv;
 }

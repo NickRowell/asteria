@@ -301,9 +301,6 @@ std::istream &operator>>(std::istream &input, Image &image) {
         image.rawImage.push_back(pix);
     }
 
-    // Create the annotated image showing analysis results
-    image.generateAnnotatedImage();
-
     return input;
 }
 
@@ -337,6 +334,36 @@ void Image::generateAnnotatedImage() {
         for(unsigned int y = bb_ymin; y<=bb_ymax; y++) {
             annotatedImage[y*width + bb_xmin] = 0xFF0000FF;
             annotatedImage[y*width + bb_xmax] = 0xFF0000FF;
+        }
+    }
+
+    // Example usage of rendering functions
+//    RenderUtil::drawLine(annotatedImage, width, height, 256u, 350u, 100u, 300u, 0x00FFFFFF);
+//    RenderUtil::drawCircle(annotatedImage, width, height, 328.0, 145.6, 53.2, 0x0000FFFF);
+
+
+}
+
+void Image::generatePeakholdAnnotatedImage(std::vector<std::shared_ptr<Image>> &eventFrames) {
+
+    annotatedImage.clear();
+    annotatedImage.reserve(width * height);
+
+    // Initialise to full transparency
+    for(unsigned int p = 0; p < width * height; p++) {
+        annotatedImage.push_back(0x00000000);
+    }
+
+    // Loop over the event images, which are in time sequence
+    for(unsigned int i=1; i<eventFrames.size(); i++) {
+        if(eventFrames[i]->coarse_localisation_success && eventFrames[i-1]->coarse_localisation_success) {
+            // Draw line connecting the centroids between the two frames
+            int x0 = (int) std::round(eventFrames[i-1]->x_flux_centroid);
+            int y0 = (int) std::round(eventFrames[i-1]->y_flux_centroid);
+            int x1 = (int) std::round(eventFrames[i]->x_flux_centroid);
+            int y1 = (int) std::round(eventFrames[i]->y_flux_centroid);
+
+            RenderUtil::drawLine(annotatedImage, width, height, x0, x1, y0, y1, 0xFF00FFFF);
         }
     }
 
