@@ -40,7 +40,8 @@ SOURCES += \
     infra/concurrentqueue.cpp \
     infra/acquisitionvideostats.cpp \
     infra/analysisvideostats.cpp \
-    util/mathutil.cpp
+    util/mathutil.cpp \
+    util/renderutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -95,7 +96,8 @@ HEADERS += \
     infra/concurrentqueue.h \
     infra/acquisitionvideostats.h \
     infra/analysisvideostats.h \
-    util/mathutil.h
+    util/mathutil.h \
+    util/renderutil.h
 
 LIBS += -ljpeg \
         -lftgl \

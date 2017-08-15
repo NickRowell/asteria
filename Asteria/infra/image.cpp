@@ -1,6 +1,7 @@
 #include "image.h"
 #include "util/ioutil.h"
 #include "util/v4l2util.h"
+#include "util/renderutil.h"
 
 #include <numeric>
 
@@ -338,4 +339,10 @@ void Image::generateAnnotatedImage() {
             annotatedImage[y*width + bb_xmax] = 0xFF0000FF;
         }
     }
+
+    // Example usage of rendering functions
+//    RenderUtil::drawLine(annotatedImage, width, height, 256u, 350u, 100u, 300u, 0x00FFFFFF);
+//    RenderUtil::drawCircle(annotatedImage, width, height, 328.0, 145.6, 53.2, 0x0000FFFF);
+
+
 }

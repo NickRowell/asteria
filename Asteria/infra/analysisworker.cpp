@@ -109,23 +109,33 @@ void AnalysisWorker::process() {
             }
 
             // Coarse localisation: bounding box of changed pixels
+//            image.coarse_localisation_success = true;
 //            auto xrange = std::minmax_element(xs.begin(), xs.end());
 //            auto yrange = std::minmax_element(ys.begin(), ys.end());
-
 //            image.bb_xmin=*xrange.first;
 //            image.bb_xmax=*xrange.second;
 //            image.bb_ymin=*yrange.first;
 //            image.bb_ymax=*yrange.second;
 
             // Alternatively - robust localisation using median and MAD
-            int x_med, x_mad, y_med, y_mad;
-            MathUtil::getMedianMad(xs, x_med, x_mad);
-            MathUtil::getMedianMad(ys, y_med, y_mad);
+//            image.coarse_localisation_success = true;
+//            int x_med, x_mad, y_med, y_mad;
+//            MathUtil::getMedianMad(xs, x_med, x_mad);
+//            MathUtil::getMedianMad(ys, y_med, y_mad);
+//            image.bb_xmin=std::max(x_med - 3*x_mad, 0);
+//            image.bb_xmax=std::min(x_med + 3*x_mad, (int)state->width-1);
+//            image.bb_ymin=std::max(y_med - 3*y_mad, 0);
+//            image.bb_ymax=std::min(y_med + 3*y_mad, (int)state->height-1);
+
+            // Alternatively - fit to 90th percentiles of data
             image.coarse_localisation_success = true;
-            image.bb_xmin=std::max(x_med - 3*x_mad, 0);
-            image.bb_xmax=std::min(x_med + 3*x_mad, (int)state->width-1);
-            image.bb_ymin=std::max(y_med - 3*y_mad, 0);
-            image.bb_ymax=std::min(y_med + 3*y_mad, (int)state->height-1);
+            std::sort(xs.begin(), xs.end());
+            std::sort(ys.begin(), ys.end());
+            unsigned int p5 = xs.size() / 20;
+            image.bb_xmin=xs[p5];
+            image.bb_xmax=xs[xs.size() - 1 - p5];
+            image.bb_ymin=ys[p5];
+            image.bb_ymax=ys[ys.size() - 1 - p5];
 
             // Finer localisation: centre of flux of pixels within the coarse box
             double sum = 0.0;
