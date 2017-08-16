@@ -340,6 +340,7 @@ void Image::generateAnnotatedImage() {
     // Example usage of rendering functions
 //    RenderUtil::drawLine(annotatedImage, width, height, 256u, 350u, 100u, 300u, 0x00FFFFFF);
 //    RenderUtil::drawCircle(annotatedImage, width, height, 328.0, 145.6, 53.2, 0x0000FFFF);
+//    RenderUtil::drawEllipse(annotatedImage, width, height, 328.0, 145.6, 10.0, 1.5, 3.0, 15.0, 0xFF00FFFF);
 
 
 }
@@ -370,6 +371,7 @@ void Image::generatePeakholdAnnotatedImage(std::vector<std::shared_ptr<Image>> &
     // Example usage of rendering functions
 //    RenderUtil::drawLine(annotatedImage, width, height, 256u, 350u, 100u, 300u, 0x00FFFFFF);
 //    RenderUtil::drawCircle(annotatedImage, width, height, 328.0, 145.6, 53.2, 0x0000FFFF);
+//    RenderUtil::drawEllipse(annotatedImage, width, height, 328.0, 145.6, 10.0, 1.5, 3.0, 15.0, 0xFF00FFFF);
 
 
 }

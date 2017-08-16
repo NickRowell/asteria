@@ -13,6 +13,9 @@ public:
 
     static void drawCircle(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
                            double centre_x, double centre_y, double radius, unsigned int colour);
+
+    static void drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
+                            double centre_x, double centre_y, double a, double b, double c, float sigmas, unsigned int colour);
 };
 
 #endif // RENDERUTIL_H
