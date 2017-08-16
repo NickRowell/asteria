@@ -45,9 +45,11 @@ sudo apt-get install libjpeg-dev
 # FTGL and Freetype for improved text rendering in OpenGL:
 sudo apt-get install ftgl-dev libfreetype6-dev libfreetype6
 
+# Gnuplot is used for plotting
+sudo apt-get install gnuplot
+
 # Other useful stuff:
 sudo apt-get install v4l-utils
-
 
 # To build Asteria it is simplest to use QtCreator. Once this has been configured for the developent machine,
 # then it's simply a case of opening up the project and building it within the QtCreator environment. That

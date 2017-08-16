@@ -118,13 +118,57 @@ void CalibrationWorker::process() {
         }
     }
 
-    for(unsigned int i=0; i<512; i++) {
-        fprintf(stderr, "%d\t%d\n", (i-256), histogramOfDeviations[i]);
-    }
+    // TODO: Add gnuplot installation to the build setup file
+    // TODO: Measure xrange from percentiles of data
+    // TODO: Get readnoise estimate from data
+    // TODO: Terminate calibration recording if event detected
 
-    // TODO: prototype using Gnuplot to generate a plot of the readnoise histogram
-    // TODO: add gnuplot installation to the build setup file
-    // system("gnuplot -p -e \"plot 'Co_ordinates.txt'\"");
+    char rnPlotfilename [100];
+    sprintf(rnPlotfilename, "%s/readnoise.png", path.c_str());
+
+    std::stringstream ss;
+
+    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
+    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
+    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
+    ss << "set style fill transparent solid 0.5 noborder\n";
+    ss << "set boxwidth 0.95 relative\n";
+    ss << "set xlabel \"Deviation from median [ADU]\" font \"Helvetica,14\"\n";
+    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+    ss << "set mxtics 2\n";
+    ss << "set xrange [-10:10]\n";
+    ss << "set format x \"%g\"\n";
+    ss << "set ylabel \"Frequency [-]\" font \"Helvetica,14\"\n";
+    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+    ss << "set mytics 2\n";
+    ss << "set yrange [*:*]\n";
+    ss << "set format y \"%g\"\n";
+    ss << "set key off\n";
+    ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
+    ss << "set title \"Readnoise estimate\"\n";
+    ss << "set output \"" << rnPlotfilename << "\"\n";
+    ss << "plot \"-\" w boxes notitle\n";
+    for(int i=0; i<512; i++) {
+        ss << (i-256) << " " << histogramOfDeviations[i] << "\n";
+    }
+    ss << "e\n";
+
+    // Get the path to a temporary file
+    std::string tmpFileName = std::tmpnam(nullptr);
+    std::ofstream ofs (tmpFileName, std::ofstream::out);
+    ofs << ss.str();
+    ofs.close();
+
+    char command [100];
+    sprintf(command, "gnuplot < %s", tmpFileName.c_str());
+    system(command);
+
+
+
+
+
+
+
 
     Image median(state->width, state->height);
     median.rawImage = medianVals;
