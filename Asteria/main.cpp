@@ -11,6 +11,8 @@
 #include "infra/acquisitionvideostats.h"
 #include "infra/analysisvideostats.h"
 
+#include "math/cosinefitter.h"
+
 #include <signal.h>
 #include <getopt.h>
 #include <string.h>
@@ -29,6 +31,33 @@ static void catchUnixSignals();
 int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
+
+
+    // TEMP: test the Levenberg-Marquardt fitter
+    double amp = 2.0;
+    double freq = 0.012;
+    double phase = 0.25;
+    std::vector<double> xs;
+    std::vector<double> ys;
+    for(double x=0; x<2*M_PI; x+=M_PI/180) {
+        double y = amp * std::cos(x * freq + phase);
+        xs.push_back(x);
+        ys.push_back(y);
+    }
+
+    CosineFitter cosFit(xs, ys);
+    cosFit.fit(25, true);
+
+    double solution[3];
+    cosFit.getParametersSolution(solution);
+    fprintf(stderr, "Amplitude = %f\n", solution[0]);
+    fprintf(stderr, "Frequency = %f\n", solution[1]);
+    fprintf(stderr, "Phase     = %f\n", solution[2]);
+
+
+
+
+
 
     catchUnixSignals();
 

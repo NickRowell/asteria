@@ -9,6 +9,8 @@
 #include <iostream>
 #include <algorithm>    // std::max
 
+#include <Eigen/Dense>
+
 #include <QString>
 #include <QCloseEvent>
 #include <QGridLayout>
@@ -117,6 +119,15 @@ void CalibrationWorker::process() {
             madVals.push_back(mad);
         }
     }
+
+
+    // Prototype linear algebra library usage
+    Eigen::MatrixXd m(2,2);
+    m(0,0) = 3;
+    m(1,0) = 2.5;
+    m(0,1) = -1;
+    m(1,1) = m(1,0) + m(0,1);
+    std::cout << m << std::endl;
 
     // TODO: Add gnuplot installation to the build setup file
     // TODO: Measure xrange from percentiles of data

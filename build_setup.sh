@@ -48,6 +48,13 @@ sudo apt-get install ftgl-dev libfreetype6-dev libfreetype6
 # Gnuplot is used for plotting
 sudo apt-get install gnuplot
 
+# Eigen3 library is used for linear algebra
+# Eigen headers are installed at /usr/include/eigen3/
+# Include in Qt project by adding this to the .pro file:
+# INCLUDEPATH += /usr/include/eigen3/
+sudo apt-get install libeigen3-dev
+sudo apt-get install libeigen3-doc
+
 # Other useful stuff:
 sudo apt-get install v4l-utils
 

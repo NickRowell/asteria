@@ -41,7 +41,9 @@ SOURCES += \
     infra/acquisitionvideostats.cpp \
     infra/analysisvideostats.cpp \
     util/mathutil.cpp \
-    util/renderutil.cpp
+    util/renderutil.cpp \
+    math/levenbergmarquardtsolver.cpp \
+    math/cosinefitter.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -97,15 +99,17 @@ HEADERS += \
     infra/acquisitionvideostats.h \
     infra/analysisvideostats.h \
     util/mathutil.h \
-    util/renderutil.h
+    util/renderutil.h \
+    math/levenbergmarquardtsolver.h \
+    math/cosinefitter.h
 
 LIBS += -ljpeg \
         -lftgl \
         -lfreetype \
         -lGLU
-#        -lglut
 
-INCLUDEPATH += /usr/include/freetype2/
+INCLUDEPATH += /usr/include/freetype2/ \
+               /usr/include/eigen3/
 
 CONFIG += c++11
 
