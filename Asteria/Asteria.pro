@@ -43,7 +43,8 @@ SOURCES += \
     util/mathutil.cpp \
     util/renderutil.cpp \
     math/levenbergmarquardtsolver.cpp \
-    math/cosinefitter.cpp
+    math/cosinefitter.cpp \
+    math/polynomialfitter.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -101,7 +102,8 @@ HEADERS += \
     util/mathutil.h \
     util/renderutil.h \
     math/levenbergmarquardtsolver.h \
-    math/cosinefitter.h
+    math/cosinefitter.h \
+    math/polynomialfitter.h
 
 LIBS += -ljpeg \
         -lftgl \

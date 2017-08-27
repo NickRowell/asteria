@@ -18,9 +18,9 @@ void CosineFitter::getModel(const double * params, double * model) {
     double freq = params[1];
     double phase = params[2];
 
-    for(unsigned int i=0; i<N; i++) {
-        double x = xs[i];
-        model[i] = amp * std::cos(x * freq + phase);
+    for(unsigned int n=0; n<N; n++) {
+        double x = xs[n];
+        model[n] = amp * std::cos(x * freq + phase);
     }
 }
 
@@ -30,15 +30,15 @@ void CosineFitter::getJacobian(const double * params, double * jac) {
     double freq = params[1];
     double phase = params[2];
 
-    for(unsigned int i=0; i<N; i++) {
-        double x = xs[i];
+    for(unsigned int n=0; n<N; n++) {
+        double x = xs[n];
 
         // Partial derivative with respect to amplitude
-        jac[3*i + 0] = std::cos(x * freq + phase);
+        jac[3*n + 0] = std::cos(x * freq + phase);
         // Partial derivative with respect to frequency
-        jac[3*i + 1] = -amp * x * std::sin(x * freq + phase);
+        jac[3*n + 1] = -amp * x * std::sin(x * freq + phase);
         // Partial derivative with respect to phase
-        jac[3*i + 2] = -amp * std::sin(x * freq + phase);
+        jac[3*n + 2] = -amp * std::sin(x * freq + phase);
     }
 }
 

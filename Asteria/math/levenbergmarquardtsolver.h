@@ -72,7 +72,7 @@ public:
      * @param data
      * 	Pointer to an N-element array of observed values
      */
-    void setData(double * data);
+    void setData(const double *data);
 
     /**
      * Set the Mx1 column vector of initial-guess parameters.
@@ -96,7 +96,7 @@ public:
      * 	NxN matrix of covariance of the data points, packed in a one dimensional array in
      * row-major order.
      */
-    void setCovariance(double * covariance);
+    void setCovariance(const double *covariance);
 
     /**
      * Set the Nx1 variance array of the data points. This is for applications where the covariance
@@ -105,7 +105,7 @@ public:
      * @param variance
      * 	Nx1 array of variance values for each data point.
      */
-    void setVariance(double * variance);
+    void setVariance(const double *variance);
 
     /**
      * @brief getModel
@@ -241,9 +241,13 @@ public:
     MatrixXd getParameterCovariance();
 
     /**
+     * @brief getAsymptoticStandardError
      * Get the asymptotic standard error for the parameters
+     * @param errors
+     *  Pointer to an M-element array fo doubles; on exit this will contain the asymptotic
+     * standard error for each parameter.
      */
-    MatrixXd getAsymptoticStandardError();
+    void getAsymptoticStandardError(double * errors);
 
     /**
      * Get the correlation matrix for the parameters

@@ -14,36 +14,26 @@ LevenbergMarquardtSolver::LevenbergMarquardtSolver(unsigned int M, unsigned int 
 
 LevenbergMarquardtSolver::~LevenbergMarquardtSolver() {
     delete data;
+    delete model;
     delete params;
     delete covariance;
 }
 
-void LevenbergMarquardtSolver::setH(double h)  {
-    this->h = h;
-}
 
-void LevenbergMarquardtSolver::setExitTolerance(double exitTolerance) {
-    this->exitTolerance = exitTolerance;
-}
-
-void LevenbergMarquardtSolver::setMaxDamping(double maxDamping) {
-    this->maxDamping = maxDamping;
-}
-
-void LevenbergMarquardtSolver::setData(double * data) {
+void LevenbergMarquardtSolver::setData(const double * data) {
     for(unsigned int n=0; n<N; n++) {
         this->data[n] =  data[n];
     }
 }
 
-void LevenbergMarquardtSolver::setCovariance(double * covariance) {
+void LevenbergMarquardtSolver::setCovariance(const double * covariance) {
     covarianceIsDiagonal = false;
     for(unsigned int idx=0; idx<N*N; idx++) {
         this->covariance[idx] = covariance[idx];
     }
 }
 
-void LevenbergMarquardtSolver::setVariance(double * variance) {
+void LevenbergMarquardtSolver::setVariance(const double * variance) {
     covarianceIsDiagonal = true;
     for(unsigned int idx=0; idx<N; idx++) {
         this->covariance[idx] = variance[idx];
@@ -60,6 +50,18 @@ void LevenbergMarquardtSolver::getParameters(double * params) {
     for(unsigned int m=0; m<M; m++) {
         params[m] = this->params[m];
     }
+}
+
+void LevenbergMarquardtSolver::setH(double h)  {
+    this->h = h;
+}
+
+void LevenbergMarquardtSolver::setExitTolerance(double exitTolerance) {
+    this->exitTolerance = exitTolerance;
+}
+
+void LevenbergMarquardtSolver::setMaxDamping(double maxDamping) {
+    this->maxDamping = maxDamping;
 }
 
 void LevenbergMarquardtSolver::finiteDifferencesStepSizePerParam(double * steps) {
@@ -248,9 +250,6 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
     // Search for a good step:
     unsigned int stepCount = 0;
     do {
-
-//        fprintf(stderr, "Step count = %d\n", stepCount++);
-
         // Make damping matrix
         MatrixXd L = MatrixXd::Identity(M, M) * lambda[0];
 
@@ -352,33 +351,20 @@ void LevenbergMarquardtSolver::getResiduals(double * residuals) {
     }
 }
 
-double LevenbergMarquardtSolver::getReducedChi2(){
+double LevenbergMarquardtSolver::getReducedChi2() {
     return getChi2()/getDOF();
 }
 
-double LevenbergMarquardtSolver::getDOF(){
+double LevenbergMarquardtSolver::getDOF() {
     return N - M;
 }
 
-MatrixXd LevenbergMarquardtSolver::getFourthOrderCovariance(){
 
-    MatrixXd dpdx = getJacobian_dpdx();
-
-    // First order propagation.
-    return dpdx.transpose() * (*covariance) * dpdx;
-}
-
-MatrixXd LevenbergMarquardtSolver::getParameterCovariance(){
-
-    // Weighted sum of squared residuals
-    double WSSR = getChi2();
-
-    // Degrees of freedom
-    double dof = getDOF();
+MatrixXd LevenbergMarquardtSolver::getParameterCovariance() {
 
     // Get Jacobian matrix for current parameter set
     double jac[N*M];
-    getJacobian(this->params, jac);
+    getJacobian(params, jac);
     // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
     Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
 
@@ -395,33 +381,37 @@ MatrixXd LevenbergMarquardtSolver::getParameterCovariance(){
         WJ = W.colPivHouseholderQr().solve(J);
     }
     MatrixXd JTWJ = J.transpose() * WJ;
-    JTWJ *= (dof / WSSR);
+
+    // This step is thrown in to make results match Gnuplot
+    JTWJ /= getReducedChi2();
 
     // Invert...
     return JTWJ.inverse();
 }
 
-MatrixXd LevenbergMarquardtSolver::getAsymptoticStandardError(){
-
+void LevenbergMarquardtSolver::getAsymptoticStandardError(double *errors) {
     // Get covariance matrix for current parameter set
     MatrixXd covariance = getParameterCovariance();
 
-    MatrixXd standardError(M, 1);
-
     for(unsigned int p=0; p<M; p++) {
-        standardError(p, 0) = sqrt(covariance(p, p));
+        errors[p] = sqrt(covariance(p, p));
     }
-
-    return standardError;
 }
 
 MatrixXd LevenbergMarquardtSolver::getParameterCorrelation() {
 
     MatrixXd covariance = getParameterCovariance();
 
-    MatrixXd standardError = getAsymptoticStandardError();
+    double errors[M];
+    getAsymptoticStandardError(errors);
 
-    MatrixXd standardErrorSquared = standardError * standardError.transpose();
+    // Outer product of the errors
+    MatrixXd standardErrorSquared(M, M);
+    for(unsigned int i=0; i<M; i++) {
+        for(unsigned int j=0; j<M; j++) {
+            standardErrorSquared(i, j) = errors[i] * errors[j];
+        }
+    }
 
     MatrixXd correlation(M, M);
 
@@ -432,6 +422,28 @@ MatrixXd LevenbergMarquardtSolver::getParameterCorrelation() {
     }
 
     return correlation;
+}
+
+MatrixXd LevenbergMarquardtSolver::getFourthOrderCovariance() {
+
+    MatrixXd dpdx = getJacobian_dpdx();
+
+    // Transform the data covariance matrix to the parameter space by:
+    // S_p = (dp/dx)^T S_x (dp/dx)
+
+    MatrixXd sx_dpdx(N, M);
+    if(covarianceIsDiagonal) {
+        // Manually multiply each row of dp/dx by the corresponding variance term
+        for(unsigned int n=0; n<N; n++) {
+            sx_dpdx.row(n) = dpdx.row(n) * covariance[n];
+        }
+    }
+    else {
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> sx(covariance, N, N);
+        sx_dpdx = sx * dpdx;
+    }
+
+    return dpdx.transpose() * sx_dpdx;
 }
 
 MatrixXd LevenbergMarquardtSolver::getJacobian_dpdx() {
