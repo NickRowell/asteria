@@ -8,8 +8,7 @@ CosineFitter::CosineFitter(std::vector<double> &xs, std::vector<double> &ys) : L
     initialGuessParams[0] = 1.0;
     initialGuessParams[1] = 1.0;
     initialGuessParams[2] = 1.0;
-
-    setInitialGuessParameters(initialGuessParams);
+    setParameters(initialGuessParams);
 }
 
 

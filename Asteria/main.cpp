@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
     // TEMP: test the Levenberg-Marquardt fitter
     double amp = 2.0;
-    double freq = 0.012;
+    double freq = 1.312;
     double phase = 0.25;
     std::vector<double> xs;
     std::vector<double> ys;
@@ -46,14 +46,25 @@ int main(int argc, char **argv)
     }
 
     CosineFitter cosFit(xs, ys);
-    cosFit.fit(25, true);
-
+    double initialGuessParams[3];
+    initialGuessParams[0] = 4.5;
+    initialGuessParams[1] = 3.720;
+    initialGuessParams[2] = 0.45;
+    cosFit.setParameters(initialGuessParams);
+    cosFit.fit(125, true);
     double solution[3];
-    cosFit.getParametersSolution(solution);
+    cosFit.getParameters(solution);
     fprintf(stderr, "Amplitude = %f\n", solution[0]);
     fprintf(stderr, "Frequency = %f\n", solution[1]);
     fprintf(stderr, "Phase     = %f\n", solution[2]);
-
+    // Print the data and model
+    double model[xs.size()];
+    cosFit.getModel(solution, model);
+    double initialModel[xs.size()];
+    cosFit.getModel(initialGuessParams, initialModel);
+    for(unsigned int i=0; i<xs.size(); i++) {
+        fprintf(stderr, "%f\t%f\t%f\t%f\n", xs[i], ys[i], model[i], initialModel[i]);
+    }
 
 
 

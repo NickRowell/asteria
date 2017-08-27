@@ -113,6 +113,10 @@ INCLUDEPATH += /usr/include/freetype2/ \
 
 CONFIG += c++11
 
+# Compiler optimization results in much faster linear algebra operations
+#QMAKE_CXXFLAGS_RELEASE += -O1
+#QMAKE_CXXFLAGS_DEBUG += -O1
+
 DISTFILES += \
     shaders/f_screen.glsl \
     shaders/v_screen.glsl \
