@@ -623,9 +623,8 @@ void AcquisitionThread::run() {
             }
 
             // Transition to CALIBRATING if counter has reached (or passed) limit
-            if(nFramesSinceLastCalibration >= calibration_intervals_frames) {
+            else if(nFramesSinceLastCalibration >= calibration_intervals_frames) {
                 transitionToState(CALIBRATING);
-                nFramesSinceLastCalibration = 0;
             }
         }
         else if(acqState == RECORDING) {
@@ -670,32 +669,39 @@ void AcquisitionThread::run() {
         else if(acqState == CALIBRATING) {
 
             if(event) {
-                // TODO: what happens if an event is detected while recording calibration frames?
-                // Should we terminate the calibration on the grounds that the images are compromised?
-            }
-
-            // Add the frame to the calibration set
-            calibrationFrames.push_back(image);
-
-            // Determine if we've recorded all the calibration frames we need
-            if(calibrationFrames.size() >= state->calibration_stack) {
-                // Got enough frames: run calibration algorithm
-                QThread* thread = new QThread;
-                CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);
-                worker->moveToThread(thread);
-                connect(thread, SIGNAL(started()), worker, SLOT(process()));
-                connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
-                connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
-                connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-                thread->start();
-
-                // Clear the calibration buffer
+                // Abort calibration: the calibration algorithms assume the signal is stable, and are compromised
+                // by the occurence of events in the scene.
                 calibrationFrames.clear();
-
-                // Back to DETECTING state
-                transitionToState(DETECTING);
+                // Transition to RECORDING to capture the event
+                transitionToState(RECORDING);
+                // Copy the detection head buffer contents to the event frames buffer
+                std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
+                eventFrames.insert(eventFrames.end(), detectionHeadFrames.begin(), detectionHeadFrames.end());
             }
+            else {
+                // Add the frame to the calibration set
+                calibrationFrames.push_back(image);
 
+                // Determine if we've recorded all the calibration frames we need
+                if(calibrationFrames.size() >= state->calibration_stack) {
+                    // Got enough frames: run calibration algorithm
+                    QThread* thread = new QThread;
+                    CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);
+                    worker->moveToThread(thread);
+                    connect(thread, SIGNAL(started()), worker, SLOT(process()));
+                    connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
+                    connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
+                    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+                    thread->start();
+
+                    // Clear the calibration buffer, reset the counter
+                    calibrationFrames.clear();
+                    nFramesSinceLastCalibration = 0;
+
+                    // Back to DETECTING state
+                    transitionToState(DETECTING);
+                }
+            }
         }
 
         if(!state->headless && showOverlayImage) {
