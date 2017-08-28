@@ -2,6 +2,8 @@
 #include "gui/glmeteordrawer.h"
 #include "infra/analysisinventory.h"
 #include "infra/asteriastate.h"
+#include "gui/videodirectorymodel.h"
+#include "util/timeutil.h"
 
 #ifdef REANALYSE
     #include "infra/analysisworker.h"
@@ -15,10 +17,17 @@
 #include <QCheckBox>
 #include <QSlider>
 #include <QLabel>
+#include <QTreeView>
 
 AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
 
     display = new GLMeteorDrawer(this, this->state);
+
+    tree = new QTreeView(this);
+    model = new VideoDirectoryModel(state->videoDirPath, tree);
+    tree->setModel(model);
+    tree->resizeColumnToContents(0);
+    tree->setContextMenuPolicy(Qt::CustomContextMenu);
 
     // Display the usual symbols for each button
     QIcon playIcon(":/images/play.png");
@@ -108,13 +117,26 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool, bool)));
     connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
+    // Capture right-clicks in the tree view for displaying context menu
+    connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
+
+    // Capture double-clicks in the tree view for replaying videos
+    connect(tree, SIGNAL (doubleClicked(const QModelIndex)), this, SLOT(replayVideo(const QModelIndex)));
+
     // Arrange layout
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(display);
-    mainLayout->addWidget(statsDisplay);
-    mainLayout->addWidget(utcDisplay);
-    mainLayout->addWidget(slider);
-    mainLayout->addWidget(controls);
+    QVBoxLayout *rightPanelLayout = new QVBoxLayout;
+    rightPanelLayout->addWidget(display);
+    rightPanelLayout->addWidget(statsDisplay);
+    rightPanelLayout->addWidget(utcDisplay);
+    rightPanelLayout->addWidget(slider);
+    rightPanelLayout->addWidget(controls);
+    QWidget * rightPanel = new QWidget(this);
+    rightPanel->setLayout(rightPanelLayout);
+
+    QHBoxLayout *mainLayout = new QHBoxLayout;
+    mainLayout->addWidget(tree);
+    mainLayout->addWidget(rightPanel);
+
     this->setLayout(mainLayout);
 }
 
@@ -211,3 +233,28 @@ void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
         fprintf(stderr, "Finished reanalysing %s\n", utc.c_str());
     }
 #endif
+
+void AnalysisWidget::replayVideo(const QModelIndex &index) {
+
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+
+    QString title = item->data(0).toString();
+    QString path = item->data(1).toString();
+
+    // Detect if user has double clicked on a node that is not a video clip
+    if(!std::regex_match (title.toStdString().c_str(), TimeUtil::getTimeRegex())) {
+        // Not a clip (clips have titles like 01:34:56). Do nothing.
+        return;
+    }
+
+    // Load the clip for display
+    loadClip(path);
+}
+
+void AnalysisWidget::onCustomContextMenu(const QPoint &point) {
+    QModelIndex index = tree->indexAt(point);
+    if (index.isValid()) {
+        TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+        item->getContextMenu()->exec(tree->viewport()->mapToGlobal(point));
+    }
+}

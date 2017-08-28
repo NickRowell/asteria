@@ -78,10 +78,11 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
     overlaycheckbox->setChecked(true);
 
     // Arrange layout
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(display);
-    mainLayout->addWidget(acqStateDisplay);
-    this->setLayout(mainLayout);
+    QVBoxLayout *rightPanelLayout = new QVBoxLayout;
+    rightPanelLayout->addWidget(display);
+    rightPanelLayout->addWidget(acqStateDisplay);
+
+    this->setLayout(rightPanelLayout);
 
     acqThread->launch();
 }
@@ -91,10 +92,8 @@ AcquisitionWidget::~AcquisitionWidget() {
 }
 
 void AcquisitionWidget::updateAcquisitionState(AcquisitionThread::AcquisitionState acqState) {
-
     std::ostringstream oss;
     oss << "<b>" << AcquisitionThread::acquisitionStateNames[acqState] << "</b>";
-
     acqStateField->setText(QString::fromStdString(oss.str()));
 }
 

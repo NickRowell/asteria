@@ -13,9 +13,11 @@ class QPushButton;
 class AsteriaState;
 class GLMeteorDrawer;
 class AnalysisInventory;
+class VideoDirectoryModel;
 class QCheckBox;
 class QSlider;
 class QLabel;
+class QTreeView;
 
 class AnalysisWidget : public QWidget
 {
@@ -24,6 +26,9 @@ public:
     explicit AnalysisWidget(QWidget *parent = 0, AsteriaState * state = 0);
 
     AsteriaState * state;
+
+    QTreeView *tree;
+    VideoDirectoryModel *model;
 
     /**
      * The AnalysisInventory that is currently being displayed by the widget.
@@ -66,6 +71,9 @@ public slots:
     // Load a clip for display
     void loadClip(QString path);
     void updateVideoStats(const AnalysisVideoStats &stats);
+
+    void replayVideo(const QModelIndex &index);
+    void onCustomContextMenu(const QPoint &point);
 
 #ifdef REANALYSE
     void reanalyse();

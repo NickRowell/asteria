@@ -7,7 +7,6 @@ class AsteriaState;
 class AcquisitionWidget;
 class AnalysisWidget;
 class QCloseEvent;
-class QTreeView;
 
 class MainWindow : public QMainWindow
 {
@@ -24,7 +23,6 @@ private:
 
     AnalysisWidget * analWidget;
 
-    QTreeView *tree;
 
     QTabWidget *tabWidget;
 
@@ -37,8 +35,6 @@ signals:
 
 public slots:
     void initAndShowGui();
-    void replayVideo(const QModelIndex &index);
-    void onCustomContextMenu(const QPoint &point);
 };
 
 #endif // MAINWINDOW_H
