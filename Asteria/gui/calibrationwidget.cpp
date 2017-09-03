@@ -1,11 +1,11 @@
-#include "gui/analysiswidget.h"
+#include "gui/calibrationwidget.h"
 #include "gui/glmeteordrawer.h"
-#include "infra/analysisinventory.h"
+#include "infra/calibrationinventory.h"
 #include "infra/asteriastate.h"
 #include "gui/videodirectorymodel.h"
 #include "util/timeutil.h"
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     #include "infra/analysisworker.h"
 #endif
 
@@ -19,12 +19,12 @@
 #include <QLabel>
 #include <QTreeView>
 
-AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
+CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state), inv(0), display(0) {
 
     display = new GLMeteorDrawer(this, this->state);
 
     tree = new QTreeView(this);
-    model = new VideoDirectoryModel(state->videoDirPath, "Video clips", tree);
+    model = new VideoDirectoryModel(state->calibrationDirPath, "Calibrations", tree);
     tree->setModel(model);
     tree->resizeColumnToContents(0);
     tree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -50,7 +50,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     dicheckbox = new QCheckBox("&De-interlaced stepping", this);
     overlaycheckbox = new QCheckBox("&Show overlay image", this);
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     reanalyse_button = new QPushButton("Reanalyse", this);
 #endif
 
@@ -70,7 +70,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     boxesLayout->addWidget(dicheckbox);
     boxesLayout->addWidget(overlaycheckbox);
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     boxesLayout->addWidget(reanalyse_button);
 #endif
 
@@ -103,7 +103,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     connect(dicheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleDiStepping(int)));
     connect(overlaycheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleOverlay(int)));
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     connect(reanalyse_button, SIGNAL(pressed()), this, SLOT(reanalyse()));
 #endif
 
@@ -115,7 +115,6 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
 
     // Display image when one is queued
     connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool, bool)));
-    connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
@@ -140,7 +139,7 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
     this->setLayout(mainLayout);
 }
 
-void AnalysisWidget::loadClip(const QModelIndex &index) {
+void CalibrationWidget::loadClip(const QModelIndex &index) {
 
     TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
 
@@ -157,18 +156,18 @@ void AnalysisWidget::loadClip(const QModelIndex &index) {
     loadClip(path);
 }
 
-void AnalysisWidget::loadClip(QString path) {
+void CalibrationWidget::loadClip(QString path) {
 
     // If there's already an AnalysisInventory loaded then delete it
     if(inv) {
         delete inv;
     }
 
-    inv = AnalysisInventory::loadFromDir(path.toStdString());
+    inv = CalibrationInventory::loadFromDir(path.toStdString());
 
     if(!inv) {
         // Couldn't load from dir!
-        fprintf(stderr, "Couldn't load analysis from %s\n", path.toStdString().c_str());
+        fprintf(stderr, "Couldn't load calibration from %s\n", path.toStdString().c_str());
         return;
     }
 
@@ -212,23 +211,9 @@ void AnalysisWidget::loadClip(QString path) {
     display->newFrame(inv->peakHold, true, true, true);
 }
 
-void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
-    utcField->setText(QString::fromStdString(stats.utc));
-    QString clipLengthSecsStr;
-    clipLengthSecsStr.sprintf("%05.2f / %05.2f", stats.framePositionSecs, stats.clipLengthSecs);
-    clipLengthSecsField->setText(clipLengthSecsStr);
 
-    // Unicode symbols to use when displaying full frame, top field & bottom field
-    QString both = QString::fromUtf8("\u25CF");
-    QString top = QString::fromUtf8("\u25D3");
-    QString bottom = QString::fromUtf8("\u25D2");
-
-    QString symbol = (stats.isTopField && stats.isBottomField) ? both : (stats.isTopField ? top : bottom);
-    clipLengthFramesField->setText(QString("%1 %2 / %3").arg(QString::number(stats.framePositionFrames), symbol, QString::number(stats.clipLengthFrames)));
-}
-
-#ifdef REANALYSE
-    void AnalysisWidget::reanalyse() {
+#ifdef RECALIBRATE
+    void CalibrationWidget::reanalyse() {
         fprintf(stderr, "Reanalysing...\n");
         // If there's no clip loaded, bail
         if(!inv) {
@@ -246,13 +231,13 @@ void AnalysisWidget::updateVideoStats(const AnalysisVideoStats &stats) {
         thread->start();
     }
 
-    void AnalysisWidget::reanalysisComplete(std::string utc) {
+    void CalibrationWidget::reanalysisComplete(std::string utc) {
         fprintf(stderr, "Finished reanalysing %s\n", utc.c_str());
     }
 #endif
 
 
-void AnalysisWidget::onCustomContextMenu(const QPoint &point) {
+void CalibrationWidget::onCustomContextMenu(const QPoint &point) {
     QModelIndex index = tree->indexAt(point);
     if (index.isValid()) {
         TreeItem *item = static_cast<TreeItem*>(index.internalPointer());

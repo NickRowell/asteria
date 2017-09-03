@@ -9,9 +9,9 @@
 
 #include <QDebug>
 
-VideoDirectoryModel::VideoDirectoryModel(std::string path, QWidget *widget, QObject *parent) : QAbstractItemModel(parent) {
+VideoDirectoryModel::VideoDirectoryModel(std::string path, std::string title, QWidget *widget, QObject *parent) : QAbstractItemModel(parent) {
     QList<QVariant> rootData;
-    rootData << "Video clips";
+    rootData << title.c_str();
     rootItem = new TreeItem(rootData);
     rootPath = path;
     displayWidget = widget;

@@ -6,6 +6,7 @@
 class AsteriaState;
 class AcquisitionWidget;
 class AnalysisWidget;
+class CalibrationWidget;
 class QCloseEvent;
 
 class MainWindow : public QMainWindow
@@ -23,6 +24,7 @@ private:
 
     AnalysisWidget * analWidget;
 
+    CalibrationWidget * calWidget;
 
     QTabWidget *tabWidget;
 

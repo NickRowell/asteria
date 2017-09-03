@@ -69,7 +69,8 @@ AcquisitionWidget::AcquisitionWidget(QWidget *parent, AsteriaState * state) : QW
 
     // Forward the acquiredClip signal
     connect(acqThread, SIGNAL (acquiredClip(std::string)), this, SIGNAL (acquiredClip(std::string)));
-
+    // Forward the acquiredCalibration signal
+    connect(acqThread, SIGNAL (acquiredCalibration(std::string)), this, SIGNAL (acquiredCalibration(std::string)));
     connect(acqThread, SIGNAL (transitionedToState(AcquisitionThread::AcquisitionState)), this, SLOT (updateAcquisitionState(AcquisitionThread::AcquisitionState)));
     connect(acqThread, SIGNAL (videoStats(const AcquisitionVideoStats &)), this, SLOT (updateVideoStats(const AcquisitionVideoStats &)));
 

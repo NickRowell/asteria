@@ -42,6 +42,7 @@ signals:
     void acquiredImage(std::shared_ptr<Image>, bool renderOverlay, bool renderTopField, bool renderBottomField);
     void videoStats(const AcquisitionVideoStats &);
     void acquiredClip(std::string utc);
+    void acquiredCalibration(std::string utc);
     void transitionedToState(AcquisitionThread::AcquisitionState);
 
 public slots:

@@ -651,10 +651,9 @@ void AcquisitionThread::run() {
                 connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
                 connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
                 connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-                thread->start();
-
                 // Notify listeners when a new clip is available
                 connect(worker, SIGNAL(finished(std::string)), this, SIGNAL(acquiredClip(std::string)));
+                thread->start();
 
                 // Clear the event frame buffer
                 eventFrames.clear();
@@ -692,6 +691,8 @@ void AcquisitionThread::run() {
                     connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
                     connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
                     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+                    // Notify listeners when a new calibration is available
+                    connect(worker, SIGNAL(finished(std::string)), this, SIGNAL(acquiredCalibration(std::string)));
                     thread->start();
 
                     // Clear the calibration buffer, reset the counter

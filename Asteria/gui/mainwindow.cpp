@@ -2,6 +2,7 @@
 #include "infra/asteriastate.h"
 #include "gui/acquisitionwidget.h"
 #include "gui/analysiswidget.h"
+#include "gui/calibrationwidget.h"
 #include "gui/videodirectorymodel.h"
 
 #include <QApplication>
@@ -25,10 +26,12 @@ void MainWindow::initAndShowGui() {
 
     acqWidget = new AcquisitionWidget(this, this->state);
     analWidget = new AnalysisWidget(this, this->state);
+    calWidget = new CalibrationWidget(this, this->state);
 
     tabWidget = new QTabWidget;
     tabWidget->addTab(acqWidget, QString("Acquisition"));
     tabWidget->addTab(analWidget, QString("Analysis"));
+    tabWidget->addTab(calWidget, QString("Calibration"));
 
     // Arrange layout
     central = new QWidget(this);
@@ -47,6 +50,7 @@ void MainWindow::initAndShowGui() {
 
     // Connect new clip signal to tree viewer slot, so that new clips get added to the viewer
     connect(acqWidget, SIGNAL (acquiredClip(std::string)), analWidget->model, SLOT (addNewClipByUtc(std::string)));
+    connect(acqWidget, SIGNAL (acquiredCalibration(std::string)), calWidget->model, SLOT (addNewClipByUtc(std::string)));
 
     show();
 }

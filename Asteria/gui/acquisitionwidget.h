@@ -37,8 +37,9 @@ public:
     QLabel *droppedFramesField;
 
 signals:
-    // Forward the signal from the AcquisitionThread
+    // Forward the signals from the AcquisitionThread
     void acquiredClip(std::string utc);
+    void acquiredCalibration(std::string utc);
 
 public slots:
     void updateAcquisitionState(AcquisitionThread::AcquisitionState acqState);

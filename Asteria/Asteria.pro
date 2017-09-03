@@ -44,7 +44,9 @@ SOURCES += \
     util/renderutil.cpp \
     math/levenbergmarquardtsolver.cpp \
     math/cosinefitter.cpp \
-    math/polynomialfitter.cpp
+    math/polynomialfitter.cpp \
+    gui/calibrationwidget.cpp \
+    infra/calibrationinventory.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -103,7 +105,9 @@ HEADERS += \
     util/renderutil.h \
     math/levenbergmarquardtsolver.h \
     math/cosinefitter.h \
-    math/polynomialfitter.h
+    math/polynomialfitter.h \
+    gui/calibrationwidget.h \
+    infra/calibrationinventory.h
 
 LIBS += -ljpeg \
         -lftgl \

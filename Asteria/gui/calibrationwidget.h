@@ -1,7 +1,7 @@
-#ifndef ANALYSISWIDGET_H
-#define ANALYSISWIDGET_H
+#ifndef CALIBRATIONWIDGET_H
+#define CALIBRATIONWIDGET_H
 
-#define REANALYSE
+#define RECALIBRATE
 
 #include "infra/image.h"
 #include "gui/replayvideothread.h"
@@ -12,18 +12,18 @@
 class QPushButton;
 class AsteriaState;
 class GLMeteorDrawer;
-class AnalysisInventory;
+class CalibrationInventory;
 class VideoDirectoryModel;
 class QCheckBox;
 class QSlider;
 class QLabel;
 class QTreeView;
 
-class AnalysisWidget : public QWidget
+class CalibrationWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit AnalysisWidget(QWidget *parent = 0, AsteriaState * state = 0);
+    explicit CalibrationWidget(QWidget *parent = 0, AsteriaState * state = 0);
 
     AsteriaState * state;
 
@@ -31,10 +31,10 @@ public:
     VideoDirectoryModel *model;
 
     /**
-     * The AnalysisInventory that is currently being displayed by the widget.
+     * The CalibrationInventory that is currently being displayed by the widget.
      * @brief inv
      */
-    AnalysisInventory * inv;
+    CalibrationInventory * inv;
 
     GLMeteorDrawer * display;
 
@@ -47,7 +47,7 @@ public:
     QPushButton *stepb_button;
     QSlider * slider;
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     QPushButton *reanalyse_button;
 #endif
 
@@ -64,18 +64,16 @@ public:
     QLabel * clipLengthFramesField;
     QLabel * utcField;
 
-
 signals:
 
 public slots:
     // Load a clip for display
     void loadClip(const QModelIndex &index);
     void loadClip(QString path);
-    void updateVideoStats(const AnalysisVideoStats &stats);
 
     void onCustomContextMenu(const QPoint &point);
 
-#ifdef REANALYSE
+#ifdef RECALIBRATE
     void reanalyse();
     void reanalysisComplete(std::string);
 #endif
@@ -83,4 +81,4 @@ public slots:
 private slots:
 };
 
-#endif // ANALYSISWIDGET_H
+#endif // CALIBRATIONWIDGET_H
