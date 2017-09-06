@@ -19,9 +19,10 @@ class QSlider;
 class QLabel;
 class QTreeView;
 
-class CalibrationWidget : public QWidget
-{
+class CalibrationWidget : public QWidget {
+
     Q_OBJECT
+
 public:
     explicit CalibrationWidget(QWidget *parent = 0, AsteriaState * state = 0);
 
@@ -48,7 +49,7 @@ public:
     QSlider * slider;
 
 #ifdef RECALIBRATE
-    QPushButton *reanalyse_button;
+    QPushButton *recalibrate_button;
 #endif
 
     /**
@@ -74,8 +75,8 @@ public slots:
     void onCustomContextMenu(const QPoint &point);
 
 #ifdef RECALIBRATE
-    void reanalyse();
-    void reanalysisComplete(std::string);
+    void recalibrate();
+    void recalibrationComplete(std::string);
 #endif
 
 private slots:

@@ -6,7 +6,7 @@
 #include "util/timeutil.h"
 
 #ifdef RECALIBRATE
-    #include "infra/analysisworker.h"
+    #include "infra/calibrationworker.h"
 #endif
 
 #include <memory>
@@ -51,7 +51,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     overlaycheckbox = new QCheckBox("&Show overlay image", this);
 
 #ifdef RECALIBRATE
-    reanalyse_button = new QPushButton("Reanalyse", this);
+    recalibrate_button = new QPushButton("Recalibrate", this);
 #endif
 
     replayThread = new ReplayVideoThread(this->state->nominalFramePeriodUs);
@@ -71,7 +71,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     boxesLayout->addWidget(overlaycheckbox);
 
 #ifdef RECALIBRATE
-    boxesLayout->addWidget(reanalyse_button);
+    boxesLayout->addWidget(recalibrate_button);
 #endif
 
     boxes->setLayout(boxesLayout);
@@ -104,7 +104,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     connect(overlaycheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleOverlay(int)));
 
 #ifdef RECALIBRATE
-    connect(reanalyse_button, SIGNAL(pressed()), this, SLOT(reanalyse()));
+    connect(recalibrate_button, SIGNAL(pressed()), this, SLOT(recalibrate()));
 #endif
 
     // Slider response to user actions in the player
@@ -176,63 +176,63 @@ void CalibrationWidget::loadClip(QString path) {
     overlaycheckbox->setChecked(true);
 
     // Set the range of the slider according to how many frames we have
-    slider->setRange(0, inv->eventFrames.size()-1);
-    slider->setValue(0);
+//    slider->setRange(0, inv->eventFrames.size()-1);
+//    slider->setValue(0);
 
     // Enable/disable the de-interlaced stepping checkbox depending on whether the clip consists of
     // interlaced-scan type images
-    switch(inv->eventFrames[0]->field) {
-    case V4L2_FIELD_NONE:
-        // progressive format; not interlaced
-        dicheckbox->setChecked(false);
-        dicheckbox->setEnabled(false);
-        break;
-    case V4L2_FIELD_INTERLACED:
-        // interleaved/interlaced format
-        dicheckbox->setChecked(false);
-        dicheckbox->setEnabled(true);
-        break;
-    case V4L2_FIELD_INTERLACED_TB:
-        // interleaved/interlaced format; top field is transmitted first
-        dicheckbox->setChecked(false);
-        dicheckbox->setEnabled(true);
-        break;
-    case V4L2_FIELD_INTERLACED_BT:
-        // interleaved/interlaced format; bottom field is transmitted first
-        dicheckbox->setChecked(false);
-        dicheckbox->setEnabled(true);
-        break;
-    }
+//    switch(inv->eventFrames[0]->field) {
+//    case V4L2_FIELD_NONE:
+//        // progressive format; not interlaced
+//        dicheckbox->setChecked(false);
+//        dicheckbox->setEnabled(false);
+//        break;
+//    case V4L2_FIELD_INTERLACED:
+//        // interleaved/interlaced format
+//        dicheckbox->setChecked(false);
+//        dicheckbox->setEnabled(true);
+//        break;
+//    case V4L2_FIELD_INTERLACED_TB:
+//        // interleaved/interlaced format; top field is transmitted first
+//        dicheckbox->setChecked(false);
+//        dicheckbox->setEnabled(true);
+//        break;
+//    case V4L2_FIELD_INTERLACED_BT:
+//        // interleaved/interlaced format; bottom field is transmitted first
+//        dicheckbox->setChecked(false);
+//        dicheckbox->setEnabled(true);
+//        break;
+//    }
 
     // Pass the clip to the player
-    replayThread->loadClip(inv->eventFrames, inv->peakHold);
+//    replayThread->loadClip(inv->eventFrames, inv->peakHold);
 
     // Initialise it with the peak hold image
-    display->newFrame(inv->peakHold, true, true, true);
+    display->newFrame(inv->medianImage, true, true, true);
 }
 
 
 #ifdef RECALIBRATE
-    void CalibrationWidget::reanalyse() {
-        fprintf(stderr, "Reanalysing...\n");
+    void CalibrationWidget::recalibrate() {
+        fprintf(stderr, "Recalibrating...\n");
         // If there's no clip loaded, bail
         if(!inv) {
             fprintf(stderr, "No clip to analyse!\n");
             return;
         }
         QThread* thread = new QThread;
-        AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, inv->eventFrames);
+        CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, inv->calibrationFrames);
         worker->moveToThread(thread);
         connect(thread, SIGNAL(started()), worker, SLOT(process()));
         connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
         connect(worker, SIGNAL(finished(std::string)), worker, SLOT(deleteLater()));
-        connect(worker, SIGNAL(finished(std::string)), this, SLOT(reanalysisComplete(std::string)));
+        connect(worker, SIGNAL(finished(std::string)), this, SLOT(recalibrationComplete(std::string)));
         connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
         thread->start();
     }
 
-    void CalibrationWidget::reanalysisComplete(std::string utc) {
-        fprintf(stderr, "Finished reanalysing %s\n", utc.c_str());
+    void CalibrationWidget::recalibrationComplete(std::string utc) {
+        fprintf(stderr, "Finished recalibrating %s\n", utc.c_str());
     }
 #endif
 

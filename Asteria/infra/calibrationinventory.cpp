@@ -21,8 +21,8 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
 
     // Regex suitable for identifying images with filenames e.g. 2017-06-14T19:41:09.282Z
     const std::regex utcRegex = TimeUtil::getUtcRegex();
-    // Regex suitable for identifying images with filenames starting 'peakhold'
-    const std::regex peakHoldRegex = std::regex("peakhold");
+    // Regex suitable for identifying images with filenames starting 'median'
+    const std::regex medianRegex = std::regex("median");
 
     CalibrationInventory * inv = new CalibrationInventory();
 
@@ -38,7 +38,7 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         // Parse the filename to decide what type of file it is using regex
 
         // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
-        // These are the raw frames from the sequence
+        // These are the raw calibration frames
         if(std::regex_search(child->d_name, utcRegex, std::regex_constants::match_continuous)) {
             // Build full path to the item
             std::string childPath = path + "/" + child->d_name;
@@ -46,33 +46,31 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
             std::ifstream input(childPath);
             auto seq = std::make_shared<Image>();
             input >> *seq;
-            inv->eventFrames.push_back(seq);
+            inv->calibrationFrames.push_back(seq);
             input.close();
         }
 
-        // Detect the peak hold image
-        if(std::regex_search(child->d_name, peakHoldRegex, std::regex_constants::match_continuous)) {
+        // Detect the median image
+        if(std::regex_search(child->d_name, medianRegex, std::regex_constants::match_continuous)) {
             // Build full path to the item
             std::string childPath = path + "/" + child->d_name;
-            // Load the image from file and store a shared pointer to it in the peakHold variable
+            // Load the image from file
             std::ifstream input(childPath);
-            auto peakHoldImage = std::make_shared<Image>();
-            input >> *peakHoldImage;
-            inv->peakHold = peakHoldImage;
+            auto medianImage = std::make_shared<Image>();
+            input >> *medianImage;
+            inv->medianImage = medianImage;
             input.close();
+        }
+
+        // Detect the text file containing the calibration data
+        if(strcmp(child->d_name, "calibration.dat") == 0) {
+            fprintf(stderr, "Found %s\n", child->d_name);
         }
     }
     closedir (dir);
 
-    // Sort the image sequence into ascending order of capture time
-    std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Image::comparePtrToImage);
-
-    // Generate annnotated images for each raw image, showing analysis of individual frame
-    for(unsigned int i=0; i<inv->eventFrames.size(); i++) {
-        inv->eventFrames[i]->generateAnnotatedImage();
-    }
-    // Generate annotated image for the peakHold image, showing analysis of clip
-    inv->peakHold->generatePeakholdAnnotatedImage(inv->eventFrames);
+    // Sort the calibration image sequence into ascending order of capture time
+    std::sort(inv->calibrationFrames.begin(), inv->calibrationFrames.end(), Image::comparePtrToImage);
 
     return inv;
 }

@@ -46,7 +46,10 @@ SOURCES += \
     math/cosinefitter.cpp \
     math/polynomialfitter.cpp \
     gui/calibrationwidget.cpp \
-    infra/calibrationinventory.cpp
+    infra/calibrationinventory.cpp \
+    util/sourcedetector.cpp \
+    infra/source.cpp \
+    infra/sample.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -107,7 +110,10 @@ HEADERS += \
     math/cosinefitter.h \
     math/polynomialfitter.h \
     gui/calibrationwidget.h \
-    infra/calibrationinventory.h
+    infra/calibrationinventory.h \
+    util/sourcedetector.h \
+    infra/source.h \
+    infra/sample.h
 
 LIBS += -ljpeg \
         -lftgl \

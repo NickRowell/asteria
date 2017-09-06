@@ -1,6 +1,8 @@
 #include "infra/calibrationworker.h"
 #include "util/timeutil.h"
 #include "util/fileutil.h"
+#include "infra/source.h"
+#include "util/sourcedetector.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -28,30 +30,11 @@ void CalibrationWorker::process() {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
-    //               Perform image analysis                  //
+    //                 Perform calibration                   //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
-
-    // Create new directory to store results for this clip. The path is set by the
-    // date and time of the first frame
-    std::string utc = TimeUtil::convertToUtcString(calibrationFrames[0u]->epochTimeUs);
-    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
-    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
-    std::string dd = TimeUtil::extractDayFromUtcString(utc);
-
-    std::vector<std::string> subLevels;
-    subLevels.push_back(yyyy);
-    subLevels.push_back(mm);
-    subLevels.push_back(dd);
-    subLevels.push_back(utc);
-    string path = state->calibrationDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
-
-    if(!FileUtil::createDirs(state->calibrationDirPath, subLevels)) {
-        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
-        return;
-    }
 
     // Compute the median image; for each pixel, store a vector of all the values
     std::vector< std::vector<unsigned char>> pixels(state->width * state->height);
@@ -120,14 +103,102 @@ void CalibrationWorker::process() {
         }
     }
 
+    Image median(state->width, state->height);
+    median.rawImage = medianVals;
+
+    // Extract sources from the median image
+    fprintf(stderr, "Getting sources...\n");
+    std::vector<Source> sources = SourceDetector::getSources(median.rawImage, state->width, state->height);
+    fprintf(stderr, "Found %d sources\n", sources.size());
+
+    // Create black sources image; we'll fill in each source with colour
+    std::vector<unsigned char> sourcesImageBlank(state->width*state->height*3, 0);
+
+    for(unsigned int s=0; s<sources.size(); s++) {
+        Source source = sources[s];
+
+        // Get a random colour for this source
+        unsigned char red = (unsigned char) rand();
+        unsigned char green = (unsigned char) rand();
+        unsigned char blue = (unsigned char) rand();
+
+        // Loop over the pixels assigned to this source
+        for(unsigned int p=0; p<source.pixels.size(); p++) {
+            // Index of the pixel that's part of the current source
+            unsigned int pixel = source.pixels[p];
+            // Insert colour for this pixels
+            sourcesImageBlank[3*pixel + 0] = red;
+            sourcesImageBlank[3*pixel + 1] = green;
+            sourcesImageBlank[3*pixel + 2] = blue;
+        }
+    }
+
+
+
+
+    // TODO: measure the background image for use in thresholded source detection
+
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
+    double readNoiseAdu = 5.0;
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //          Save calibration results to disk             //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // Create new directory to store results for this clip. The path is set by the
+    // date and time of the first frame
+    std::string utc = TimeUtil::convertToUtcString(calibrationFrames[0u]->epochTimeUs);
+    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
+    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
+    std::string dd = TimeUtil::extractDayFromUtcString(utc);
+
+    std::vector<std::string> subLevels;
+    subLevels.push_back(yyyy);
+    subLevels.push_back(mm);
+    subLevels.push_back(dd);
+    subLevels.push_back(utc);
+    string path = state->calibrationDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+
+    if(!FileUtil::createDirs(state->calibrationDirPath, subLevels)) {
+        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
+        return;
+    }
+
+    //
+    // TEMP: save sources image to file
+    //
+    char sourcesFilename [100];
+    sprintf(sourcesFilename, "%s/sources.ppm", path.c_str());
+    std::ofstream output(sourcesFilename);
+    output << "P6\n";
+    // Write the data section
+    output << state->width << " " << state->height << " 255\n";
+    // Write raster
+    for(unsigned char pix : sourcesImageBlank) {
+        output << pix;
+    }
+    output.close();
+    //
+    //
+    //
+
+    // Save calibration data to text file
+    char calibrationDataFilename [100];
+    sprintf(calibrationDataFilename, "%s/calibration.dat", path.c_str());
+    std::ofstream out1(calibrationDataFilename);
+    out1 << "# \n";
+    out1 << "# read_noise=" << readNoiseAdu << "\n";
+    out1.close();
 
     char rnPlotfilename [100];
     sprintf(rnPlotfilename, "%s/readnoise.png", path.c_str());
 
     std::stringstream ss;
 
+    // This script produces a histogram of the deviations:
     ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
     ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
     ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
@@ -153,6 +224,31 @@ void CalibrationWorker::process() {
     }
     ss << "e\n";
 
+    // This script produces a plot of scatter versus signal level
+//    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
+//    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
+//    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
+//    ss << "set xlabel \"Signal [ADU]\" font \"Helvetica,14\"\n";
+//    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+//    ss << "set mxtics 2\n";
+//    ss << "set xrange [0:255]\n";
+//    ss << "set format x \"%g\"\n";
+//    ss << "set ylabel \"Sigma^2 [ADU^2]\" font \"Helvetica,14\"\n";
+//    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+//    ss << "set mytics 2\n";
+//    ss << "set yrange [0:*]\n";
+//    ss << "set format y \"%g\"\n";
+//    ss << "set key off\n";
+//    ss << "set title \"Readnoise estimate\"\n";
+//    ss << "set output \"" << rnPlotfilename << "\"\n";
+//    ss << "plot \"-\" w p pt 5 ps 0.1 notitle\n";
+//    for(unsigned int i=0; i<state->width*state->height; i++) {
+//        char buffer[80] = "";
+//        sprintf(buffer, "%d\t%d\n", medianVals[i], madVals[i]);
+//        ss << buffer;
+//    }
+//    ss << "e\n";
+
     // Get the path to a temporary file
     std::string tmpFileName = std::tmpnam(nullptr);
     std::ofstream ofs (tmpFileName, std::ofstream::out);
@@ -164,26 +260,25 @@ void CalibrationWorker::process() {
     system(command);
 
 
-
-
-
-
-
-
-    Image median(state->width, state->height);
-    median.rawImage = medianVals;
-
     // Write out the median image
     char filename [100];
     string utcFrame = TimeUtil::convertToUtcString(calibrationFrames[0]->epochTimeUs);
     sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
-
-    // PGM (grey image)
     std::ofstream out(filename);
     out << median;
     out.close();
 
+    // Write out the raw calibration frames
+    for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
+        Image &image = *calibrationFrames[i];
+        char filename [100];
+        string utcFrame = TimeUtil::convertToUtcString(image.epochTimeUs);
+        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
+        std::ofstream out(filename);
+        out << image;
+        out.close();
+    }
+
     // All done - emit signal
     emit finished(utc);
 }
-

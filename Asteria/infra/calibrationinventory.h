@@ -22,9 +22,11 @@ class CalibrationInventory : public QObject {
 public:
     CalibrationInventory();
 
-    // TODO: add calibration data
-    std::shared_ptr<Image> peakHold;
-    std::vector<std::shared_ptr<Image>> eventFrames;
+    std::shared_ptr<Image> medianImage;
+
+    std::vector<std::shared_ptr<Image>> calibrationFrames;
+
+    double readNoise;
 
 public slots:
 
@@ -34,4 +36,4 @@ public slots:
 
 };
 
-#endif // ANALYSISINVENTORY_H
+#endif // CALIBRATIONINVENTORY_H
