@@ -29,7 +29,7 @@ SourceDetector::SourceDetector() {
 std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> pixels, unsigned int width, unsigned int height) {
 
     // Samples above this level will be considered source
-    unsigned char detectionThreshold = 50;
+    unsigned char detectionThreshold = 150;
 
     // Create an array and List of Samples. The array is used to get a sample for a given coordinate, and
     // the list is used so that we can process the samples in intensity order

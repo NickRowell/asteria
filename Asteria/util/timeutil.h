@@ -13,20 +13,21 @@ class TimeUtil {
 public:
     TimeUtil();
 
-    static long long getUpTime();
+    static const char * utcFormatString;
+    static const std::regex timeRegex;
+    static const std::regex utcRegex;
 
+    static long long getUpTime();
     static long long getEpochTimeShift();
 
-    static std::string convertToUtcString(long long epochTimeStamp_us);
+    static void convertEpochToUtc(const long long &epochTimeStamp_us, int &year, int &month, int &day, int &hour, int &min, double &sec);
+    static double convertEpochToJd(const long long &epochTimeStamp_us);
+    static std::string convertEpochToUtcString(const long long &epochTimeStamp_us);
+    static std::string extractYearFromUtcString(const std::string &utc);
+    static std::string extractMonthFromUtcString(const std::string &utc);
+    static std::string extractDayFromUtcString(const std::string &utc);
+    static std::string extractTimeFromUtcString(const std::string &utc);
 
-    static std::string extractYearFromUtcString(std::string utc);
-    static std::string extractMonthFromUtcString(std::string utc);
-    static std::string extractDayFromUtcString(std::string utc);
-    static std::string extractTimeFromUtcString(std::string utc);
-
-
-    static const std::regex getUtcRegex();
-    static const std::regex getTimeRegex();
 };
 
 #endif // TIMEUTIL_H

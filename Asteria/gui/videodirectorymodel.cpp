@@ -131,7 +131,6 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
     // This regex usage relies on version 4.9 or later of the GCC
     const std::regex yearRegex("[0-9]{4}");
     const std::regex monthDayRegex("[0-9]{2}");
-    const std::regex utcRegex = TimeUtil::getUtcRegex();
 
     QIcon folderIcon(":/images/folder-outline-filled.png");
     QIcon meteorIcon(":/images/meteor-512.png");
@@ -234,7 +233,7 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
                     struct dirent *dayFile;
                     while ((dayFile = readdir (dayDir)) != NULL) {
                         // Detect directories with names matching the UTC format
-                        if(dayFile->d_type == DT_DIR && std::regex_match (dayFile->d_name, utcRegex)) {
+                        if(dayFile->d_type == DT_DIR && std::regex_match (dayFile->d_name, TimeUtil::utcRegex)) {
                             clips.push_back(dayFile->d_name);
                         }
                     }

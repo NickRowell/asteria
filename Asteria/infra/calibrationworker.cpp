@@ -52,9 +52,12 @@ void CalibrationWorker::process() {
         }
     }
 
-    // Compute the median and MAD value of each pixel
+    // Compute the median, MAD and RMS value of each pixel
     std::vector<unsigned char> medianVals;
     std::vector<unsigned char> madVals;
+    std::vector<double> meanVals;
+    std::vector<double> varianceVals;
+    double maxVariance = 0;
     int histogramOfDeviations[512] = {0};
 
     for(unsigned int k=0; k<state->height; k++) {
@@ -62,10 +65,24 @@ void CalibrationWorker::process() {
             unsigned int pixIdx = k*state->width + l;
 
             vector<unsigned char> pixel = pixels[pixIdx];
-            std::sort(pixel.begin(), pixel.end());
+
+            double mean = 0.0;
+            double meanOfSquare = 0.0;
+            for(unsigned int p = 0; p < pixel.size(); p++) {
+                double dPix = (double)pixel[p];
+                mean += dPix;
+                meanOfSquare += (dPix * dPix);
+            }
+            mean /= (double)pixel.size();
+            meanOfSquare /= (double)pixel.size();
+            double variance = meanOfSquare - (mean*mean);
+            meanVals.push_back(mean);
+            varianceVals.push_back(variance);
+            maxVariance = std::max(variance, maxVariance);
 
             unsigned char med;
             unsigned char mad;
+            std::sort(pixel.begin(), pixel.end());
 
             // Compute the median value
             if(pixel.size() % 2 == 0) {
@@ -91,7 +108,7 @@ void CalibrationWorker::process() {
 
             std::sort(absDevs.begin(), absDevs.end());
 
-            if (pixel.size()  % 2 == 0) {
+            if (pixel.size() % 2 == 0) {
                 mad = (absDevs[pixel.size() / 2 - 1] + absDevs[pixel.size() / 2]) / 2;
             }
             else {
@@ -102,6 +119,19 @@ void CalibrationWorker::process() {
             madVals.push_back(mad);
         }
     }
+
+    // Construct an image of the noise level in each pixel to detect fixed pattern noise etc
+    std::vector<unsigned char> varImage;
+    for(unsigned int i=0; i<state->width*state->height; i++) {
+        double variance = varianceVals[i];
+        // Normalise this to [0:1] range applying a stretch as appropriate
+        double scaled = std::pow(variance, 0.25)/std::pow(maxVariance, 0.25);
+        // Scale to 0:255 range and quantize
+        unsigned char pixel = (unsigned char)floor(scaled * 255.0);
+        varImage.push_back(pixel);
+    }
+    Image varianceImage(state->width, state->height);
+    varianceImage.rawImage = varImage;
 
     Image median(state->width, state->height);
     median.rawImage = medianVals;
@@ -133,9 +163,6 @@ void CalibrationWorker::process() {
         }
     }
 
-
-
-
     // TODO: measure the background image for use in thresholded source detection
 
     // TODO: Measure xrange from percentiles of data
@@ -150,7 +177,7 @@ void CalibrationWorker::process() {
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
-    std::string utc = TimeUtil::convertToUtcString(calibrationFrames[0u]->epochTimeUs);
+    std::string utc = TimeUtil::convertEpochToUtcString(calibrationFrames[0u]->epochTimeUs);
     std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
     std::string mm = TimeUtil::extractMonthFromUtcString(utc);
     std::string dd = TimeUtil::extractDayFromUtcString(utc);
@@ -199,55 +226,57 @@ void CalibrationWorker::process() {
     std::stringstream ss;
 
     // This script produces a histogram of the deviations:
+//    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
+//    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
+//    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
+//    ss << "set style fill transparent solid 0.5 noborder\n";
+//    ss << "set boxwidth 0.95 relative\n";
+//    ss << "set xlabel \"Deviation from median [ADU]\" font \"Helvetica,14\"\n";
+//    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+//    ss << "set mxtics 2\n";
+//    ss << "set xrange [-10:10]\n";
+//    ss << "set format x \"%g\"\n";
+//    ss << "set ylabel \"Frequency [-]\" font \"Helvetica,14\"\n";
+//    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
+//    ss << "set mytics 2\n";
+//    ss << "set yrange [*:*]\n";
+//    ss << "set format y \"%g\"\n";
+//    ss << "set key off\n";
+//    ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
+//    ss << "set title \"Readnoise estimate\"\n";
+//    ss << "set output \"" << rnPlotfilename << "\"\n";
+//    ss << "plot \"-\" w boxes notitle\n";
+//    for(int i=0; i<512; i++) {
+//        ss << (i-256) << " " << histogramOfDeviations[i] << "\n";
+//    }
+//    ss << "e\n";
+
+    // This script produces a plot of scatter versus signal level
     ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
     ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
     ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
-    ss << "set style fill transparent solid 0.5 noborder\n";
-    ss << "set boxwidth 0.95 relative\n";
-    ss << "set xlabel \"Deviation from median [ADU]\" font \"Helvetica,14\"\n";
+    ss << "set xlabel \"Signal [ADU]\" font \"Helvetica,14\"\n";
     ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
     ss << "set mxtics 2\n";
-    ss << "set xrange [-10:10]\n";
+    ss << "set xrange [*:*]\n";
     ss << "set format x \"%g\"\n";
-    ss << "set ylabel \"Frequency [-]\" font \"Helvetica,14\"\n";
+    ss << "set ylabel \"σ^{2} [ADU^{2}]\" font \"Helvetica,14\"\n";
     ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
     ss << "set mytics 2\n";
-    ss << "set yrange [*:*]\n";
+    ss << "set yrange [0:*]\n";
     ss << "set format y \"%g\"\n";
     ss << "set key off\n";
     ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
     ss << "set title \"Readnoise estimate\"\n";
     ss << "set output \"" << rnPlotfilename << "\"\n";
-    ss << "plot \"-\" w boxes notitle\n";
-    for(int i=0; i<512; i++) {
-        ss << (i-256) << " " << histogramOfDeviations[i] << "\n";
+    ss << "plot \"-\" w d notitle\n";
+    for(unsigned int i=0; i<state->width*state->height; i++) {
+        char buffer[80] = "";
+//        sprintf(buffer, "%d\t%d\n", medianVals[i], madVals[i]);
+        sprintf(buffer, "%f\t%f\n", meanVals[i], varianceVals[i]);
+        ss << buffer;
     }
     ss << "e\n";
-
-    // This script produces a plot of scatter versus signal level
-//    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
-//    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
-//    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
-//    ss << "set xlabel \"Signal [ADU]\" font \"Helvetica,14\"\n";
-//    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mxtics 2\n";
-//    ss << "set xrange [0:255]\n";
-//    ss << "set format x \"%g\"\n";
-//    ss << "set ylabel \"Sigma^2 [ADU^2]\" font \"Helvetica,14\"\n";
-//    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mytics 2\n";
-//    ss << "set yrange [0:*]\n";
-//    ss << "set format y \"%g\"\n";
-//    ss << "set key off\n";
-//    ss << "set title \"Readnoise estimate\"\n";
-//    ss << "set output \"" << rnPlotfilename << "\"\n";
-//    ss << "plot \"-\" w p pt 5 ps 0.1 notitle\n";
-//    for(unsigned int i=0; i<state->width*state->height; i++) {
-//        char buffer[80] = "";
-//        sprintf(buffer, "%d\t%d\n", medianVals[i], madVals[i]);
-//        ss << buffer;
-//    }
-//    ss << "e\n";
 
     // Get the path to a temporary file
     std::string tmpFileName = std::tmpnam(nullptr);
@@ -262,17 +291,28 @@ void CalibrationWorker::process() {
 
     // Write out the median image
     char filename [100];
-    string utcFrame = TimeUtil::convertToUtcString(calibrationFrames[0]->epochTimeUs);
+    string utcFrame = TimeUtil::convertEpochToUtcString(calibrationFrames[0]->epochTimeUs);
     sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
-    std::ofstream out(filename);
-    out << median;
-    out.close();
+    {
+        std::ofstream out(filename);
+        out << median;
+        out.close();
+    }
+
+    // Write out the variance image
+    sprintf(filename, "%s/noise_%s.pgm", path.c_str(), utcFrame.c_str());
+    {
+        std::ofstream out(filename);
+        out << varianceImage;
+        out.close();
+    }
+
 
     // Write out the raw calibration frames
     for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
         Image &image = *calibrationFrames[i];
         char filename [100];
-        string utcFrame = TimeUtil::convertToUtcString(image.epochTimeUs);
+        string utcFrame = TimeUtil::convertEpochToUtcString(image.epochTimeUs);
         sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
         std::ofstream out(filename);
         out << image;

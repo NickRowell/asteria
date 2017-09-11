@@ -19,8 +19,6 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         return NULL;
     }
 
-    // Regex suitable for identifying images with filenames e.g. 2017-06-14T19:41:09.282Z
-    const std::regex utcRegex = TimeUtil::getUtcRegex();
     // Regex suitable for identifying images with filenames starting 'peakhold'
     const std::regex peakHoldRegex = std::regex("peakhold");
 
@@ -39,7 +37,7 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
 
         // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
         // These are the raw frames from the sequence
-        if(std::regex_search(child->d_name, utcRegex, std::regex_constants::match_continuous)) {
+        if(std::regex_search(child->d_name, TimeUtil::utcRegex, std::regex_constants::match_continuous)) {
             // Build full path to the item
             std::string childPath = path + "/" + child->d_name;
             // Load the image from file and store a shared pointer to it in the vector

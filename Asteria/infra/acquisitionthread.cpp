@@ -503,7 +503,7 @@ void AcquisitionThread::run() {
         // Translate to microseconds since 1970-01-01T00:00:00Z
         long long epochTimeStamp_us = temp_us +  state->epochTimeDiffUs;
 
-        string utc = TimeUtil::convertToUtcString(epochTimeStamp_us);
+        string utc = TimeUtil::convertEpochToUtcString(epochTimeStamp_us);
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
         image->epochTimeUs = epochTimeStamp_us;

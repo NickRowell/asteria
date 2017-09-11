@@ -147,7 +147,7 @@ void CalibrationWidget::loadClip(const QModelIndex &index) {
     QString path = item->data(1).toString();
 
     // Detect if user has double clicked on a node that is not a video clip
-    if(!std::regex_match (title.toStdString().c_str(), TimeUtil::getTimeRegex())) {
+    if(!std::regex_match (title.toStdString().c_str(), TimeUtil::timeRegex)) {
         // Not a clip (clips have titles like 01:34:56). Do nothing.
         return;
     }
