@@ -37,6 +37,9 @@ sudo apt-get install qtcreator
 sudo apt-get install qtmultimedia5-dev
 sudo apt-get install libqt5multimedia5-plugins
 
+# Doxygen for code documentation
+sudo apt-get install doxygen
+
 # Other necessary libraries:
 # GLUT for various OpenGL utilities:
 sudo apt-get install freeglut3 freeglut3-dev

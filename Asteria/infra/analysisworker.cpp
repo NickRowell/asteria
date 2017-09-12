@@ -166,7 +166,7 @@ void AnalysisWorker::process() {
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
-    std::string utc = TimeUtil::convertEpochToUtcString(eventFrames[0u]->epochTimeUs);
+    std::string utc = TimeUtil::epochToUtcString(eventFrames[0u]->epochTimeUs);
     std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
     std::string mm = TimeUtil::extractMonthFromUtcString(utc);
     std::string dd = TimeUtil::extractDayFromUtcString(utc);
@@ -193,7 +193,7 @@ void AnalysisWorker::process() {
 
         // Write the image data out to a file
         char filename [100];
-        string utcFrame = TimeUtil::convertEpochToUtcString(image.epochTimeUs);
+        string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
         sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
 
         // PGM (grey image)
@@ -212,7 +212,7 @@ void AnalysisWorker::process() {
 
     // Write out the peak hold image
     char filename [100];
-    string utcFrame = TimeUtil::convertEpochToUtcString(eventFrames[0]->epochTimeUs);
+    string utcFrame = TimeUtil::epochToUtcString(eventFrames[0]->epochTimeUs);
     sprintf(filename, "%s/peakhold_%s.pgm", path.c_str(), utcFrame.c_str());
     std::ofstream out(filename);
     out << peakHold;

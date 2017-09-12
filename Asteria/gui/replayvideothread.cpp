@@ -90,7 +90,7 @@ void ReplayVideoThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> i
     // Time of this frame in the clip
     long long framePositionUs = image->epochTimeUs - frames.front()->epochTimeUs;
     double framePositionSecs = (double) framePositionUs / 1000000.0;
-    std::string utc = TimeUtil::convertEpochToUtcString(image->epochTimeUs);
+    std::string utc = TimeUtil::epochToUtcString(image->epochTimeUs);
 
     AnalysisVideoStats stats(clipLengthSecs, frames.size(), framePositionSecs, fIdx, isTopField, isBottomField, utc);
 

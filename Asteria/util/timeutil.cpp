@@ -70,7 +70,7 @@ long long TimeUtil::getUpTime() {
  * @param sec
  *  On exit, contains the seconds after the minute [0-61]. The range is generally 0-59; the extra range is to accommodate for leap seconds in certain systems.
  */
-void TimeUtil::convertEpochToUtc(const long long &epochTimeStamp_us, int &year, int &month, int &day, int &hour, int &min, double &sec) {
+void TimeUtil::epochToUtc(const long long &epochTimeStamp_us, int &year, int &month, int &day, int &hour, int &min, double &sec) {
 
     // Split into whole seconds and remainder microseconds
     long long epochTimeStamp_s = epochTimeStamp_us / 1000000LL;
@@ -104,11 +104,59 @@ void TimeUtil::convertEpochToUtc(const long long &epochTimeStamp_us, int &year, 
  * @return
  *  The Julian Day Number
  */
-double TimeUtil::convertEpochToJd(const long long &epochTimeStamp_us) {
+double TimeUtil::epochToJd(const long long &epochTimeStamp_us) {
     // The Unix epoch (zero-point) is January 1, 1970 GMT. That corresponds to the Julian day of 2440587.5
     // We just need to add the number of consecutive days since then, ignoring leap seconds.
     // The constant 86400000000.0 is the number of microseconds in a day.
     return 2440587.5 + epochTimeStamp_us/86400000000.0;
+}
+
+/**
+ * @brief TimeUtil::epochToGmst
+ * Get the Greenwich Mean Sidereal Time for the given epoch time.
+ *
+ * See http://www.cv.nrao.edu/~rfisher/Ephemerides/times.html
+ *
+ * @param epochTimeStamp_us
+ *  The input epoch time to convert (microseconds after 1970-01-01T00:00:00Z)
+ * @return
+ *  The Greenwich Mean Sidereal Time [units?]
+ */
+double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
+
+    // Julian day number
+    double jd = epochToJd(epochTimeStamp_us);
+    // Julian days since 2000 Jan. 1 12h UT1
+    double d = jd - 2451545.0;
+    // Julian centuries since 2000 Jan. 1 12h UT1
+    double t = d / 36525.0;
+    // TODO: what are the units of GMST? "Seconds at UT1 = 0"
+    double gmst = 24110.54841 + (8640184.812866 * t) + (0.093104 * t * t) - (0.0000062 * t * t * t);
+
+    // Get the seconds since UT = 0 for today
+    int year, month, day, hour, min;
+    double sec;
+    epochToUtc(epochTimeStamp_us, year, month, day, hour, min, sec);
+    double secsSinceUt0 = hour * 3600 + min * 60 + sec;
+
+    // Add this to the gmst to get the current gmst
+    gmst += secsSinceUt0;
+
+    // Now convert this to time within the current day
+
+    // Convert to days:
+    double gmst_d = gmst / (60.0 * 60.0 * 24.0);
+    // Get remainder (fraction of the day)
+    gmst_d -= std::floor(gmst_d);
+    // Convert to hours
+    double gmst_h = gmst_d * 24;
+    gmst_h -= std::floor(gmst_h);
+    double gmst_m = (gmst_h - std::floor(gmst_h)) * 60.0;
+    double gmst_s = (gmst_m - std::floor(gmst_m)) * 60.0;
+
+    fprintf(stderr, "GMST = %f\t%02.0f:%02.0f:%02.0f\n", gmst, gmst_h, gmst_m, gmst_s);
+
+    return gmst;
 }
 
 /**
@@ -120,11 +168,11 @@ double TimeUtil::convertEpochToJd(const long long &epochTimeStamp_us) {
  *
  * @return
  */
-std::string TimeUtil::convertEpochToUtcString(const long long &epochTimeStamp_us) {
+std::string TimeUtil::epochToUtcString(const long long &epochTimeStamp_us) {
 
     int year, month, day, hour, min;
     double sec;
-    convertEpochToUtc(epochTimeStamp_us, year, month, day, hour, min, sec);
+    epochToUtc(epochTimeStamp_us, year, month, day, hour, min, sec);
 
     // Convert to years since AD 0
     year += 1900;

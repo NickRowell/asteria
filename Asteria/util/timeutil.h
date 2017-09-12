@@ -20,9 +20,12 @@ public:
     static long long getUpTime();
     static long long getEpochTimeShift();
 
-    static void convertEpochToUtc(const long long &epochTimeStamp_us, int &year, int &month, int &day, int &hour, int &min, double &sec);
-    static double convertEpochToJd(const long long &epochTimeStamp_us);
-    static std::string convertEpochToUtcString(const long long &epochTimeStamp_us);
+    static void epochToUtc(const long long &epochTimeStamp_us, int &year, int &month, int &day, int &hour, int &min, double &sec);
+    static double epochToJd(const long long &epochTimeStamp_us);
+    static double epochToGmst(const long long &epochTimeStamp_us);
+
+
+    static std::string epochToUtcString(const long long &epochTimeStamp_us);
     static std::string extractYearFromUtcString(const std::string &utc);
     static std::string extractMonthFromUtcString(const std::string &utc);
     static std::string extractDayFromUtcString(const std::string &utc);

@@ -177,7 +177,7 @@ void CalibrationWorker::process() {
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
-    std::string utc = TimeUtil::convertEpochToUtcString(calibrationFrames[0u]->epochTimeUs);
+    std::string utc = TimeUtil::epochToUtcString(calibrationFrames[0u]->epochTimeUs);
     std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
     std::string mm = TimeUtil::extractMonthFromUtcString(utc);
     std::string dd = TimeUtil::extractDayFromUtcString(utc);
@@ -291,7 +291,7 @@ void CalibrationWorker::process() {
 
     // Write out the median image
     char filename [100];
-    string utcFrame = TimeUtil::convertEpochToUtcString(calibrationFrames[0]->epochTimeUs);
+    string utcFrame = TimeUtil::epochToUtcString(calibrationFrames[0]->epochTimeUs);
     sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
@@ -312,7 +312,7 @@ void CalibrationWorker::process() {
     for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
         Image &image = *calibrationFrames[i];
         char filename [100];
-        string utcFrame = TimeUtil::convertEpochToUtcString(image.epochTimeUs);
+        string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
         sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
         std::ofstream out(filename);
         out << image;
