@@ -505,10 +505,29 @@ void AcquisitionThread::run() {
 
         string utc = TimeUtil::epochToUtcString(epochTimeStamp_us);
 
-        // TEMP:
+
+
+        /////////////////////////////////////////////////////////////// TEMP:
         double jd = TimeUtil::epochToJd(epochTimeStamp_us);
-        fprintf(stderr, "JD = %f\n", jd);
         double gmst = TimeUtil::epochToGmst(epochTimeStamp_us);
+        double lst = TimeUtil::gmstToLst(gmst, state->longitude);
+
+        // Get decimal minutes and seconds
+        int gmst_hour, gmst_min;
+        double gmst_sec;
+        TimeUtil::decimalHoursToHMS(gmst, gmst_hour, gmst_min, gmst_sec);
+        int lst_hour, lst_min;
+        double lst_sec;
+        TimeUtil::decimalHoursToHMS(lst, lst_hour, lst_min, lst_sec);
+
+        fprintf(stderr, "JD   = %f\n", jd);
+        fprintf(stderr, "UTC  = %s\n", utc.c_str());
+        fprintf(stderr, "GMST = %02.0f:%02.0f:%06.3f\n", std::floor(gmst_hour), std::floor(gmst_min), gmst_sec);
+        fprintf(stderr, "LST  = %02.0f:%02.0f:%06.3f\n", std::floor(lst_hour), std::floor(lst_min), lst_sec);
+
+        ///////////////////////////////////////////////////////////////
+
+
 
 
         std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);

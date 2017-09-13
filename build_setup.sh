@@ -61,6 +61,11 @@ sudo apt-get install libeigen3-doc
 # Other useful stuff:
 sudo apt-get install v4l-utils
 
+# In order to keep the system clock synchronized with UTC we need to turn on Network Time Protocol synchronization.
+# After running the following command, the status can be checked by executing $ timedatectl status
+# and checking for 'NTP enabled: yes'
+sudo timedatectl set-ntp on
+
 # To build Asteria it is simplest to use QtCreator. Once this has been configured for the developent machine,
 # then it's simply a case of opening up the project and building it within the QtCreator environment. That
 # produces the executable that can then be launched from the command line.

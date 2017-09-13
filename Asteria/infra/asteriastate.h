@@ -155,7 +155,7 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * \brief Station longitude [decimal degrees]
+     * \brief Station longitude, positive east [decimal degrees]
      */
     double longitude;
 

@@ -117,10 +117,21 @@ double TimeUtil::epochToJd(const long long &epochTimeStamp_us) {
  *
  * See http://www.cv.nrao.edu/~rfisher/Ephemerides/times.html
  *
+ * NOTE: there seems to be a ~20 second offset between the time returned by this method and that avilable in
+ * online converters. This might be due to a failure to account for leap seconds. It might also be a problem
+ * with the conversion tools online. To do:
+ * 1) Check a few online conversion tools to see if the offset is consistent. E.g.:
+ *    http://tycho.usno.navy.mil/sidereal.html
+ *    http://www.jgiesen.de/astro/astroJS/siderealClock/
+ * 2) Test with a single, fixed time for consistency. Work on the conversion to get that right.
+ *    Convert the epoch time to JD, UTC and GMST to see where the error is arising.
+ *
+ *
+ *
  * @param epochTimeStamp_us
  *  The input epoch time to convert (microseconds after 1970-01-01T00:00:00Z)
  * @return
- *  The Greenwich Mean Sidereal Time [units?]
+ *  The Greenwich Mean Sidereal Time [decimal hours, 0-24]
  */
 double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
 
@@ -128,9 +139,11 @@ double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
     double jd = epochToJd(epochTimeStamp_us);
     // Julian days since 2000 Jan. 1 12h UT1
     double d = jd - 2451545.0;
+    // Quantize to 0.5
+    d = std::floor(d/0.5) * 0.5;
     // Julian centuries since 2000 Jan. 1 12h UT1
     double t = d / 36525.0;
-    // TODO: what are the units of GMST? "Seconds at UT1 = 0"
+    // The units of GMST are "Seconds at UT1 = 0", i.e. midnight at the start of the current day.
     double gmst = 24110.54841 + (8640184.812866 * t) + (0.093104 * t * t) - (0.0000062 * t * t * t);
 
     // Get the seconds since UT = 0 for today
@@ -142,22 +155,60 @@ double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
     // Add this to the gmst to get the current gmst
     gmst += secsSinceUt0;
 
-    // Now convert this to time within the current day
+    // Convert to decimal days:
+    double gmst_days = gmst / 86400.0;
+    // Convert to fraction of a day:
+    double gmst_fdays = gmst_days - std::floor(gmst_days);
 
-    // Convert to days:
-    double gmst_d = gmst / (60.0 * 60.0 * 24.0);
-    // Get remainder (fraction of the day)
-    gmst_d -= std::floor(gmst_d);
-    // Convert to hours
-    double gmst_h = gmst_d * 24;
-    gmst_h -= std::floor(gmst_h);
-    double gmst_m = (gmst_h - std::floor(gmst_h)) * 60.0;
-    double gmst_s = (gmst_m - std::floor(gmst_m)) * 60.0;
+    // Convert to decimal hours
+    double gmst_hours = gmst_fdays * 24.0;
 
-    fprintf(stderr, "GMST = %f\t%02.0f:%02.0f:%02.0f\n", gmst, gmst_h, gmst_m, gmst_s);
-
-    return gmst;
+    return gmst_hours;
 }
+
+/**
+ * @brief TimeUtil::gmstToLst Convert Greenwich Mean Sidereal Time to Local Sidereal Time.
+ *
+ * The Local Sidereal Time is equal to the Right Ascension of objects transiting the
+ * observers meridean.
+ *
+ * @param gmst
+ *  The current Greenwich Mean Sidereal Time [decimal hours]
+ * @param longitude
+ *  The longitude of the site, positive east [degrees]
+ * @return
+ *  The Local Sidereal Time [decimal hours]
+ */
+double TimeUtil::gmstToLst(const double &gmst, const double &longitude) {
+    // Convert longitude to hour angle
+    double ha = longitude / 15.0;
+    // Add offset to GMST
+    double lst = gmst + ha;
+    return lst;
+}
+
+/**
+ * @brief TimeUtil::decimalHoursToHMS Convert a time in decimal hours [0-24] to HH:MM:SS.sss
+ * @param dhour
+ *  The input decimal hours [hours]
+ * @param hour
+ *  On exit, contains the whole number of hours [hours]
+ * @param min
+ *  On exit, contains the whole number of minutes [mins]
+ * @param sec
+ *  On exit, contains the seconds [sec]
+ */
+void TimeUtil::decimalHoursToHMS(const double &dhour, int &hour, int &min, double &sec) {
+    // Whole hours
+    hour = (int)std::floor(dhour);
+    // Decimal minutes from remainder
+    double dmin = (dhour - std::floor(dhour)) * 60.0;
+    // Whole mins
+    min = (int)std::floor(dmin);
+    // Decimal seconds from remainder
+    sec = (dmin - std::floor(dmin)) * 60.0;
+}
+
 
 /**
  * @brief TimeUtil::convertToUtcString

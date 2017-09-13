@@ -24,6 +24,10 @@ public:
     static double epochToJd(const long long &epochTimeStamp_us);
     static double epochToGmst(const long long &epochTimeStamp_us);
 
+    static double gmstToLst(const double &gmst, const double &longitude);
+
+    static void decimalHoursToHMS(const double &dhour, int &hour, int &min, double &sec);
+
 
     static std::string epochToUtcString(const long long &epochTimeStamp_us);
     static std::string extractYearFromUtcString(const std::string &utc);
