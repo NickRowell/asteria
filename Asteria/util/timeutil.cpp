@@ -115,18 +115,7 @@ double TimeUtil::epochToJd(const long long &epochTimeStamp_us) {
  * @brief TimeUtil::epochToGmst
  * Get the Greenwich Mean Sidereal Time for the given epoch time.
  *
- * See http://www.cv.nrao.edu/~rfisher/Ephemerides/times.html
- *
- * NOTE: there seems to be a ~20 second offset between the time returned by this method and that avilable in
- * online converters. This might be due to a failure to account for leap seconds. It might also be a problem
- * with the conversion tools online. To do:
- * 1) Check a few online conversion tools to see if the offset is consistent. E.g.:
- *    http://tycho.usno.navy.mil/sidereal.html
- *    http://www.jgiesen.de/astro/astroJS/siderealClock/
- * 2) Test with a single, fixed time for consistency. Work on the conversion to get that right.
- *    Convert the epoch time to JD, UTC and GMST to see where the error is arising.
- *
- *
+ * Follows Example 3-5 from "Fundamentals of Astrodynamics and Applications", fourth edition.
  *
  * @param epochTimeStamp_us
  *  The input epoch time to convert (microseconds after 1970-01-01T00:00:00Z)
@@ -135,33 +124,25 @@ double TimeUtil::epochToJd(const long long &epochTimeStamp_us) {
  */
 double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
 
-    // Julian day number
-    double jd = epochToJd(epochTimeStamp_us);
-    // Julian days since 2000 Jan. 1 12h UT1
-    double d = jd - 2451545.0;
-    // Quantize to 0.5
-    d = std::floor(d/0.5) * 0.5;
     // Julian centuries since 2000 Jan. 1 12h UT1
-    double t = d / 36525.0;
-    // The units of GMST are "Seconds at UT1 = 0", i.e. midnight at the start of the current day.
-    double gmst = 24110.54841 + (8640184.812866 * t) + (0.093104 * t * t) - (0.0000062 * t * t * t);
+    double t = (epochToJd(epochTimeStamp_us) - 2451545.0) / 36525.0;
 
-    // Get the seconds since UT = 0 for today
-    int year, month, day, hour, min;
-    double sec;
-    epochToUtc(epochTimeStamp_us, year, month, day, hour, min, sec);
-    double secsSinceUt0 = hour * 3600 + min * 60 + sec;
+    // Compute the GMST in seconds
+    double gmst = 67310.54841 + (876600.0*60.0*60.0 + 8640184.812866) * t + (0.093104 * t * t) - (0.0000062 * t * t * t);
 
-    // Add this to the gmst to get the current gmst
-    gmst += secsSinceUt0;
+    // Shift to [0:86400] range
+    while(gmst < 0.0) {
+        gmst += 86400.0;
+    }
+    while(gmst > 86400.0) {
+        gmst -= 86400.0;
+    }
 
     // Convert to decimal days:
     double gmst_days = gmst / 86400.0;
-    // Convert to fraction of a day:
-    double gmst_fdays = gmst_days - std::floor(gmst_days);
 
     // Convert to decimal hours
-    double gmst_hours = gmst_fdays * 24.0;
+    double gmst_hours = gmst_days * 24.0;
 
     return gmst_hours;
 }
