@@ -136,13 +136,57 @@ void CalibrationWorker::process() {
     Image median(state->width, state->height);
     median.rawImage = medianVals;
 
+    // Measure the background image from the median
+    Image background(state->width, state->height);
+    // Algorithm for background calculation: each pixel is the median value of the pixels surrounding it in
+    // a window of some particular width.
+    // Sliding window extends out to this many pixels on each side of the central pixel
+    int hw = 15;
+    for(int k=0; k<state->height; k++) {
+        for(int l=0; l<state->width; l++) {
+
+            // Compute the boundary of the window region
+            int k_min = std::max(k - hw, 0);
+            int k_max = std::min(k + hw, (int)state->height);
+            int l_min = std::max(l - hw, 0);
+            int l_max = std::min(l + hw, (int)state->width);
+
+            // Pixels within the window
+            std::vector<unsigned char> pixels;
+            for(unsigned int kp=k_min; kp<k_max; kp++) {
+                for(unsigned int lp=l_min; lp<l_max; lp++) {
+                    unsigned int pixIdx = kp*state->width + lp;
+                    pixels.push_back(medianVals[pixIdx]);
+                }
+            }
+
+            // Get the median value in the window
+            std::sort(pixels.begin(), pixels.end());
+            unsigned char med;
+            if(pixels.size() % 2 == 0) {
+                // Even number of elements - take average of central two
+                unsigned int a = (int)pixels[pixels.size()/2];
+                unsigned int b = (int)pixels[pixels.size()/2 - 1];
+                unsigned int c = (a + b)/2;
+                unsigned char d = c & 0xFF;
+                med = d;
+            }
+            else {
+                // Odd number of elements - pick central one
+                med = pixels[pixels.size()/2];
+            }
+            unsigned int pixIdx = k*state->width + l;
+            background.rawImage[pixIdx] = med;
+        }
+    }
+
     // Extract sources from the median image
     fprintf(stderr, "Getting sources...\n");
     std::vector<Source> sources = SourceDetector::getSources(median.rawImage, state->width, state->height);
     fprintf(stderr, "Found %d sources\n", sources.size());
 
-    // Create black sources image; we'll fill in each source with colour
-    std::vector<unsigned char> sourcesImageBlank(state->width*state->height*3, 0);
+    // Create an image of the extracted sources
+    std::vector<unsigned char> sourcesImage(state->width*state->height*3, 0);
 
     for(unsigned int s=0; s<sources.size(); s++) {
         Source source = sources[s];
@@ -157,13 +201,11 @@ void CalibrationWorker::process() {
             // Index of the pixel that's part of the current source
             unsigned int pixel = source.pixels[p];
             // Insert colour for this pixels
-            sourcesImageBlank[3*pixel + 0] = red;
-            sourcesImageBlank[3*pixel + 1] = green;
-            sourcesImageBlank[3*pixel + 2] = blue;
+            sourcesImage[3*pixel + 0] = red;
+            sourcesImage[3*pixel + 1] = green;
+            sourcesImage[3*pixel + 2] = blue;
         }
     }
-
-    // TODO: measure the background image for use in thresholded source detection
 
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
@@ -204,7 +246,7 @@ void CalibrationWorker::process() {
     // Write the data section
     output << state->width << " " << state->height << " 255\n";
     // Write raster
-    for(unsigned char pix : sourcesImageBlank) {
+    for(unsigned char pix : sourcesImage) {
         output << pix;
     }
     output.close();
@@ -288,14 +330,22 @@ void CalibrationWorker::process() {
     sprintf(command, "gnuplot < %s", tmpFileName.c_str());
     system(command);
 
-
-    // Write out the median image
     char filename [100];
     string utcFrame = TimeUtil::epochToUtcString(calibrationFrames[0]->epochTimeUs);
+
+    // Write out the median image
     sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
         out << median;
+        out.close();
+    }
+
+    // Write out the background image
+    sprintf(filename, "%s/background_%s.pgm", path.c_str(), utcFrame.c_str());
+    {
+        std::ofstream out(filename);
+        out << background;
         out.close();
     }
 
@@ -306,7 +356,6 @@ void CalibrationWorker::process() {
         out << varianceImage;
         out.close();
     }
-
 
     // Write out the raw calibration frames
     for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {

@@ -37,3 +37,11 @@ void MathUtil::getMedianMad(std::vector<unsigned int> values, int &median, int &
     }
 
 }
+
+double MathUtil::toDegrees(const double &rad) {
+    return rad * (180.0 / M_PI);
+}
+
+double MathUtil::toRadians(const double &deg) {
+    return deg * (M_PI / 180.0);
+}

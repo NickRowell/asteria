@@ -24,6 +24,8 @@ public:
 
     std::shared_ptr<Image> medianImage;
 
+    std::shared_ptr<Image> backgroundImage;
+
     std::vector<std::shared_ptr<Image>> calibrationFrames;
 
     double readNoise;

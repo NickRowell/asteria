@@ -49,7 +49,8 @@ SOURCES += \
     infra/calibrationinventory.cpp \
     util/sourcedetector.cpp \
     infra/source.cpp \
-    infra/sample.cpp
+    infra/sample.cpp \
+    util/coordinateutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -113,7 +114,8 @@ HEADERS += \
     infra/calibrationinventory.h \
     util/sourcedetector.h \
     infra/source.h \
-    infra/sample.h
+    infra/sample.h \
+    util/coordinateutil.h
 
 LIBS += -ljpeg \
         -lftgl \

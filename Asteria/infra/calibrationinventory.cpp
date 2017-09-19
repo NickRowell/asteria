@@ -21,6 +21,7 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
 
     // Regex suitable for identifying images with filenames starting 'median'
     const std::regex medianRegex = std::regex("median");
+    const std::regex backgroundRegex = std::regex("background");
 
     CalibrationInventory * inv = new CalibrationInventory();
 
@@ -57,6 +58,18 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
             auto medianImage = std::make_shared<Image>();
             input >> *medianImage;
             inv->medianImage = medianImage;
+            input.close();
+        }
+
+        // Detect the background image
+        if(std::regex_search(child->d_name, backgroundRegex, std::regex_constants::match_continuous)) {
+            // Build full path to the item
+            std::string childPath = path + "/" + child->d_name;
+            // Load the image from file
+            std::ifstream input(childPath);
+            auto backgroundImage = std::make_shared<Image>();
+            input >> *backgroundImage;
+            inv->backgroundImage = backgroundImage;
             input.close();
         }
 

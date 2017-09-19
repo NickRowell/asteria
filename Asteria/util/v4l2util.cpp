@@ -124,8 +124,15 @@ string V4L2Util::getFourCC(__u32 format) {
 }
 
 /**
- * Queries the pixel formats provided by the camera and returns the preferred one, being the one
- * that appears earliest in the list of supportedFmts.
+ * Examine the pixel formats provided by the camera, and get the subset of formats supported by the application, in order of
+ * preference. Clients can pick the preferred format from the first element in the vector, or detect if no supported format
+ * exists if the vector is empty.
+ *
+ * @brief getSupportedPixelFormats
+ * @param fd
+ * @param supportedFmts
+ * @param supportedFmtsN
+ * @return
  */
 std::vector< v4l2_fmtdesc > V4L2Util::getSupportedPixelFormats(int & fd, const unsigned int * supportedFmts, const unsigned int supportedFmtsN) {
 
