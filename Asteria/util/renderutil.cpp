@@ -86,20 +86,20 @@ void RenderUtil::drawCircle(std::vector<unsigned int> &annotatedImage, unsigned 
  * in units is pixels.
  */
 void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
-                             double centre_x, double centre_y, double a, double b, double c, float sigmas, unsigned int colour) {
+                             double &centre_x, double &centre_y, double &a, double &b, double &c, float sigmas, unsigned int &colour) {
 
     // Eigenvalues of image covariance matrix:
     double trA  = a+c;
     double detA = a*c - b*b;
     // intermediate quantity
-    double temp = std::sqrt(trA*trA - 4*detA)/2;
+    double temp = std::sqrt(trA*trA - 4.0*detA)/2.0;
     // actual eigenvalues
     double eVal1 = trA/2.0f + temp;
     double eVal2 = trA/2.0f - temp;
 
     // Compute normalised eigenvectors from these
-    double norm1 = 1.0/std::sqrt(b*b/((a-eVal1)*(a-eVal1)) + 1);
-    double norm2 = 1.0/std::sqrt(b*b/((a-eVal2)*(a-eVal2)) + 1);
+    double norm1 = 1.0/std::sqrt(b*b/((a-eVal1)*(a-eVal1)) + 1.0);
+    double norm2 = 1.0/std::sqrt(b*b/((a-eVal2)*(a-eVal2)) + 1.0);
 
     // Components of eigenvector matrix in image plane
     //      [ A   B ]
@@ -118,8 +118,8 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
 
     if(det<0) {
         // Reverse first eigenvector.
-        eVec1_x *= -1;
-        eVec1_y *= -1;
+        eVec1_x *= -1.0;
+        eVec1_y *= -1.0;
     }
 
     // Length of major axes of ellipse - number of standard deviations
@@ -149,7 +149,7 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
         int i = (int) std::round(centre_x + dx);
         int j = (int) std::round(centre_y + dy);
 
-        if(i < 0 || i >= width || j < 0 || j >= height) {
+        if(i < 0 || i >= (int)width || j < 0 || j >= (int)height) {
             // Point is outside image boundary
             continue;
         }
@@ -157,4 +157,14 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
         unsigned int pIdx = j * width + i;
         annotatedImage[pIdx] = colour;
     }
+}
+
+void RenderUtil::encodeRgb(const unsigned char &r, const unsigned char &g, const unsigned char &b, unsigned int &rgb) {
+    rgb = (r << 16) + (g << 8) + b;
+}
+
+void RenderUtil::decodeRgb(unsigned char &r, unsigned char &g, unsigned char &b, const unsigned int &rgb) {
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >>  8) & 0xFF;
+    b = (rgb >>  0) & 0xFF;
 }

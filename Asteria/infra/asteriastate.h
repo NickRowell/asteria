@@ -231,6 +231,19 @@ public:
      */
     unsigned int calibration_stack;
 
+    /**
+     * @brief Half-width of the median filter kernel used to estimate the background image [pixels]. The
+     * full size kernel is (2N+1)x(2N+1).
+     */
+    unsigned int bkg_median_filter_half_width;
+
+    /**
+     * @brief Threshold for detection of significant sources, in terms of the number of standard deviations
+     * that the integrated flux lies above the background level [dimensionless].
+     */
+    double source_detection_threshold_sigmas;
+
+
 };
 
 #endif // METEORCAPTURESTATE_H

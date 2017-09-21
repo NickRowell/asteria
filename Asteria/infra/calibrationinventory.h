@@ -20,14 +20,27 @@ class CalibrationInventory : public QObject {
     Q_OBJECT
 
 public:
+
     CalibrationInventory();
 
+    /**
+     * @brief The median (noise-reduced) image.
+     */
     std::shared_ptr<Image> medianImage;
 
+    /**
+     * @brief The background image.
+     */
     std::shared_ptr<Image> backgroundImage;
 
+    /**
+     * @brief A vector containing the individual frames used in the calibration, stored in ascending time order.
+     */
     std::vector<std::shared_ptr<Image>> calibrationFrames;
 
+    /**
+     * @brief The readnoise [adu]
+     */
     double readNoise;
 
 public slots:

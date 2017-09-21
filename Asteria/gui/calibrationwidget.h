@@ -32,8 +32,7 @@ public:
     VideoDirectoryModel *model;
 
     /**
-     * The CalibrationInventory that is currently being displayed by the widget.
-     * @brief inv
+     * @brief The CalibrationInventory that is currently being displayed by the widget.
      */
     CalibrationInventory * inv;
 
@@ -53,10 +52,9 @@ public:
 #endif
 
     /**
-    * @brief dicheckbox
-    * Checkbox for enabling/disabling de-interlaced stepping of frames, for clips composed of interlaced
-    * scan type images.
-    */
+     * @brief Checkbox for enabling/disabling de-interlaced stepping of frames, for clips composed of interlaced
+     * scan type images.
+     */
     QCheckBox *dicheckbox;
 
     QCheckBox *overlaycheckbox;

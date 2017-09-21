@@ -12,7 +12,8 @@ class SourceDetector
 public:
     SourceDetector();
 
-    static std::vector<Source> getSources(std::vector<unsigned char> pixels, unsigned int width, unsigned int height);
+    static std::vector<Source> getSources(std::vector<unsigned char> &median, std::vector<unsigned char> &background, std::vector<unsigned char> &noise,
+                                          unsigned int &width, unsigned int &height, double &source_detection_threshold_sigmas);
     static std::vector<unsigned int> getNeighbourUniqueLabels(Sample *&sample, const std::vector<Sample *> &samples, unsigned int &width, unsigned int &height);
 };
 

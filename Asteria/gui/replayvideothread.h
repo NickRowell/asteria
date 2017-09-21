@@ -9,53 +9,72 @@
 #include <QThread>
 #include <QMutex>
 
-
 class ReplayVideoThread : public QThread {
+
     Q_OBJECT
 
 public:
+
     ReplayVideoThread(const unsigned int &framePeriodUs);
     ~ReplayVideoThread();
 
     /**
-     * Current state of the replay viewer
-     * @brief The ReplayState enum
+     * @brief Enumerates the possible states of the replay viewer.
      */
     enum ReplayState{PLAYING, PAUSED, STOPPED, STEPF, STEPB, FQUEUED};
 
-    // The clip we're playing
+    /**
+     * @brief The clip we're playing, stored as a sorted vector of shared_ptrs to Images.
+     */
     std::vector<std::shared_ptr<Image>> frames;
 
-    // Peak hold image, to display before the clip starts and whenever it stops
-    std::shared_ptr<Image> peakHold;
+    /**
+     * @brief Image to display before the clip starts and whenever it stops.
+     */
+    std::shared_ptr<Image> splash;
 
-    // The total length of the clip [secs]
+    /**
+     * @brief The total length of the clip [secs]
+     */
     double clipLengthSecs;
 
-    // The index of the frame currently being displayed
+    /**
+     * @brief The index of the frame currently being displayed
+     */
     unsigned int idx;
 
-    // Indicates whether we're in de-interlaced stepping mode
+    /**
+     * @brief Indicates whether we're in de-interlaced stepping mode
+     */
     bool deinterlacedStepping;
 
-    // Indicates whether we're displaying the overlay image
+    /**
+     * @brief Indicates whether we're displaying the overlay image
+     */
     bool showOverlayImage;
 
-    // Indicates the field (top=true/bottom=false) currently being displayed. This is only relevant when in
-    // de-interlaced stepping mode
-    bool topField = true;
+    /**
+     * @brief Indicates the field (top=true/bottom=false) currently being displayed, when in de-interlaced stepping mode.
+     */
+    bool topField;
 
-    // Current state
+    /**
+     * @brief Current state of the replay
+     */
     ReplayState state;
 
-    // Flag used to close down the thread
+    /**
+     * @brief Flag used to close down the thread
+     */
     bool abort;
 
-    // Delay between frames [microseconds]
+    /**
+     * @brief Delay between frames [microseconds]
+     */
     unsigned int framePeriodUs;
 
     /**
-     * @brief mutex used to control multithreaded use of instances of this class.
+     * @brief Mutex used to control multithreaded use of instances of this class.
      */
     QMutex mutex;
 
@@ -65,7 +84,14 @@ protected:
     void processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField);
 
 public slots:
-    void loadClip(std::vector<std::shared_ptr<Image>>, std::shared_ptr<Image>);
+    /**
+     * @brief Load the video clip and prepare for playback
+     * @param images
+     *      The individual frames of the video clip, in ascending time order.
+     * @param splash
+     *      The splash image, i.e. the image to display when the clip is stopped.
+     */
+    void loadClip(std::vector<std::shared_ptr<Image>> images, std::shared_ptr<Image> splash);
     void toggleDiStepping(int checkBoxState);
     void toggleOverlay(int checkBoxState);
 

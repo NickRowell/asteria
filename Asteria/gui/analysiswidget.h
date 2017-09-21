@@ -19,9 +19,10 @@ class QSlider;
 class QLabel;
 class QTreeView;
 
-class AnalysisWidget : public QWidget
-{
+class AnalysisWidget : public QWidget {
+
     Q_OBJECT
+
 public:
     explicit AnalysisWidget(QWidget *parent = 0, AsteriaState * state = 0);
 

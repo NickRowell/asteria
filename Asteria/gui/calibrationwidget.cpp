@@ -115,6 +115,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
 
     // Display image when one is queued
     connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool, bool)));
+    connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
@@ -176,8 +177,8 @@ void CalibrationWidget::loadClip(QString path) {
     overlaycheckbox->setChecked(true);
 
     // Set the range of the slider according to how many frames we have
-//    slider->setRange(0, inv->eventFrames.size()-1);
-//    slider->setValue(0);
+    slider->setRange(0, inv->calibrationFrames.size()-1);
+    slider->setValue(0);
 
     // Enable/disable the de-interlaced stepping checkbox depending on whether the clip consists of
     // interlaced-scan type images
@@ -205,7 +206,7 @@ void CalibrationWidget::loadClip(QString path) {
 //    }
 
     // Pass the clip to the player
-//    replayThread->loadClip(inv->eventFrames, inv->peakHold);
+    replayThread->loadClip(inv->calibrationFrames, inv->medianImage);
 
     // Initialise it with the peak hold image
     display->newFrame(inv->medianImage, true, true, true);

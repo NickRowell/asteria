@@ -3,13 +3,14 @@
 #include "util/fileutil.h"
 #include "infra/source.h"
 #include "util/sourcedetector.h"
+#include "util/renderutil.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
 #include <sys/stat.h>
 #include <iostream>
-#include <algorithm>    // std::max
+#include <algorithm>
 
 #include <Eigen/Dense>
 
@@ -121,17 +122,14 @@ void CalibrationWorker::process() {
     }
 
     // Construct an image of the noise level in each pixel to detect fixed pattern noise etc
-    std::vector<unsigned char> varImage;
+    std::vector<unsigned char> stdVals;
     for(unsigned int i=0; i<state->width*state->height; i++) {
-        double variance = varianceVals[i];
-        // Normalise this to [0:1] range applying a stretch as appropriate
-        double scaled = std::pow(variance, 0.25)/std::pow(maxVariance, 0.25);
-        // Scale to 0:255 range and quantize
-        unsigned char pixel = (unsigned char)floor(scaled * 255.0);
-        varImage.push_back(pixel);
+        double std = std::sqrt(varianceVals[i]);
+        unsigned char pixel = (unsigned char)floor(std);
+        stdVals.push_back(pixel);
     }
-    Image varianceImage(state->width, state->height);
-    varianceImage.rawImage = varImage;
+    Image noise(state->width, state->height);
+    noise.rawImage = stdVals;
 
     Image median(state->width, state->height);
     median.rawImage = medianVals;
@@ -141,7 +139,7 @@ void CalibrationWorker::process() {
     // Algorithm for background calculation: each pixel is the median value of the pixels surrounding it in
     // a window of some particular width.
     // Sliding window extends out to this many pixels on each side of the central pixel
-    int hw = 15;
+    int hw = (int)state->bkg_median_filter_half_width;
     for(int k=0; k<state->height; k++) {
         for(int l=0; l<state->width; l++) {
 
@@ -181,14 +179,14 @@ void CalibrationWorker::process() {
     }
 
     // Extract sources from the median image
-    fprintf(stderr, "Getting sources...\n");
-    std::vector<Source> sources = SourceDetector::getSources(median.rawImage, state->width, state->height);
-    fprintf(stderr, "Found %d sources\n", sources.size());
+    std::vector<Source> sources = SourceDetector::getSources(median.rawImage, background.rawImage, noise.rawImage,
+                                                             state->width, state->height, state->source_detection_threshold_sigmas);
 
     // Create an image of the extracted sources
-    std::vector<unsigned char> sourcesImage(state->width*state->height*3, 0);
+    std::vector<unsigned int> sourcesImage(state->width*state->height, 0);
 
     for(unsigned int s=0; s<sources.size(); s++) {
+
         Source source = sources[s];
 
         // Get a random colour for this source
@@ -196,15 +194,22 @@ void CalibrationWorker::process() {
         unsigned char green = (unsigned char) rand();
         unsigned char blue = (unsigned char) rand();
 
+        unsigned int rgb;
+        RenderUtil::encodeRgb(red, green, blue, rgb);
+
         // Loop over the pixels assigned to this source
         for(unsigned int p=0; p<source.pixels.size(); p++) {
             // Index of the pixel that's part of the current source
             unsigned int pixel = source.pixels[p];
             // Insert colour for this pixels
-            sourcesImage[3*pixel + 0] = red;
-            sourcesImage[3*pixel + 1] = green;
-            sourcesImage[3*pixel + 2] = blue;
+            sourcesImage[pixel] = rgb;
         }
+
+        // Invert the colour
+        unsigned int negColour = 0xFFFFFFFF;
+
+        // Now draw a cross on the centroid and an ellipse to represent the dispersion matrix
+        RenderUtil::drawEllipse(sourcesImage, state->width, state->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
     }
 
     // TODO: Measure xrange from percentiles of data
@@ -246,8 +251,13 @@ void CalibrationWorker::process() {
     // Write the data section
     output << state->width << " " << state->height << " 255\n";
     // Write raster
-    for(unsigned char pix : sourcesImage) {
-        output << pix;
+    for(unsigned int pix : sourcesImage) {
+        unsigned char r, g, b;
+        RenderUtil::decodeRgb(r, g, b, pix);
+
+        output << r;
+        output << g;
+        output << b;
     }
     output.close();
     //
@@ -353,7 +363,7 @@ void CalibrationWorker::process() {
     sprintf(filename, "%s/noise_%s.pgm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
-        out << varianceImage;
+        out << noise;
         out.close();
     }
 

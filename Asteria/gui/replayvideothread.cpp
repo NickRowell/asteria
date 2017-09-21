@@ -2,7 +2,7 @@
 #include "util/timeutil.h"
 
 
-ReplayVideoThread::ReplayVideoThread(const unsigned int &framePeriodUs) : frames(0), idx(0), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
+ReplayVideoThread::ReplayVideoThread(const unsigned int &framePeriodUs) : frames(0), idx(0), topField(true), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
     // Start the thread
     start(NormalPriority);
 }
@@ -14,7 +14,7 @@ ReplayVideoThread::~ReplayVideoThread() {
     wait();
 }
 
-void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> peakHold) {
+void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
 
     // Stop any current replay
     stop();
@@ -23,8 +23,8 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     frames.clear();
     // Push new frames
     frames.insert(frames.end(), images.begin(), images.end());
-    // Store peakHold
-    this->peakHold = peakHold;
+    // Store splash image
+    this->splash = splash;
     // Reset counter
     idx = 0;
     // Compute clip length
@@ -125,7 +125,7 @@ void ReplayVideoThread::run() {
                 break;
             case STOPPED:
                 idx=0;
-                processFrame(idx, peakHold, true, true);
+                processFrame(idx, splash, true, true);
                 break;
             case PAUSED:
                 break;

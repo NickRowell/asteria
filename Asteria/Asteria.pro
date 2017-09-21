@@ -115,7 +115,8 @@ HEADERS += \
     util/sourcedetector.h \
     infra/source.h \
     infra/sample.h \
-    util/coordinateutil.h
+    util/coordinateutil.h \
+    math/gaussian2dfitter.h
 
 LIBS += -ljpeg \
         -lftgl \

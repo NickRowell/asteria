@@ -10,26 +10,27 @@ SourceDetector::SourceDetector() {
 /**
  * Main workhorse algorithm for source detection. The samples in the image are sorted into
  * descending order. The sources are gradually formed by either assigning an isolated sample
- * to a new source, or assigning a non-isolated sample to an existing source.
- *
- * TODO:
- *  - Include background estimation at each pixel to enable noise suppression
- *  - Investigate the best source detection algorithm;
- *     - Peak-finding (i.e. sources defined by local maxima)
- *     - Thresholding (i.e. sources defined by regions within a contour)
+ * to a new source, or assigning a non-isolated sample to an existing source. The significance
+ * of each source is measured by reference to the noise image and the background level. Sources
+ * falling below the given significance threshold are culled.
  *
  * @param pixels
- *            Vector of all pixel values (row-packed) [ADU]
+ *            Vector of all pixel values; this is the measured image from which sources are to be extracted (row-packed) [ADU]
+ * @param background
+ *            Vector of pixel background values (row-packed) [ADU]
+ * @param noise
+ *            Vector of pixel noise values, in terms of the standard deviation (row-packed) [ADU]
  * @param width
  *            Width of the image [pixels]
  * @param height
  *            Height of the image [pixels]
+ * @param source_detection_threshold_sigmas
+ *            Threshold for detection of significant sources, in terms of the number of standard deviations
+ *            that the integrated flux lies above the background level [dimensionless].
  * @return Vector containing the Sources detected in the window
  */
-std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> pixels, unsigned int width, unsigned int height) {
-
-    // Samples above this level will be considered source
-    unsigned char detectionThreshold = 50;
+std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &median, std::vector<unsigned char> &background, std::vector<unsigned char> &noise,
+                                               unsigned int &width, unsigned int &height, double &source_detection_threshold_sigmas) {
 
     // Create an array and List of Samples. The array is used to get a sample for a given coordinate, and
     // the list is used so that we can process the samples in intensity order
@@ -37,12 +38,9 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> pixels
     std::vector<Sample *> allSamples;
 
     for(unsigned int sIdx=0; sIdx<height * width; sIdx++) {
-        Sample * sample = new Sample(sIdx, width, pixels[sIdx]);
+        Sample * sample = new Sample(sIdx, width, median[sIdx]);
         allSamples.push_back(sample);
-        // TODO: dynamic detection threshold based on background image
-        if(sample->level > detectionThreshold) {
-            sortedSamples.push_back(sample);
-        }
+        sortedSamples.push_back(sample);
     }
 
     // Sort the vector into order of decreasing intensity
@@ -88,7 +86,131 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> pixels
             sources[sample->label - 1].pixels.push_back(sample->index);
         }
     }
-    return sources;
+
+    std::vector<Source> significantSources;
+
+    // Post-process the sources to purge insignificant ones
+    for (unsigned int s=0; s<sources.size(); s++) {
+
+        Source source = sources[s];
+
+        // Integrated background-subtracted signal
+        source.adu = 0.0;
+        // Uncertainty on that
+        source.sigma_adu = 0.0;
+        // Centre-of-flux
+        source.x0 = 0.0;
+        source.y0 = 0.0;
+
+        for(unsigned int sIdx : source.pixels) {
+            double adu = (double)median[sIdx] - (double)background[sIdx];
+            source.adu += adu;
+            source.sigma_adu += (double)noise[sIdx] * (double)noise[sIdx];
+
+            unsigned int x = sIdx % width;
+            unsigned int y = sIdx / width;
+            source.x0 += ((double)x) * adu;
+            source.y0 += ((double)y) * adu;
+        }
+        source.sigma_adu = std::sqrt(source.sigma_adu);
+        source.x0 /= source.adu;
+        source.y0 /= source.adu;
+
+        // Detection significance of the source
+        double sigmas = source.adu / source.sigma_adu;
+        if(sigmas > source_detection_threshold_sigmas) {
+            significantSources.push_back(source);
+        }
+    }
+
+    std::vector<Source> stellarSources;
+
+    // Now measure the flux-weighted sample dispersion matrix for each source.
+    for (unsigned int s=0; s<significantSources.size(); s++) {
+
+        Source source = significantSources[s];
+
+        // Compute the flux-weighted sample position dispersion matrix [pix],
+        // as A =
+        // [a b]
+        // [b c]
+        double a = 0.0;
+        double b = 0.0;
+        double c = 0.0;
+
+        for(unsigned int sIdx : source.pixels) {
+
+            unsigned int x = sIdx % width;
+            unsigned int y = sIdx / width;
+
+            double weight = ((double)median[sIdx] - (double)background[sIdx]) / source.adu;
+
+            a += (x - source.x0) * (x - source.x0) * weight;
+            b += (x - source.x0) * (y - source.y0) * weight;
+            c += (y - source.y0) * (y - source.y0) * weight;
+        }
+
+        source.c_xx = a;
+        source.c_xy = b;
+        source.c_yy = c;
+
+        // Compute the eigenvalues: direct solution for 2x2 matrix
+        double tr = a + c;
+        double det = a * c - b * b;
+        double disc = tr * tr / 4.0 - det;
+        if (disc < 0.0) {
+            // Eigenvalues are complex; note that the dispersion matrix is
+            // real-symmetric so eigenvalues (should be) always real, however we explicitly
+            // test this here in order to avoid unanticipated exceptions.
+            continue;
+        }
+        disc = std::sqrt(disc);
+
+        // The eigenvalues
+        double l1 = tr / 2.0 + disc;
+        double l2 = tr / 2.0 - disc;
+
+        // Update the eigenvalues for the source
+        source.l1 = l1;
+        source.l2 = l2;
+
+        // Both eigenvalues should be positive, as we're working with intensity maxima. Usually if
+        // either is negative then the source is a perfect straight line.
+        if (l1 < 0.0 || l2 < 0.0) {
+            continue;
+        }
+
+        if (b == 0.0) {
+            // Special case: principal axes align with X or Y directions. Likely that one eigenvalue
+            // is zero.
+            if (a > c) {
+                source.orientation = M_PI / 2.0;
+            } else {
+                source.orientation = 0.0;
+            }
+        } else {
+            // General case: principal axis does not align with either X or Y direction
+            double lmax = std::max(l1, l2);
+
+            // X and Y components of (normalised) eigenvector corresponding to largest eigenvalue.
+            // We take the absolute value in order to reflect the eigenvector into the first
+            // quadrant so as to ease the algebra for computing the angle between the vector and
+            // the axes.
+            double v_x = std::abs(1.0 / std::sqrt(b * b / ((a - lmax) * (a - lmax)) + 1.0));
+            double v_y = std::abs(std::sqrt(1 - v_x));
+
+            // Get the angle between the spike and the X direction
+            source.orientation = std::atan(v_y / v_x);
+        }
+
+        stellarSources.push_back(source);
+    }
+
+    fprintf(stderr, "Found %lu sources\n", sources.size());
+    fprintf(stderr, "Found %lu significant sources\n", significantSources.size());
+    fprintf(stderr, "Found %lu stellar sources\n", stellarSources.size());
+
+    return stellarSources;
 }
 
 /**
