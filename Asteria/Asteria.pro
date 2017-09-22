@@ -50,7 +50,8 @@ SOURCES += \
     util/sourcedetector.cpp \
     infra/source.cpp \
     infra/sample.cpp \
-    util/coordinateutil.cpp
+    util/coordinateutil.cpp \
+    gui/videoplayerwidget.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -116,7 +117,8 @@ HEADERS += \
     infra/source.h \
     infra/sample.h \
     util/coordinateutil.h \
-    math/gaussian2dfitter.h
+    math/gaussian2dfitter.h \
+    gui/videoplayerwidget.h
 
 LIBS += -ljpeg \
         -lftgl \

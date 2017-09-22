@@ -9,15 +9,14 @@
 
 #include <QWidget>
 
-class QPushButton;
 class AsteriaState;
-class GLMeteorDrawer;
-class AnalysisInventory;
-class VideoDirectoryModel;
-class QCheckBox;
-class QSlider;
-class QLabel;
 class QTreeView;
+class VideoDirectoryModel;
+class AnalysisInventory;
+class VideoPlayerWidget;
+#ifdef REANALYSE
+    class QPushButton;
+#endif
 
 class AnalysisWidget : public QWidget {
 
@@ -29,6 +28,7 @@ public:
     AsteriaState * state;
 
     QTreeView *tree;
+
     VideoDirectoryModel *model;
 
     /**
@@ -37,34 +37,14 @@ public:
      */
     AnalysisInventory * inv;
 
-    GLMeteorDrawer * display;
-
-    ReplayVideoThread * replayThread;
-
-    QPushButton *play_button;
-    QPushButton *stop_button;
-    QPushButton *pause_button;
-    QPushButton *stepf_button;
-    QPushButton *stepb_button;
-    QSlider * slider;
+    /**
+     * @brief Video player widget used to replay the raw calibration footage.
+     */
+    VideoPlayerWidget * player;
 
 #ifdef REANALYSE
     QPushButton *reanalyse_button;
 #endif
-
-    /**
-    * @brief dicheckbox
-    * Checkbox for enabling/disabling de-interlaced stepping of frames, for clips composed of interlaced
-    * scan type images.
-    */
-    QCheckBox *dicheckbox;
-
-    QCheckBox *overlaycheckbox;
-
-    QLabel * clipLengthSecsField;
-    QLabel * clipLengthFramesField;
-    QLabel * utcField;
-
 
 signals:
 
@@ -72,8 +52,6 @@ public slots:
     // Load a clip for display
     void loadClip(const QModelIndex &index);
     void loadClip(QString path);
-    void updateVideoStats(const AnalysisVideoStats &stats);
-
     void onCustomContextMenu(const QPoint &point);
 
 #ifdef REANALYSE

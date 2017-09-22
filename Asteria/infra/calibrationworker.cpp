@@ -37,6 +37,9 @@ void CalibrationWorker::process() {
 
     fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
 
+    long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
+    unsigned int field = calibrationFrames.front()->field;
+
     // Compute the median image; for each pixel, store a vector of all the values
     std::vector< std::vector<unsigned char>> pixels(state->width * state->height);
 
@@ -129,9 +132,13 @@ void CalibrationWorker::process() {
         stdVals.push_back(pixel);
     }
     Image noise(state->width, state->height);
+    noise.field = field;
+    noise.epochTimeUs = midTimeStamp;
     noise.rawImage = stdVals;
 
     Image median(state->width, state->height);
+    median.field = field;
+    median.epochTimeUs = midTimeStamp;
     median.rawImage = medianVals;
 
     // Measure the background image from the median

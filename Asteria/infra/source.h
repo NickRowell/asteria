@@ -11,7 +11,6 @@ class Source
 {
 public:
     Source();
-//    Source(const Source& copyme);
 
     /**
      * @brief pixels

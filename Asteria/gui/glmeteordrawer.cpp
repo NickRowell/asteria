@@ -13,8 +13,8 @@
 #define PositionAttributeIndex 0
 #define TexCoordAttributeIndex 1
 
-GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, AsteriaState *state)
-    : QOpenGLWidget(parent), state(state), program(0) {
+GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, const unsigned int &width, const unsigned int &height)
+    : QOpenGLWidget(parent), width(width), height(height), program(0) {
 
 }
 
@@ -26,13 +26,10 @@ GLMeteorDrawer::~GLMeteorDrawer() {
 }
 
 QSize GLMeteorDrawer::sizeHint() const {
-    return QSize(state->width, state->height);
+    return QSize(width, height);
 }
 
 void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderOverlay, bool renderTopField, bool renderBottomField) {
-
-    unsigned int width = state->width;
-    unsigned int height = state->height;
 
     // Render the full frame
     if(renderTopField && renderBottomField) {
@@ -147,9 +144,6 @@ void GLMeteorDrawer::initializeGL() {
     vbo.bind();
     vbo.allocate(vertData.constData(), vertData.count() * sizeof(GLfloat));
 
-    unsigned int width = state->width;
-    unsigned int height = state->height;
-
     // Create textures using underlying GL API
     GLuint texHandles[3];
     glGenTextures(3, texHandles);
@@ -223,7 +217,7 @@ void GLMeteorDrawer::paintGL() {
 
         // Apply vertical shift to compensate for top/bottom field displacement.
         // Shift is quarter of one texture pixel, normalised to texture coordinates.
-        float shift = 1.0 / (2.0 * state->height);
+        float shift = 1.0 / (2.0 * height);
 
         if(isTopField) {
             program->setUniformValue("voffset", shift);

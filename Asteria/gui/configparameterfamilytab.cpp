@@ -72,7 +72,6 @@ void ConfigParameterFamilyTab::updateForm() {
             break;
         }
         }
-
     }
 }
 

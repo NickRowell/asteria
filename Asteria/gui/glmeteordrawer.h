@@ -30,7 +30,7 @@ class GLMeteorDrawer : public QOpenGLWidget {
 
 public:
 
-    explicit GLMeteorDrawer(QWidget *parent = 0, AsteriaState *state = 0);
+    explicit GLMeteorDrawer(QWidget *parent, const unsigned int &width, const unsigned int &height);
     ~GLMeteorDrawer();
 
     QSize sizeHint() const Q_DECL_OVERRIDE;
@@ -38,29 +38,60 @@ public:
 
 private:
 
-    // The MeteorCaptureState object
-    AsteriaState * state;
+    /**
+     * @brief Width of the images being displayed [pixels]
+     */
+    unsigned int width;
 
-    // Texture handle for (width*height) acquired image display
+    /**
+     * @brief Height of the images being displayed [pixels]
+     */
+    unsigned int height;
+
+    /**
+     * @brief Texture handle for (width*height) acquired image display.
+     */
     GLuint VideoImageTexture;
 
-    // Texture handle for (width * height/2) acquired image when interlaced scan
-    // mode was in use and we're doing de-interlaced stepping.
+    /**
+     * @brief Texture handle for (width * height/2) acquired image when interlaced scan
+     * mode was in use and we're doing de-interlaced stepping.
+     */
     GLuint VideoFieldTexture;
 
-    // Texture handle for (width*height) annotated image display
+    /**
+     * @brief Texture handle for (width*height) annotated image display.
+     */
     GLuint OverlayImageTexture;
 
-    // Flags used to indicate whether each of the textures should be rendered
+    /**
+     * @brief Flag used to indicate whether the VideoImageTexture texture should be rendered.
+     */
     bool renderVideoImageTexture;
+
+    /**
+     * @brief Flag used to indicate whether the VideoFieldTexture texture should be rendered.
+     */
     bool renderVideoFieldTexture;
-    bool isTopField;
+
+    /**
+     * @brief Flag used to indicate whether the VideoOverlayImageTexture texture should be rendered.
+     */
     bool renderOverlayImageTexture;
 
-    // Shader program used to render textured quad
+    /**
+     * @brief Flag indicating if the current VideoFieldTexture is for the top or bottom field.
+     */
+    bool isTopField;
+
+    /**
+     * @brief Shader program used to render textured quad
+     */
     QOpenGLShaderProgram * program;
 
-    // Vertex buffer to store quad for rendering image as a texture
+    /**
+     * @brief Vertex buffer to store quad for rendering image as a texture
+     */
     QOpenGLBuffer vbo;
 
 protected:
