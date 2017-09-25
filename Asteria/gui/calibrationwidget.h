@@ -12,6 +12,7 @@ class QTreeView;
 class VideoDirectoryModel;
 class CalibrationInventory;
 class VideoPlayerWidget;
+class GLMeteorDrawer;
 #ifdef RECALIBRATE
     class QPushButton;
 #endif
@@ -23,10 +24,19 @@ class CalibrationWidget : public QWidget {
 public:
     explicit CalibrationWidget(QWidget *parent = 0, AsteriaState * state = 0);
 
+    /**
+     * @brief Handle to the object storing all state information.
+     */
     AsteriaState * state;
 
+    /**
+     * @brief Tree viewer for video clips that have been captured and analysed.
+     */
     QTreeView *tree;
 
+    /**
+     * @brief Model of the directory tree containing video clips.
+     */
     VideoDirectoryModel *model;
 
     /**
@@ -39,7 +49,21 @@ public:
      */
     VideoPlayerWidget * player;
 
+    /**
+     * @brief Image viewer for the median calibration image.
+     */
+    GLMeteorDrawer * medianImageViewer;
+
+    /**
+     * @brief Image viewer for the background calibration image.
+     */
+    GLMeteorDrawer * backgroundImageViewer;
+
+
 #ifdef RECALIBRATE
+    /**
+     * @brief Button to activate the recalibration of existing calibration footage.
+     */
     QPushButton *recalibrate_button;
 #endif
 

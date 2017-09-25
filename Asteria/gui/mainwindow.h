@@ -18,18 +18,30 @@ public:
 
 private:
 
+    /**
+     * @brief Handle to the object storing all state information.
+     */
     AsteriaState * state;
 
+    /**
+     * @brief Widget to present the video acquisition.
+     */
     AcquisitionWidget * acqWidget;
 
+    /**
+     * @brief Widget to present the clip analysis.
+     */
     AnalysisWidget * analWidget;
 
+    /**
+     * @brief Widget to present the camera calibration.
+     */
     CalibrationWidget * calWidget;
 
+    /**
+     * @brief A tabbed widget used to navigate through the acquisition, analysis and calibration widgets.
+     */
     QTabWidget *tabWidget;
-
-    // Main container widget for all GUI elements
-    QWidget * central;
 
     void closeEvent(QCloseEvent *bar);
 

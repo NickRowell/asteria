@@ -15,6 +15,7 @@
 VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width, const unsigned int &height, const unsigned int &framePeriodUs)
     : QWidget(parent), display(0) {
 
+    // GL widget that contains the displayed image
     display = new GLMeteorDrawer(this, width, height);
 
     // Display the usual symbols for each button
@@ -38,7 +39,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     dicheckbox = new QCheckBox("&De-interlaced stepping", this);
     overlaycheckbox = new QCheckBox("&Show overlay image", this);
 
-    replayThread = new ReplayVideoThread(framePeriodUs);
+    replayThread = new VideoPlayerThread(framePeriodUs);
 
     // A widget to contain the control buttons
     QWidget * controls = new QWidget(this);
@@ -75,6 +76,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     utcLayout->addWidget(utcField);
     utcDisplay->setLayout(utcLayout);
 
+    // Connect up the buttons
     connect(play_button, SIGNAL(pressed()), replayThread, SLOT(play()));
     connect(pause_button, SIGNAL(pressed()), replayThread, SLOT(pause()));
     connect(stop_button, SIGNAL(pressed()), replayThread, SLOT(stop()));
@@ -94,16 +96,14 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Arrange layout
-    QVBoxLayout *rightPanelLayout = new QVBoxLayout;
-    rightPanelLayout->addWidget(display);
-    rightPanelLayout->addWidget(statsDisplay);
-    rightPanelLayout->addWidget(utcDisplay);
-    rightPanelLayout->addWidget(slider);
-    rightPanelLayout->addWidget(controls);
-    QWidget * rightPanel = new QWidget(this);
-    rightPanel->setLayout(rightPanelLayout);
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(display);
+    mainLayout->addWidget(statsDisplay);
+    mainLayout->addWidget(utcDisplay);
+    mainLayout->addWidget(slider);
+    mainLayout->addWidget(controls);
 
-    this->setLayout(rightPanelLayout);
+    this->setLayout(mainLayout);
 }
 
 

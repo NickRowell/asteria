@@ -2,7 +2,7 @@
 #define VIDEOPLAYERWIDGET_H
 
 #include "infra/image.h"
-#include "gui/replayvideothread.h"
+#include "gui/videoplayerthread.h"
 #include "infra/analysisvideostats.h"
 
 #include <QWidget>
@@ -25,15 +25,44 @@ public:
 
     explicit VideoPlayerWidget(QWidget *parent, const unsigned int &width, const unsigned int &height, const unsigned int &framePeriodUs);
 
+    /**
+     * @brief Used to display the video frames.
+     */
     GLMeteorDrawer * display;
 
-    ReplayVideoThread * replayThread;
+    /**
+     * @brief Used to load, queue and dispatch the video frames in a dedicated thread.
+     */
+    VideoPlayerThread * replayThread;
 
+    /**
+     * @brief Play button.
+     */
     QPushButton *play_button;
+
+    /**
+     * @brief Stop button
+     */
     QPushButton *stop_button;
+
+    /**
+     * @brief Pause button.
+     */
     QPushButton *pause_button;
+
+    /**
+     * @brief Button used to step forwards one frame at a time.
+     */
     QPushButton *stepf_button;
+
+    /**
+     * @brief Button used to step backwards one frame at a time.
+     */
     QPushButton *stepb_button;
+
+    /**
+     * @brief Slider bar used to show progression through the video clip.
+     */
     QSlider * slider;
 
     /**
@@ -42,10 +71,24 @@ public:
      */
     QCheckBox *dicheckbox;
 
+    /**
+     * @brief Checkbox for enabling/disabling display of the overlay image.
+     */
     QCheckBox *overlaycheckbox;
 
+    /**
+     * @brief Label to display the clip length in seconds.
+     */
     QLabel * clipLengthSecsField;
+
+    /**
+     * @brief Label to display the clip length in frames.
+     */
     QLabel * clipLengthFramesField;
+
+    /**
+     * @brief Labelto display the UTC of the image currently being displayed.
+     */
     QLabel * utcField;
 
 signals:

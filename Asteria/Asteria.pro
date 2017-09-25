@@ -33,7 +33,6 @@ SOURCES += \
     gui/acquisitionwidget.cpp \
     gui/analysiswidget.cpp \
     infra/analysisinventory.cpp \
-    gui/replayvideothread.cpp \
     infra/calibrationworker.cpp \
     util/ioutil.cpp \
     util/v4l2util.cpp \
@@ -51,7 +50,8 @@ SOURCES += \
     infra/source.cpp \
     infra/sample.cpp \
     util/coordinateutil.cpp \
-    gui/videoplayerwidget.cpp
+    gui/videoplayerwidget.cpp \
+    gui/videoplayerthread.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -97,7 +97,6 @@ HEADERS += \
     gui/acquisitionwidget.h \
     gui/analysiswidget.h \
     infra/analysisinventory.h \
-    gui/replayvideothread.h \
     config/analysisparameters.h \
     config/calibrationparameters.h \
     infra/calibrationworker.h \
@@ -118,7 +117,8 @@ HEADERS += \
     infra/sample.h \
     util/coordinateutil.h \
     math/gaussian2dfitter.h \
-    gui/videoplayerwidget.h
+    gui/videoplayerwidget.h \
+    gui/videoplayerthread.h
 
 LIBS += -ljpeg \
         -lftgl \

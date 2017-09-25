@@ -34,7 +34,7 @@ void MainWindow::initAndShowGui() {
     tabWidget->addTab(calWidget, QString("Calibration"));
 
     // Arrange layout
-    central = new QWidget(this);
+    QWidget * central = new QWidget(this);
 
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(tabWidget);

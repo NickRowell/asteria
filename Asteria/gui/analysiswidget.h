@@ -4,7 +4,7 @@
 #define REANALYSE
 
 #include "infra/image.h"
-#include "gui/replayvideothread.h"
+#include "gui/videoplayerthread.h"
 #include "infra/analysisvideostats.h"
 
 #include <QWidget>
@@ -25,10 +25,19 @@ class AnalysisWidget : public QWidget {
 public:
     explicit AnalysisWidget(QWidget *parent = 0, AsteriaState * state = 0);
 
+    /**
+     * @brief Handle to the object storing all state information.
+     */
     AsteriaState * state;
 
+    /**
+     * @brief Tree viewer for video clips that have been captured and analysed.
+     */
     QTreeView *tree;
 
+    /**
+     * @brief Model of the directory tree containing video clips.
+     */
     VideoDirectoryModel *model;
 
     /**
@@ -43,6 +52,9 @@ public:
     VideoPlayerWidget * player;
 
 #ifdef REANALYSE
+    /**
+     * @brief Button to activate the reanalysis of an existing video clip.
+     */
     QPushButton *reanalyse_button;
 #endif
 

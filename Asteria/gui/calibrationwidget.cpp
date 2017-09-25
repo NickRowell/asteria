@@ -4,6 +4,7 @@
 #include "gui/videodirectorymodel.h"
 #include "util/timeutil.h"
 #include "gui/videoplayerwidget.h"
+#include "gui/glmeteordrawer.h"
 
 #ifdef RECALIBRATE
     #include "infra/calibrationworker.h"
@@ -27,20 +28,8 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
 
     player = new VideoPlayerWidget(this, this->state->width, this->state->height, this->state->nominalFramePeriodUs);
 
-#ifdef RECALIBRATE
-    recalibrate_button = new QPushButton("Recalibrate", this);
-#endif
-
-    //
-    // TODO: place the recalibrate button in the main widget
-    //
-#ifdef RECALIBRATE
-//    boxesLayout->addWidget(recalibrate_button);
-#endif
-
-#ifdef RECALIBRATE
-    connect(recalibrate_button, SIGNAL(pressed()), this, SLOT(recalibrate()));
-#endif
+    medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
+    backgroundImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
@@ -48,10 +37,31 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     // Capture double-clicks in the tree view for replaying videos
     connect(tree, SIGNAL (doubleClicked(const QModelIndex)), this, SLOT(loadClip(const QModelIndex)));
 
+    // Use a tabbed widget to display the video footage and calibration images
+    QTabWidget *tabWidget = new QTabWidget;
+    tabWidget->addTab(player, QString("Raw frames"));
+    tabWidget->addTab(medianImageViewer, QString("Median"));
+    tabWidget->addTab(backgroundImageViewer, QString("Background"));
+
+    // Add more tabs for the other calibration
+//    tabWidget->addTab(calWidget, QString("Calibration"));
+
     // Arrange layout
+
+    // Right panel containing the player widget and any additional stuff
+    QWidget * rightPanel = new QWidget(this);
+    QVBoxLayout *rightPanelLayout = new QVBoxLayout;
+    rightPanelLayout->addWidget(tabWidget);
+#ifdef RECALIBRATE
+    recalibrate_button = new QPushButton("Recalibrate", this);
+    connect(recalibrate_button, SIGNAL(pressed()), this, SLOT(recalibrate()));
+    rightPanelLayout->addWidget(recalibrate_button);
+#endif
+    rightPanel->setLayout(rightPanelLayout);
+
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(tree);
-    mainLayout->addWidget(player);
+    mainLayout->addWidget(rightPanel);
 
     this->setLayout(mainLayout);
 }
@@ -89,6 +99,8 @@ void CalibrationWidget::loadClip(QString path) {
     }
 
     player->loadClip(inv->calibrationFrames, inv->calibrationFrames.front());
+    medianImageViewer->newFrame(inv->medianImage, false, true, true);
+    backgroundImageViewer->newFrame(inv->backgroundImage, false, true, true);
 }
 
 #ifdef RECALIBRATE

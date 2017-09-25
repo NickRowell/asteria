@@ -27,30 +27,28 @@ AnalysisWidget::AnalysisWidget(QWidget *parent, AsteriaState *state) : QWidget(p
 
     player = new VideoPlayerWidget(this, this->state->width, this->state->height, this->state->nominalFramePeriodUs);
 
-#ifdef REANALYSE
-    reanalyse_button = new QPushButton("Reanalyse", this);
-#endif
-
-    //
-    // TODO: place the recalibrate button in the main widget
-    //
-#ifdef REANALYSE
-//    boxesLayout->addWidget(reanalyse_button);
-#endif
-
-#ifdef REANALYSE
-    connect(reanalyse_button, SIGNAL(pressed()), this, SLOT(reanalyse()));
-#endif
-
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
 
     // Capture double-clicks in the tree view for replaying videos
     connect(tree, SIGNAL (doubleClicked(const QModelIndex)), this, SLOT(loadClip(const QModelIndex)));
 
+    // Arrange layout
+
+    // Right panel containing the player widget and any additional stuff
+    QWidget * rightPanel = new QWidget(this);
+    QVBoxLayout *rightPanelLayout = new QVBoxLayout;
+    rightPanelLayout->addWidget(player);
+#ifdef REANALYSE
+    reanalyse_button = new QPushButton("Reanalyse", this);
+    connect(reanalyse_button, SIGNAL(pressed()), this, SLOT(reanalyse()));
+    rightPanelLayout->addWidget(reanalyse_button);
+#endif
+    rightPanel->setLayout(rightPanelLayout);
+
     QHBoxLayout *mainLayout = new QHBoxLayout;
     mainLayout->addWidget(tree);
-    mainLayout->addWidget(player);
+    mainLayout->addWidget(rightPanel);
 
     this->setLayout(mainLayout);
 }

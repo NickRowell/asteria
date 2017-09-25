@@ -1,20 +1,20 @@
-#include "gui/replayvideothread.h"
+#include "gui/videoplayerthread.h"
 #include "util/timeutil.h"
 
 
-ReplayVideoThread::ReplayVideoThread(const unsigned int &framePeriodUs) : frames(0), idx(0), topField(true), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
+VideoPlayerThread::VideoPlayerThread(const unsigned int &framePeriodUs) : frames(0), idx(0), topField(true), state(STOPPED), abort(false), framePeriodUs(framePeriodUs) {
     // Start the thread
     start(NormalPriority);
 }
 
-ReplayVideoThread::~ReplayVideoThread() {
+VideoPlayerThread::~VideoPlayerThread() {
     mutex.lock();
     abort = true;
     mutex.unlock();
     wait();
 }
 
-void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
+void VideoPlayerThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
 
     // Stop any current replay
     stop();
@@ -35,7 +35,7 @@ void ReplayVideoThread::loadClip(std::vector<std::shared_ptr<Image> > images, st
     deinterlacedStepping = false;
 }
 
-void ReplayVideoThread::toggleDiStepping(int checkBoxState) {
+void VideoPlayerThread::toggleDiStepping(int checkBoxState) {
     switch(checkBoxState) {
     case Qt::Checked:
         deinterlacedStepping = true;
@@ -46,7 +46,7 @@ void ReplayVideoThread::toggleDiStepping(int checkBoxState) {
     }
 }
 
-void ReplayVideoThread::toggleOverlay(int checkBoxState) {
+void VideoPlayerThread::toggleOverlay(int checkBoxState) {
     switch(checkBoxState) {
     case Qt::Checked:
         showOverlayImage = true;
@@ -58,32 +58,32 @@ void ReplayVideoThread::toggleOverlay(int checkBoxState) {
     state = FQUEUED;
 }
 
-void ReplayVideoThread::play() {
+void VideoPlayerThread::play() {
     state = PLAYING;
 }
 
-void ReplayVideoThread::pause() {
+void VideoPlayerThread::pause() {
     state = PAUSED;
 }
 
-void ReplayVideoThread::stop() {
+void VideoPlayerThread::stop() {
     state = STOPPED;
 }
 
-void ReplayVideoThread::stepf() {
+void VideoPlayerThread::stepf() {
     state = STEPF;
 }
 
-void ReplayVideoThread::stepb() {
+void VideoPlayerThread::stepb() {
     state = STEPB;
 }
 
-void ReplayVideoThread::queueFrameIndex(int fIdx) {
+void VideoPlayerThread::queueFrameIndex(int fIdx) {
     state = FQUEUED;
     idx = fIdx;
 }
 
-void ReplayVideoThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField) {
+void VideoPlayerThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField) {
 
     // Compute AnalysisVideoStats
 
@@ -99,7 +99,7 @@ void ReplayVideoThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> i
     emit queuedFrameIndex(fIdx);
 }
 
-void ReplayVideoThread::run() {
+void VideoPlayerThread::run() {
 
     forever {
 

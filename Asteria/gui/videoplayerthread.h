@@ -9,14 +9,14 @@
 #include <QThread>
 #include <QMutex>
 
-class ReplayVideoThread : public QThread {
+class VideoPlayerThread : public QThread {
 
     Q_OBJECT
 
 public:
 
-    ReplayVideoThread(const unsigned int &framePeriodUs);
-    ~ReplayVideoThread();
+    VideoPlayerThread(const unsigned int &framePeriodUs);
+    ~VideoPlayerThread();
 
     /**
      * @brief Enumerates the possible states of the replay viewer.

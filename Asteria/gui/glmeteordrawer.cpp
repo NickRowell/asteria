@@ -15,7 +15,8 @@
 
 GLMeteorDrawer::GLMeteorDrawer(QWidget *parent, const unsigned int &width, const unsigned int &height)
     : QOpenGLWidget(parent), width(width), height(height), program(0) {
-
+    this->setFixedSize(width, height);
+    this->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 }
 
 GLMeteorDrawer::~GLMeteorDrawer() {
