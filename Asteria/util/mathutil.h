@@ -2,6 +2,7 @@
 #define MATHUTIL_H
 
 #include <vector>
+#include <cmath>
 
 class MathUtil
 {
