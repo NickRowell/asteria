@@ -10,6 +10,8 @@ CoordinateUtil::CoordinateUtil()
 /**
  * @brief Converts celestial Right Ascension and Declination to Azimuth and Elevation.
  *
+ * See equations 4-11 to 4-14 in "Fundamentals of Astrodynamics and Applications", fourth edition.
+ *
  * @param ra
  *  The right ascension [radians]
  * @param dec
@@ -35,6 +37,9 @@ void CoordinateUtil::raDecToAzEl(const double &ra, const double &dec, const doub
 
     el = std::asin(sinEl);
     az = std::atan2(sinAz, cosAz);
+
+    // Shift azimuth to 0:2pi range
+    translateToRangeZeroToTwoPi(az);
 }
 
 /**
@@ -84,9 +89,28 @@ Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
 
     r_ecef_sez <<  sinLat * cosLong, sinLat * sinLong, -cosLat,
                            -sinLong,          cosLong,     0.0,
-                   cosLat * cosLong, cosLat * sinLong, sinLong;
+                   cosLat * cosLong, cosLat * sinLong,  sinLat;
 
     return r_ecef_sez;
+}
+
+/**
+ * @brief Computes and returns the matrix that rotates vectors from the SEZ to the CAM frame.
+ *
+ * @param az
+ *  The azimuthal angle of the camera Z axis (i.e. boresight / pointing direction) [radians]
+ * @param el
+ *  The elevation angle of the camera Z axis (i.e. boresight / pointing direction) [radians]
+ * @param roll
+ *  The roll angle about the camera Z axis [radians]
+ * @return
+ *  The orthonormal matrix that rotates vectors from the SEZ to the CAM frame.
+ */
+Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, const double &roll) {
+
+    Matrix3d r_sez_cam;
+
+    return r_sez_cam;
 }
 
 /**
@@ -132,7 +156,7 @@ void CoordinateUtil::cartesianToSpherical(const Vector3d &cart, double &r, doubl
     phi = std::asin(z/r);
 
     // right ascension/longitude/azimuth...
-    theta  = std::atan2(y, x);
+    theta = std::atan2(y, x);
 
     // Shift theta to 0:2pi range
     translateToRangeZeroToTwoPi(theta);
@@ -173,4 +197,17 @@ void CoordinateUtil::translateToRangeZeroToTwoPi(double &angle) {
         double multiplesOfTwoPiToSubtract = std::floor(angle/(2.0*M_PI));
         angle -= multiplesOfTwoPiToSubtract * 2.0 * M_PI;
     }
+}
+
+/**
+ * @brief Transforms an angle measured east-of-south to the equivalent angle measured
+ * east-or-north. This is useful for converting the equatorial angular coordinate of a
+ * position in the SEZ frame to the conventional azimuthal angle.
+ *
+ * @param angle
+ *  The input angle, measured east-of-south. On exit, this will contain the east-of-north angle [radians]
+ */
+void CoordinateUtil::eastOfSouthToEastOfNorth(double &angle) {
+    angle = M_PI - angle;
+    CoordinateUtil::translateToRangeZeroToTwoPi(angle);
 }

@@ -51,7 +51,8 @@ SOURCES += \
     infra/sample.cpp \
     util/coordinateutil.cpp \
     gui/videoplayerwidget.cpp \
-    gui/videoplayerthread.cpp
+    gui/videoplayerthread.cpp \
+    util/testutil.cpp
 
 HEADERS += \
     math/mat2x2.h \
@@ -118,7 +119,8 @@ HEADERS += \
     util/coordinateutil.h \
     math/gaussian2dfitter.h \
     gui/videoplayerwidget.h \
-    gui/videoplayerthread.h
+    gui/videoplayerthread.h \
+    util/testutil.h
 
 LIBS += -ljpeg \
         -lftgl \

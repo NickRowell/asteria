@@ -35,7 +35,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    fprintf(stderr, "Got %d frames for calibration\n", calibrationFrames.size());
+    fprintf(stderr, "Got %lu frames for calibration\n", calibrationFrames.size());
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
     unsigned int field = calibrationFrames.front()->field;
@@ -147,14 +147,14 @@ void CalibrationWorker::process() {
     // a window of some particular width.
     // Sliding window extends out to this many pixels on each side of the central pixel
     int hw = (int)state->bkg_median_filter_half_width;
-    for(int k=0; k<state->height; k++) {
-        for(int l=0; l<state->width; l++) {
+    for(unsigned int k=0; k<state->height; k++) {
+        for(unsigned int l=0; l<state->width; l++) {
 
             // Compute the boundary of the window region
-            int k_min = std::max(k - hw, 0);
-            int k_max = std::min(k + hw, (int)state->height);
-            int l_min = std::max(l - hw, 0);
-            int l_max = std::min(l + hw, (int)state->width);
+            unsigned int k_min = std::max((int)k - hw, 0);
+            unsigned int k_max = std::min((int)k + hw, (int)state->height);
+            unsigned int l_min = std::max((int)l - hw, 0);
+            unsigned int l_max = std::min((int)l + hw, (int)state->width);
 
             // Pixels within the window
             std::vector<unsigned char> pixels;

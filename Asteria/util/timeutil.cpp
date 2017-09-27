@@ -1,6 +1,7 @@
 #include "timeutil.h"
+#include "util/mathutil.h"
 
-#include <sstream>              // ostringstream
+#include <sstream>
 
 TimeUtil::TimeUtil() {
 
@@ -156,13 +157,13 @@ double TimeUtil::epochToGmst(const long long &epochTimeStamp_us) {
  * @param gmst
  *  The current Greenwich Mean Sidereal Time [decimal hours]
  * @param longitude
- *  The longitude of the site, positive east [degrees]
+ *  The longitude of the site, positive east [radians]
  * @return
  *  The Local Sidereal Time [decimal hours]
  */
 double TimeUtil::gmstToLst(const double &gmst, const double &longitude) {
     // Convert longitude to hour angle
-    double ha = longitude / 15.0;
+    double ha = MathUtil::toDegrees(longitude) / 15.0;
     // Add offset to GMST
     double lst = gmst + ha;
     return lst;
