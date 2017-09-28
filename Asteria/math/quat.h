@@ -31,9 +31,6 @@
 #define	QUAT_H
 
 #include <math.h>
-#include "math/mat3x3.h"
-#include "math/mat4x4.h"
-#include "math/vec3.h"
 
 template <typename T>
 class Quat
@@ -52,15 +49,15 @@ public:
      * @param Q2   Imaginary j component
      * @param Q3   Imaginary k component
      */
-    Quat(const T & pre=0, const T & pq1=0, const T & pq2=0, const T & pq3=0) : 
-                re(pre), im(pq1,pq2,pq3) {}
+//    Quat(const T & pre=0, const T & pq1=0, const T & pq2=0, const T & pq3=0) :
+//                re(pre), im(pq1,pq2,pq3) {}
     
     /**
      * Constructor setting real and imaginary parts explicitly.
      * @param real
      * @param imag
      */
-    Quat(const T & pre, const Vec3<T> & pim) : re(pre), im(pim) {}
+//    Quat(const T & pre, const Vec3<T> & pim) : re(pre), im(pim) {}
     
     
     /**
@@ -68,11 +65,11 @@ public:
      * @param axis      Rotation axis [unit vector]
      * @param angle     Rotation angle [radians]
      */
-    Quat(const Vec3<T> & axis, const T & angle)
-    {
-        re = cos(angle/2.0);
-        im = axis*sin(angle/2.0);
-    };
+//    Quat(const Vec3<T> & axis, const T & angle)
+//    {
+//        re = cos(angle/2.0);
+//        im = axis*sin(angle/2.0);
+//    };
     
     
     
@@ -80,10 +77,10 @@ public:
      * Get quaternion inverse, i.e. quaternion corresponding to reverse rotation
      * @return   (q0,-q1,-q2,-q3)
      */
-    Quat<T> inverse() const
-    {
-        return Quat<T>(re, im*(-1.0));
-    };
+//    Quat<T> inverse() const
+//    {
+//        return Quat<T>(re, im*(-1.0));
+//    };
     
     /**
      * Rotate a vector using a quaternion
@@ -111,20 +108,20 @@ public:
      * @param A   Second quaternion
      * @return    C = this * A
      */
-    Quat<T> operator*(const Quat<T> & A) const
-    {
-        Quat<T> mult(re*A.re - im*(A.im), A.im*(re) + im*(A.re) + (im^(A.im)));
+//    Quat<T> operator*(const Quat<T> & A) const
+//    {
+//        Quat<T> mult(re*A.re - im*(A.im), A.im*(re) + im*(A.re) + (im^(A.im)));
 
-        return mult;
-    };
+//        return mult;
+//    };
     
     /** Equality assignment operator. */
-    Quat<T> & operator=(const Quat<T> & A)
-    {
-        re = A.re;
-        im = A.im;
-        return *this;
-    };
+//    Quat<T> & operator=(const Quat<T> & A)
+//    {
+//        re = A.re;
+//        im = A.im;
+//        return *this;
+//    };
     
     
     /**
@@ -134,21 +131,21 @@ public:
      * This can be checked intermittently if desired with this method.
      * @return sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3)
      */
-    T norm() const {
-        return (T)sqrt(re*re + im.norm2());
-    }
+//    T norm() const {
+//        return (T)sqrt(re*re + im.norm2());
+//    }
 
 
     /** Normalise the Quaternion in place. */
-    void normalise()
-    {
+//    void normalise()
+//    {
 
-        // Get current normalisation
-        T qnorm = norm();
+//        // Get current normalisation
+//        T qnorm = norm();
 
-        re /= qnorm;
-        im /= qnorm;
-    };
+//        re /= qnorm;
+//        im /= qnorm;
+//    };
     
 
     /**
@@ -176,37 +173,37 @@ public:
      * model matrix.
      * @return 
      */
-    template < typename U >
-    Mat4x4<U> toMat4x4() const
-    {
+//    template < typename U >
+//    Mat4x4<U> toMat4x4() const
+//    {
 
-        return Mat4x4<U>(1 - 2*im.y*im.y - 2*im.z*im.z,
-                         2*im.x*im.y - 2*im.z*re,
-                         2*im.x*im.z + 2*im.y*re,
-                         0,
-                         2*im.x*im.y + 2*im.z*re,
-                         1 - 2*im.x*im.x - 2*im.z*im.z,
-                         2*im.y*im.z - 2*im.x*re,
-                         0,
-                         2*im.x*im.z - 2*im.y*re,
-                         2*im.y*im.z + 2*im.x*re,
-                         1 - 2*im.x*im.x - 2*im.y*im.y,
-                         0,
-                         0,
-                         0,
-                         0,
-                         1);
-    }
+//        return Mat4x4<U>(1 - 2*im.y*im.y - 2*im.z*im.z,
+//                         2*im.x*im.y - 2*im.z*re,
+//                         2*im.x*im.z + 2*im.y*re,
+//                         0,
+//                         2*im.x*im.y + 2*im.z*re,
+//                         1 - 2*im.x*im.x - 2*im.z*im.z,
+//                         2*im.y*im.z - 2*im.x*re,
+//                         0,
+//                         2*im.x*im.z - 2*im.y*re,
+//                         2*im.y*im.z + 2*im.x*re,
+//                         1 - 2*im.x*im.x - 2*im.y*im.y,
+//                         0,
+//                         0,
+//                         0,
+//                         0,
+//                         1);
+//    }
     
     /** Check if this is a unit quaternion. */
-    bool isUnitQuaternion() const
-    {
+//    bool isUnitQuaternion() const
+//    {
         
-        /** Magnitude threshold that defines unit Quaternions. */
-        float UNIT_THRESHOLD = 1E-9;
+//        /** Magnitude threshold that defines unit Quaternions. */
+//        float UNIT_THRESHOLD = 1E-9;
         
-        return std::abs(1.0 - norm()) < UNIT_THRESHOLD ;
-    }
+//        return std::abs(1.0 - norm()) < UNIT_THRESHOLD ;
+//    }
     
 };
 

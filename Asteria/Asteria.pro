@@ -52,16 +52,11 @@ SOURCES += \
     util/coordinateutil.cpp \
     gui/videoplayerwidget.cpp \
     gui/videoplayerthread.cpp \
-    util/testutil.cpp
+    util/testutil.cpp \
+    math/quaternion.cpp
 
 HEADERS += \
-    math/mat2x2.h \
-    math/mat3x3.h \
-    math/mat4x4.h \
     math/quat.h \
-    math/vec2.h \
-    math/vec3.h \
-    math/vec4.h \
     optics/GeometricOpticsModel.h \
     optics/PinholeCameraWithRadialDistortion.h \
     optics/Camera.h \
@@ -120,7 +115,8 @@ HEADERS += \
     math/gaussian2dfitter.h \
     gui/videoplayerwidget.h \
     gui/videoplayerthread.h \
-    util/testutil.h
+    util/testutil.h \
+    math/quaternion.h
 
 LIBS += -ljpeg \
         -lftgl \
