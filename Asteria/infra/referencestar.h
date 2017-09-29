@@ -3,49 +3,47 @@
 
 #include <string>
 #include <vector>
-#include "math/vec3.h"
+
+#include <Eigen/Dense>
+
+using namespace Eigen;
 
 class ReferenceStar
 {
 public:
     ReferenceStar();
     ReferenceStar(const ReferenceStar& copyme);
-    ReferenceStar(double ra, double dec, double mag);
+    ReferenceStar(const double &ra, const double &dec, const double &mag);
 
     /**
-     * @brief loadCatalogue Utility function to load the reference star catalogue file.
-     * @param path
+     * @brief Utility function to load the reference star catalogue file.
+     * @param
+     *  The path to the reference star catalogue file.
      * @return
+     *  A vector of ReferenceStars loaded from the file.
      */
     static std::vector<ReferenceStar> loadCatalogue(std::string &path);
 
     /**
-     * @brief ra
-     * The (fixed) Right Ascension of the reference star [radians]
+     * @brief The (fixed) Right Ascension of the reference star [radians]
      */
     const double ra;
 
     /**
-     * @brief dec
-     * The (fixed) Declination of the reference star [radians]
+     * @brief The (fixed) Declination of the reference star [radians]
      */
     const double dec;
 
     /**
-     * @brief vt
-     * The (fixed) apparent magnitude of the reference star [mag]
+     * @brief The (fixed) apparent magnitude of the reference star [mag]
      */
     const double mag;
 
     /**
-     * @brief r
-     * Camera-frame unit vector pointing towards the star given the current camera orientation and
+     * @brief Camera-frame unit vector pointing towards the star given the current camera orientation and
      * time.
      */
-    Vec3<double> r;
-
-
-
+    Vector3d r;
 
 };
 

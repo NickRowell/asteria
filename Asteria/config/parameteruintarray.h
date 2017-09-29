@@ -1,7 +1,7 @@
 #ifndef PARAMETERINTARRAY_H
 #define PARAMETERINTARRAY_H
 
-#include <string>     // std::string, std::stod
+#include <string>
 #include "configparameter.h"
 
 class ParameterUintArray : public ConfigParameterBase

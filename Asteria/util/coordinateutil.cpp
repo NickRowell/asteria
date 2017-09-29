@@ -110,25 +110,11 @@ Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, cons
 
     Matrix3d r_sez_cam;
 
+
+
+
+
     return r_sez_cam;
-}
-
-/**
- * @brief Converts a position vector from the Solar System Barycentric Reference Frame to the Earth-Centred
- * Earth-Fixed Frame.
- *
- * Note that only a rotation is applied, no translation; therefore this method is only applicable to directions
- * towards distant reference stars.
- *
- * @param r_bcrf
- *  The position vector in the BCRF frame, Cartesian coordinates [arbitrary units]
- * @param r_ecef
- *  On exit, contains the position vector in the ECEF frame, Cartesian coordinates [arbitrary units]
- * @param lst
- *  The Greenwich Mean Sideral Time [decimal hours]
- */
-void bcrfToEcef(const Vector3d &r_bcrf, Vector3d &r_ecef, const double &gmst) {
-
 }
 
 /**

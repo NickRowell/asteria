@@ -36,7 +36,7 @@ public:
     // e.g. run headless
     //      config directory location
     /**
-     * \brief Boolean flag to indicate if we're running without a GUI.
+     * @brief Boolean flag to indicate if we're running without a GUI.
      */
     int headless = 0;
 
@@ -50,12 +50,12 @@ public:
     string configDirPath;
 
     /**
-     * \brief Path to the camera device file
+     * @brief Path to the camera device file
      */
     string cameraPath;
 
     /**
-     * \brief Open file descriptor on the camera device
+     * @brief Open file descriptor on the camera device
      */
     int * fd;
 
@@ -76,27 +76,42 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * \brief The image width
+     * @brief The image width
      */
     unsigned int width;
 
     /**
-     * \brief The image height
+     * @brief The image height
      */
     unsigned int height;
 
     /**
-     * \brief Camera azimuthal angle [decimal degrees]
+     * @brief Lens focal length [millimetres]
+     */
+    double focal_length;
+
+    /**
+     * @brief Pixel horiontal width [micrometres]
+     */
+    double pixel_width;
+
+    /**
+     * @brief Pixel vertical height [micrometres]
+     */
+    double pixel_height;
+
+    /**
+     * @brief Camera azimuthal angle [decimal degrees]
      */
     double azimuth;
 
     /**
-     * \brief Camera elevation angle [decimal degrees]
+     * @brief Camera elevation angle [decimal degrees]
      */
     double elevation;
 
     /**
-     * \brief Camera roll angle [decimal degrees]
+     * @brief Camera roll angle [decimal degrees]
      */
     double roll;
 
@@ -155,17 +170,17 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * \brief Station longitude, positive east [decimal degrees]
+     * @brief Station longitude, positive east [decimal degrees]
      */
     double longitude;
 
     /**
-     * \brief Station latitude [decimal degrees]
+     * @brief Station latitude [decimal degrees]
      */
     double latitude;
 
     /**
-     * \brief Station altitude [metres]
+     * @brief Station altitude [metres]
      */
     double altitude;
 
@@ -210,8 +225,7 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * Limit on the deviation from a straight line for a detection to be classified as a meteor.
-     * @brief linearity_threshold
+     * @brief Limit on the deviation from a straight line for a detection to be classified as a meteor.
      */
     double linearity_threshold;
 

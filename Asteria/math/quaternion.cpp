@@ -187,7 +187,7 @@ Eigen::Vector3d Quaternion::rotate(const Eigen::Vector3d & v) const {
     Quaternion qv_rot = (*this)*qv*inverse();
 
     // Discard real component to get the rotated vector
-    Eigen::Vector3d v_rot(qv_rot[1], qv_rot[2], qv_rot[3]);
+    Eigen::Vector3d v_rot(qv_rot.q1, qv_rot.q2, qv_rot.q3);
     return v_rot;
 }
 

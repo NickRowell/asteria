@@ -53,7 +53,8 @@ SOURCES += \
     gui/videoplayerwidget.cpp \
     gui/videoplayerthread.cpp \
     util/testutil.cpp \
-    math/quaternion.cpp
+    math/quaternion.cpp \
+    config/parameterdoublearray.cpp
 
 HEADERS += \
     optics/GeometricOpticsModel.h \
@@ -115,7 +116,8 @@ HEADERS += \
     gui/videoplayerwidget.h \
     gui/videoplayerthread.h \
     util/testutil.h \
-    math/quaternion.h
+    math/quaternion.h \
+    config/parameterdoublearray.h
 
 LIBS += -ljpeg \
         -lftgl \

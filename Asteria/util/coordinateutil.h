@@ -33,8 +33,6 @@ public:
 
     static Matrix3d getSezToCamRot(const double &az, const double &el, const double &roll);
 
-    static void bcrfToEcef(const Vector3d &r_bcrf, Vector3d &r_ecef, const double &gmst);
-
     static void cartesianToSpherical(const Vector3d &cart, double &r, double &theta, double &phi);
 
     static void sphericalToCartesian(Vector3d &cart, const double &r, const double &theta, const double &phi);

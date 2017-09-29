@@ -6,19 +6,15 @@
 
 #include <QDebug>
 
-
-ReferenceStar::ReferenceStar() : ra(0.0), dec(0.0), mag(0.0)
-{
+ReferenceStar::ReferenceStar() : ra(0.0), dec(0.0), mag(0.0) {
 
 }
 
-ReferenceStar::ReferenceStar(const ReferenceStar& copyme) : ra(copyme.ra), dec(copyme.dec), mag(copyme.mag)
-{
+ReferenceStar::ReferenceStar(const ReferenceStar& copyme) : ra(copyme.ra), dec(copyme.dec), mag(copyme.mag) {
 
 }
 
-ReferenceStar::ReferenceStar(double ra, double dec, double mag) : ra(ra), dec(dec), mag(mag)
-{
+ReferenceStar::ReferenceStar(const double &ra, const double &dec, const double &mag) : ra(ra), dec(dec), mag(mag) {
 
 }
 
