@@ -134,8 +134,6 @@ CONFIG += c++11
 #QMAKE_CXXFLAGS_DEBUG += -O1
 
 DISTFILES += \
-    shaders/f_screen.glsl \
-    shaders/v_screen.glsl \
     images/side1.png \
     images/side4.png \
     sandbox.txt
