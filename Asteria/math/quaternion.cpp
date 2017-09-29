@@ -169,3 +169,46 @@ bool Quaternion::isUnitQuaternion() const {
 
     return std::abs(1.0 - norm()) < UNIT_THRESHOLD;
 }
+
+/**
+ * @brief Rotates the given vector by the quaternion.
+ *
+ * @param v
+ *  The vector to rotate
+ * @return
+ *  The rotated vector
+ */
+Eigen::Vector3d Quaternion::rotate(const Eigen::Vector3d & v) const {
+
+    // Represent vector as a quaternion with zero real component
+    Quaternion qv(0, v[0], v[1], v[2]);
+
+    // Rotation by quaternion multiplication
+    Quaternion qv_rot = (*this)*qv*inverse();
+
+    // Discard real component to get the rotated vector
+    Eigen::Vector3d v_rot(qv_rot[1], qv_rot[2], qv_rot[3]);
+    return v_rot;
+}
+
+/**
+ * @brief Converts a unit quaternion to the equivalent orthonormal rotation
+ * matrix.
+ *
+ * @return
+ *  An orthonormal rotation matrix representing the spatial rotation defined
+ * by the unit quaternion.
+ */
+Eigen::Matrix3d Quaternion::toMat() const {
+
+    Eigen::Matrix3d r;
+
+    r << 1 - 2*q2*q2 - 2*q3*q3,     2*q1*q2 - 2*q3*q0,     2*q1*q3 + 2*q2*q0,
+             2*q2*q1 + 2*q3*q0, 1 - 2*q1*q1 - 2*q3*q3,     2*q2*q3 - 2*q1*q0,
+             2*q1*q3 - 2*q2*q0,     2*q1*q0 + 2*q3*q2, 1 - 2*q1*q1 - 2*q2*q2;
+
+    return r;
+}
+
+
+

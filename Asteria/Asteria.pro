@@ -56,7 +56,6 @@ SOURCES += \
     math/quaternion.cpp
 
 HEADERS += \
-    math/quat.h \
     optics/GeometricOpticsModel.h \
     optics/PinholeCameraWithRadialDistortion.h \
     optics/Camera.h \
