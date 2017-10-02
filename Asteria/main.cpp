@@ -36,10 +36,7 @@ int main(int argc, char **argv)
 
     // Test the Levenberg-Marquardt fitter
 //    TestUtil::testLevenbergMarquardtFitter();
-    TestUtil::testRaDecAzElConversion();
-
-
-
+//    TestUtil::testRaDecAzElConversion();
 
     catchUnixSignals();
 
@@ -50,14 +47,12 @@ int main(int argc, char **argv)
     qRegisterMetaType<AcquisitionVideoStats>("AcquisitionVideoStats");
     qRegisterMetaType<AnalysisVideoStats>("AnalysisVideoStats");
 
-    // Get the time difference between time of day and the frame timestamp. This needs
-    // to be recomputed whenever the computer hibernates.
-    long long epochTimeDiffUs = TimeUtil::getEpochTimeShift();
-
     // Initialise the state object
     AsteriaState * state = new AsteriaState();
 
-    state->epochTimeDiffUs = epochTimeDiffUs;
+    // Get the time difference between time of day and the frame timestamp. This needs
+    // to be recomputed whenever the computer hibernates.
+    state->epochTimeDiffUs = TimeUtil::getEpochTimeShift();
 
     // Parse application parameters from the command line
     static struct option long_options[] =

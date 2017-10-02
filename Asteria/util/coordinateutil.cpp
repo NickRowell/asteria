@@ -108,13 +108,74 @@ Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
  */
 Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, const double &roll) {
 
-    Matrix3d r_sez_cam;
+    // Compose the azimuth, elevation and roll rotation matrices.
 
+    // Changes in elevation rotate the camera about the camera X axis
+    Matrix3d r_el;
+    double sinEl = std::sin(el);
+    double cosEl = std::cos(el);
+    r_el << 1.0,   0.0,    0.0,
+            0.0, cosEl, -sinEl,
+            0.0, sinEl,  cosEl;
 
+    // Changes in azimuth rotate the camera about the camera Y axis
+    Matrix3d r_az;
+    double sinAz = std::sin(az);
+    double cosAz = std::cos(az);
+    r_az << cosAz, 0.0, -sinAz,
+              0.0, 1.0,    0.0,
+            sinAz, 0.0,  cosAz;
 
+    // Changes in roll rotate the camera about the camera Z axis
+    Matrix3d r_roll;
+    double sinRoll = std::sin(roll);
+    double cosRoll = std::cos(roll);
+    r_roll << cosRoll, -sinRoll, 0.0,
+              sinRoll,  cosRoll, 0.0,
+                  0.0,      0.0, 1.0;
 
+    // Compose the combine rotation by appropriate multiplication of the individual rotations
+    Matrix3d r_sez_cam = r_roll * r_az * r_el;
 
     return r_sez_cam;
+}
+
+/**
+ * @brief Composes the camera frame intrinsic matrix from the focal length and sensor size, adopting the
+ * pinhole camera model. This is an appriximate method that assumes the principal point (projection of the
+ * camera frame origin) is at the centre of the image.
+ *
+ * @param f
+ *  The lens focal length [mm]
+ * @param sx
+ *  The pixel horiontal width [um]
+ * @param sy
+ *  The pixel vertical height [um]
+ * @param width
+ *  The image width [pixels]
+ * @param height
+ *  The image height [pixels]
+ * @return
+ *  The corresponding pinhole camera matrix.
+ */
+Matrix3d CoordinateUtil::getCamIntrinsicMatrix(const double &f, const double &sx, const double &sy,
+                                               const unsigned int &width, const unsigned int &height) {
+    // Horizontal focal length [pixels]
+    double fx = 1000.0 * f / sx;
+    // Vertical focal length [pixels]
+    double fy = 1000.0 * f / sy;
+
+    // Principal point location
+    double px = (double)width / 2.0;
+    double py = (double)height / 2.0;
+
+    Matrix3d r_cam_im;
+
+    r_cam_im <<  fx, 0.0,  px,
+                0.0,  fy,  py,
+                0.0, 0.0, 1.0;
+
+    return r_cam_im;
 }
 
 /**

@@ -39,9 +39,10 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    std::vector<ReferenceStar> refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
+    // TODO: this should be loaded elsewhere as part of application initialisation
+    state->refStarCatalogue = ReferenceStar::loadCatalogue(state->refStarCataloguePath);
 
-    fprintf(stderr, "Loaded %d ReferenceStars!\n", refStarCatalogue.size());
+    fprintf(stderr, "Loaded %lu ReferenceStars!\n", state->refStarCatalogue.size());
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

@@ -43,6 +43,32 @@ public:
      */
     double readNoise;
 
+    /**
+     * @brief The azimuthal angle of the camera frame [radians]
+     * TODO: the SEZ-CAM transformation would be better stored as a quaternion.
+     * TODO: convert (az,el,roll) -> quaternion elements (q0,q1,q2,q3).
+     */
+    double azimuth;
+
+    /**
+     * @brief The elevation angle of the camera frame [radians]
+     * TODO: the SEZ-CAM transformation would be better stored as a quaternion.
+     * TODO: convert (az,el,roll) -> quaternion elements (q0,q1,q2,q3).
+     */
+    double elevation;
+
+    /**
+     * @brief The roll angle of the camera frame [radians]
+     * TODO: the SEZ-CAM transformation would be better stored as a quaternion.
+     * TODO: convert (az,el,roll) -> quaternion elements (q0,q1,q2,q3).
+     */
+    double roll;
+
+    // Additional parameters:
+    // Camera intrinsic matrix elements
+    // Camera radial distortion coefficients
+
+
 public slots:
 
     static CalibrationInventory * loadFromDir(std::string path);

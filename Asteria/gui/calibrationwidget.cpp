@@ -29,6 +29,11 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     player = new VideoPlayerWidget(this, this->state->width, this->state->height, this->state->nominalFramePeriodUs);
 
     medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
+    QVBoxLayout *medianImageLayout = new QVBoxLayout;
+    medianImageLayout->addWidget(medianImageViewer);
+    QWidget * medianImageWidget = new QWidget(this);
+    medianImageWidget->setLayout(medianImageLayout);
+
     backgroundImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
     // Capture right-clicks in the tree view for displaying context menu
@@ -40,7 +45,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     // Use a tabbed widget to display the video footage and calibration images
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(player, QString("Raw frames"));
-    tabWidget->addTab(medianImageViewer, QString("Median"));
+    tabWidget->addTab(medianImageWidget, QString("Median"));
     tabWidget->addTab(backgroundImageViewer, QString("Background"));
 
     // Add more tabs for the other calibration

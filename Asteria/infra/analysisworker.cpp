@@ -70,7 +70,7 @@ void AnalysisWorker::process() {
         for(unsigned int p=0; p< state->width * state->height; p++) {
             unsigned char newPixel = image.rawImage[p];
             unsigned char oldPixel = prev.rawImage[p];
-            if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
+            if((unsigned int)abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                 if(newPixel - oldPixel > 0) {
                     image.changedPixelsPositive.push_back(p);
                 }

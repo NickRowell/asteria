@@ -79,7 +79,7 @@ bool ConfigParameterFamilyTab::readAndValidate() {
 
     bool isValid = true;
 
-    // Read the values enetered in the form and parse them to the parameters
+    // Read the values entered in the form and parse them to the parameters
     for(unsigned int p=0; p<links.size(); p++) {
 
         QLineEdit * edit = links[p].first;

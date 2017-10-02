@@ -4,6 +4,8 @@
 #include "infra/source.h"
 #include "util/sourcedetector.h"
 #include "util/renderutil.h"
+#include "util/coordinateutil.h"
+#include "util/mathutil.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -219,6 +221,62 @@ void CalibrationWorker::process() {
         RenderUtil::drawEllipse(sourcesImage, state->width, state->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
     }
 
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //       Project the reference stars into the image      //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // Get the transformation from BCRF to IM
+
+    // GMST of the calibration frames capture
+    double gmst = TimeUtil::epochToGmst(midTimeStamp);
+
+    double lon = MathUtil::toRadians(state->longitude);
+    double lat = MathUtil::toRadians(state->latitude);
+    double az = MathUtil::toRadians(state->azimuth);
+    double el = MathUtil::toRadians(state->elevation);
+    double roll = MathUtil::toRadians(state->roll);
+
+    // Rotation matrices
+    Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
+    Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
+    Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(az, el, roll);
+    Matrix3d r_cam_im = CoordinateUtil::getCamIntrinsicMatrix(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
+
+    // Full transformation
+    Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
+
+    std::vector<ReferenceStar> refStarsVisible;
+    for(ReferenceStar &star : state->refStarCatalogue) {
+
+        // Unit vector towards star in original frame:
+        Vector3d r_bcrf;
+        CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
+        // Transform to CAM frame:
+        Vector3d r_cam = r_bcrf_cam * r_bcrf;
+
+        if(r_cam[2] < 0) {
+            // Star is behind the camera
+            continue;
+        }
+
+        // Project into image coordinates
+        Vector3d r_im = r_cam_im * r_cam;
+
+        double i = r_im[0] / r_im[2];
+        double j = r_im[1] / r_im[2];
+
+        if(i>0 && i<state->width && j>0 && j<state->height) {
+            // Star is visible in image!
+            fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
+        }
+
+    }
+
+
+
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
     double readNoiseAdu = 5.0;
@@ -277,6 +335,9 @@ void CalibrationWorker::process() {
     std::ofstream out1(calibrationDataFilename);
     out1 << "# \n";
     out1 << "# read_noise=" << readNoiseAdu << "\n";
+    out1 << "# Camera.azimuth=" << state->azimuth << "\n";
+    out1 << "# Camera.elevation=" << state->elevation << "\n";
+    out1 << "# Camera.roll=" << state->roll << "\n";
     out1.close();
 
     char rnPlotfilename [100];

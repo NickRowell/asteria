@@ -1,5 +1,6 @@
 #include "infra/referencestar.h"
 #include "util/ioutil.h"
+#include "util/mathutil.h"
 
 #include <iostream>
 #include <fstream>
@@ -70,7 +71,7 @@ std::vector<ReferenceStar> ReferenceStar::loadCatalogue(std::string &path) {
                         continue;
                     }
 
-                    ReferenceStar star(ra, dec, mag);
+                    ReferenceStar star(MathUtil::toRadians(ra), MathUtil::toRadians(dec), mag);
                     catalogue.push_back(star);
                 }
                 else {
