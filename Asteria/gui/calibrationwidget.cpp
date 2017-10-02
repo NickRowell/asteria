@@ -31,10 +31,16 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
     QVBoxLayout *medianImageLayout = new QVBoxLayout;
     medianImageLayout->addWidget(medianImageViewer);
+    medianImageLayout->addStretch();
     QWidget * medianImageWidget = new QWidget(this);
     medianImageWidget->setLayout(medianImageLayout);
 
     backgroundImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
+    QVBoxLayout *backgroundImageLayout = new QVBoxLayout;
+    backgroundImageLayout->addWidget(backgroundImageViewer);
+    backgroundImageLayout->addStretch();
+    QWidget * backgroundImageWidget = new QWidget(this);
+    backgroundImageWidget->setLayout(backgroundImageLayout);
 
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
@@ -46,7 +52,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(player, QString("Raw frames"));
     tabWidget->addTab(medianImageWidget, QString("Median"));
-    tabWidget->addTab(backgroundImageViewer, QString("Background"));
+    tabWidget->addTab(backgroundImageWidget, QString("Background"));
 
     // Add more tabs for the other calibration
 //    tabWidget->addTab(calWidget, QString("Calibration"));
