@@ -59,6 +59,11 @@ public:
     bool topField;
 
     /**
+     * @brief Indicates if the video should automatically replay from the start if it's played to the end.
+     */
+    bool autoReplay;
+
+    /**
      * @brief Current state of the replay
      */
     ReplayState state;
@@ -92,8 +97,27 @@ public slots:
      *      The splash image, i.e. the image to display when the clip is stopped.
      */
     void loadClip(std::vector<std::shared_ptr<Image>> images, std::shared_ptr<Image> splash);
+
+    /**
+     * @brief Toggle the de-interlaced stepping flag.
+     * @param checkBoxState
+     *  The current state of the check box.
+     */
     void toggleDiStepping(int checkBoxState);
+
+    /**
+     * @brief Toggle the overlay image flag.
+     * @param checkBoxState
+     *  The current state of the check box.
+     */
     void toggleOverlay(int checkBoxState);
+
+    /**
+     * @brief Toggle the auto replay flag.
+     * @param checkBoxState
+     *  The current state of the check box.
+     */
+    void toggleAutoReplay(int checkBoxState);
 
     void play();
     void pause();

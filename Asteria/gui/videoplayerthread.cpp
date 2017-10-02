@@ -58,6 +58,17 @@ void VideoPlayerThread::toggleOverlay(int checkBoxState) {
     state = FQUEUED;
 }
 
+void VideoPlayerThread::toggleAutoReplay(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        autoReplay = true;
+        break;
+    case Qt::Unchecked:
+        autoReplay = false;
+        break;
+    }
+}
+
 void VideoPlayerThread::play() {
     state = PLAYING;
 }
@@ -115,13 +126,17 @@ void VideoPlayerThread::run() {
             case PLAYING:
                 // Check we've not yet reached the end
                 if(idx==frames.size()-1) {
-                    // Stop playing
-                    state = STOPPED;
+                    // Rewind to the start
+                    idx=0;
+                    // Auto replay?
+                    if(!autoReplay) {
+                        state = STOPPED;
+                    }
                 }
                 else {
                     idx++;
-                    processFrame(idx, frames[idx], true, true);
                 }
+                processFrame(idx, frames[idx], true, true);
                 break;
             case STOPPED:
                 idx=0;

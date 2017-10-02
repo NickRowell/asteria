@@ -38,6 +38,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     slider = new QSlider(Qt::Horizontal, this);
     dicheckbox = new QCheckBox("&De-interlaced stepping", this);
     overlaycheckbox = new QCheckBox("&Show overlay image", this);
+    autoReplayCheckbox = new QCheckBox("&Auto replay", this);
 
     replayThread = new VideoPlayerThread(framePeriodUs);
 
@@ -54,6 +55,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     QVBoxLayout * boxesLayout = new QVBoxLayout;
     boxesLayout->addWidget(dicheckbox);
     boxesLayout->addWidget(overlaycheckbox);
+    boxesLayout->addWidget(autoReplayCheckbox);
 
     boxes->setLayout(boxesLayout);
     controlsLayout->addWidget(boxes);
@@ -84,6 +86,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     connect(stepf_button, SIGNAL(pressed()), replayThread, SLOT(stepf()));
     connect(dicheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleDiStepping(int)));
     connect(overlaycheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleOverlay(int)));
+    connect(autoReplayCheckbox, SIGNAL(stateChanged(int)), replayThread, SLOT(toggleAutoReplay(int)));
 
     // Slider response to user actions in the player
     connect(replayThread, SIGNAL(queuedFrameIndex(int)), slider, SLOT(setValue(int)));
@@ -104,14 +107,18 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     mainLayout->addWidget(controls);
 
     this->setLayout(mainLayout);
-}
-
-
-void VideoPlayerWidget::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
 
     // Initialise the overlay image switch
     overlaycheckbox->setEnabled(true);
     overlaycheckbox->setChecked(true);
+
+    // Initialise the auto replay switch
+    autoReplayCheckbox->setEnabled(true);
+    autoReplayCheckbox->setChecked(false);
+}
+
+
+void VideoPlayerWidget::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
 
     // Set the range of the slider according to how many frames we have
     slider->setRange(0, images.size()-1);

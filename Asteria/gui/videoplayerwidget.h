@@ -77,6 +77,11 @@ public:
     QCheckBox *overlaycheckbox;
 
     /**
+     * @brief Checkbox for enabling/disabling automatic replaying of the video.
+     */
+    QCheckBox *autoReplayCheckbox;
+
+    /**
      * @brief Label to display the clip length in seconds.
      */
     QLabel * clipLengthSecsField;
