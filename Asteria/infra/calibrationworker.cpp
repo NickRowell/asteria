@@ -221,7 +221,6 @@ void CalibrationWorker::process() {
         RenderUtil::drawEllipse(sourcesImage, state->width, state->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
     }
 
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //       Project the reference stars into the image      //

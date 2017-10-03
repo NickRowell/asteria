@@ -5,6 +5,7 @@
 #include "util/timeutil.h"
 #include "gui/videoplayerwidget.h"
 #include "gui/glmeteordrawer.h"
+#include "gui/referencestarwidget.h"
 
 #ifdef RECALIBRATE
     #include "infra/calibrationworker.h"
@@ -28,12 +29,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
 
     player = new VideoPlayerWidget(this, this->state->width, this->state->height, this->state->nominalFramePeriodUs);
 
-    medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
-    QVBoxLayout *medianImageLayout = new QVBoxLayout;
-    medianImageLayout->addWidget(medianImageViewer);
-    medianImageLayout->addStretch();
-    QWidget * medianImageWidget = new QWidget(this);
-    medianImageWidget->setLayout(medianImageLayout);
+    refStarWidget = new ReferenceStarWidget(this, state);
 
     backgroundImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
     QVBoxLayout *backgroundImageLayout = new QVBoxLayout;
@@ -51,7 +47,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     // Use a tabbed widget to display the video footage and calibration images
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(player, QString("Raw frames"));
-    tabWidget->addTab(medianImageWidget, QString("Median"));
+    tabWidget->addTab(refStarWidget, QString("Median"));
     tabWidget->addTab(backgroundImageWidget, QString("Background"));
 
     // Add more tabs for the other calibration
@@ -110,7 +106,7 @@ void CalibrationWidget::loadClip(QString path) {
     }
 
     player->loadClip(inv->calibrationFrames, inv->calibrationFrames.front());
-    medianImageViewer->newFrame(inv->medianImage, false, true, true);
+    refStarWidget->loadImage(inv->medianImage);
     backgroundImageViewer->newFrame(inv->backgroundImage, false, true, true);
 }
 

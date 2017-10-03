@@ -54,7 +54,8 @@ SOURCES += \
     gui/videoplayerthread.cpp \
     util/testutil.cpp \
     math/quaternion.cpp \
-    config/parameterdoublearray.cpp
+    config/parameterdoublearray.cpp \
+    gui/referencestarwidget.cpp
 
 HEADERS += \
     optics/GeometricOpticsModel.h \
@@ -117,7 +118,8 @@ HEADERS += \
     gui/videoplayerthread.h \
     util/testutil.h \
     math/quaternion.h \
-    config/parameterdoublearray.h
+    config/parameterdoublearray.h \
+    gui/referencestarwidget.h
 
 LIBS += -ljpeg \
         -lftgl \

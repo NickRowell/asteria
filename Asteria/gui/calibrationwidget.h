@@ -7,6 +7,7 @@
 
 #include <QWidget>
 
+class ReferenceStarWidget;
 class AsteriaState;
 class QTreeView;
 class VideoDirectoryModel;
@@ -50,12 +51,12 @@ public:
     VideoPlayerWidget * player;
 
     /**
-     * @brief Image viewer for the median calibration image.
+     * @brief Image viewer for the median image.
      */
-    GLMeteorDrawer * medianImageViewer;
+    ReferenceStarWidget * refStarWidget;
 
     /**
-     * @brief Image viewer for the background calibration image.
+     * @brief Image viewer for the background image.
      */
     GLMeteorDrawer * backgroundImageViewer;
 
