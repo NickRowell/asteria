@@ -8,6 +8,7 @@
 class AsteriaState;
 class GLMeteorDrawer;
 class QPushButton;
+class DoubleSlider;
 
 /**
  * @brief Provides a QWidget used to display the median image overlaid with the current positions of
@@ -74,6 +75,11 @@ public:
      */
     QPushButton *zoomout_button;
 
+    /**
+     * @brief Slider bar used to adjust the reference star faint magnitude limit.
+     */
+    DoubleSlider * slider;
+
 signals:
 
 public slots:
@@ -86,6 +92,7 @@ public slots:
     void anticlockwise();
     void zoomin();
     void zoomout();
+    void slide(double position);
 
     void loadImage(std::shared_ptr<Image> &newImage);
 

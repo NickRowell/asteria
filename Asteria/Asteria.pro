@@ -55,7 +55,8 @@ SOURCES += \
     util/testutil.cpp \
     math/quaternion.cpp \
     config/parameterdoublearray.cpp \
-    gui/referencestarwidget.cpp
+    gui/referencestarwidget.cpp \
+    gui/doubleslider.cpp
 
 HEADERS += \
     optics/GeometricOpticsModel.h \
@@ -119,7 +120,8 @@ HEADERS += \
     util/testutil.h \
     math/quaternion.h \
     config/parameterdoublearray.h \
-    gui/referencestarwidget.h
+    gui/referencestarwidget.h \
+    gui/doubleslider.h
 
 LIBS += -ljpeg \
         -lftgl \

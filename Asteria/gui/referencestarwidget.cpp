@@ -5,6 +5,7 @@
 #include "util/mathutil.h"
 #include "util/timeutil.h"
 #include "util/renderutil.h"
+#include "gui/doubleslider.h"
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -12,24 +13,34 @@
 ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
     medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
-    QIcon upIcon(":/images/play.png");
+    QIcon upIcon(":/images/up.png");
+    QIcon downIcon(":/images/down.png");
+    QIcon leftIcon(":/images/left.png");
+    QIcon rightIcon(":/images/right.png");
+    QIcon clockwiseIcon(":/images/clockwise.png");
+    QIcon anticlockwiseIcon(":/images/anticlockwise.png");
+    QIcon zoomInIcon(":/images/play.png");
+    QIcon zoomOutIcon(":/images/play.png");
+
 
     up_button = new QPushButton(this);
     up_button->setIcon(upIcon);
     down_button = new QPushButton(this);
-    down_button->setIcon(upIcon);
+    down_button->setIcon(downIcon);
     left_button = new QPushButton(this);
-    left_button->setIcon(upIcon);
+    left_button->setIcon(leftIcon);
     right_button = new QPushButton(this);
-    right_button->setIcon(upIcon);
+    right_button->setIcon(rightIcon);
     clockwise_button = new QPushButton(this);
-    clockwise_button->setIcon(upIcon);
+    clockwise_button->setIcon(clockwiseIcon);
     anticlockwise_button = new QPushButton(this);
-    anticlockwise_button->setIcon(upIcon);
+    anticlockwise_button->setIcon(anticlockwiseIcon);
     zoomin_button = new QPushButton(this);
-    zoomin_button->setIcon(upIcon);
+    zoomin_button->setIcon(zoomInIcon);
     zoomout_button = new QPushButton(this);
-    zoomout_button->setIcon(upIcon);
+    zoomout_button->setIcon(zoomOutIcon);
+    // TODO: reference star catalogue should know the magnitude range of it's contents
+    slider = new DoubleSlider(this, -1.0, 6.0, state->ref_star_faint_mag_limit, 100);
 
     connect(up_button, SIGNAL(pressed()), this, SLOT(up()));
     connect(down_button, SIGNAL(pressed()), this, SLOT(down()));
@@ -39,6 +50,8 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     connect(anticlockwise_button, SIGNAL(pressed()), this, SLOT(anticlockwise()));
     connect(zoomin_button, SIGNAL(pressed()), this, SLOT(zoomin()));
     connect(zoomout_button, SIGNAL(pressed()), this, SLOT(zoomout()));
+    // Player response to user moving the slider
+    connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
 
     QHBoxLayout * controlsLayout = new QHBoxLayout;
     controlsLayout->addWidget(up_button);
@@ -55,6 +68,7 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     QVBoxLayout *medianImageLayout = new QVBoxLayout;
     medianImageLayout->addWidget(medianImageViewer);
     medianImageLayout->addWidget(controls);
+    medianImageLayout->addWidget(slider);
     medianImageLayout->addStretch();
     this->setLayout(medianImageLayout);
 }
@@ -65,50 +79,57 @@ void ReferenceStarWidget::loadImage(std::shared_ptr<Image> &newImage) {
 }
 
 void ReferenceStarWidget::up() {
-    fprintf(stderr, "Performing action: up");
     state->elevation += 1.0;
+    fprintf(stderr, "Performing action: up; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::down() {
-    fprintf(stderr, "Performing action: down");
     state->elevation -= 1.0;
+    fprintf(stderr, "Performing action: down; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::left() {
-    fprintf(stderr, "Performing action: left");
     state->azimuth += 1.0;
+    fprintf(stderr, "Performing action: left; azimuth = %f\n", state->azimuth);
     update();
 }
 
 void ReferenceStarWidget::right() {
-    fprintf(stderr, "Performing action: right");
     state->azimuth -= 1.0;
+    fprintf(stderr, "Performing action: right; azimuth = %f\n", state->azimuth);
     update();
 }
 
 void ReferenceStarWidget::clockwise() {
-    fprintf(stderr, "Performing action: clockwise");
     state->roll += 1.0;
+    fprintf(stderr, "Performing action: clockwise; roll = %f\n", state->roll);
     update();
 }
 
 void ReferenceStarWidget::anticlockwise() {
-    fprintf(stderr, "Performing action: anticlockwise");
     state->roll -= 1.0;
+    fprintf(stderr, "Performing action: anticlockwise; roll = %f\n", state->roll);
     update();
 }
 
 void ReferenceStarWidget::zoomin() {
-    fprintf(stderr, "Performing action: zoomin");
     state->focal_length += 1.0;
+    fprintf(stderr, "Performing action: zoomin; f = %f\n", state->focal_length);
     update();
 }
 
 void ReferenceStarWidget::zoomout() {
-    fprintf(stderr, "Performing action: zoomout");
     state->focal_length -= 1.0;
+    fprintf(stderr, "Performing action: zoomout; f = %f\n", state->focal_length);
+    update();
+}
+
+void ReferenceStarWidget::slide(double position) {
+    fprintf(stderr, "Position = %f\n", position);
+
+    state->ref_star_faint_mag_limit = position;
     update();
 }
 
@@ -148,6 +169,11 @@ void ReferenceStarWidget::update() {
 
     for(ReferenceStar &star : state->refStarCatalogue) {
 
+        // Reject stars fainter than faint mag limit
+        if(star.mag > state->ref_star_faint_mag_limit) {
+            continue;
+        }
+
         // Unit vector towards star in original frame:
         Vector3d r_bcrf;
         CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
@@ -170,7 +196,27 @@ void ReferenceStarWidget::update() {
             //fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
             int ii = (int)std::round(i);
             int jj = (int)std::round(j);
-            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 0xFFFF00FF);
+
+            // Translate magnitude of star to gap size in cross hair
+            double m0 = 0.0; // Bright magnitude limit
+            double g0 = 5.0; // Maximum gap; for stars at the bright magnitude limit
+            double m1 = 4.0; // Faint magnitude limit
+            double g1 = 1.0; // Minimum gap; for stars at the faint magnitude limit
+
+            double gap;
+            if(star.mag > m1) {
+                gap = g1;
+            }
+            else if(star.mag < m0) {
+                gap = g0;
+            }
+            else {
+                gap = g0 + (star.mag - m0) * ((g1 - g0)/(m1 - m0));
+            }
+
+            unsigned int gap_int = (unsigned int)std::round(gap);
+
+            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, gap_int, 0xFFFF00FF);
 
         }
 

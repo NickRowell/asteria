@@ -257,6 +257,10 @@ public:
      */
     double source_detection_threshold_sigmas;
 
+    /**
+     * @brief Faint visual magnitude limit for reference stars used in the calibration [mags]
+     */
+    double ref_star_faint_mag_limit;
 
 };
 

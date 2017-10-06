@@ -160,9 +160,17 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
 }
 
 void RenderUtil::drawCrossHair(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
-                    int x0, int y0, unsigned int colour) {
-    drawLine(annotatedImage, width, height, x0-5, x0+5, y0, y0, colour);
-    drawLine(annotatedImage, width, height, x0, x0, y0-5, y0+5, colour);
+                    int x0, int y0, unsigned int gap, unsigned int colour) {
+    if(gap==0) {
+        drawLine(annotatedImage, width, height, x0-5, x0+5, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0-5, y0+5, colour);
+    }
+    else {
+        drawLine(annotatedImage, width, height, x0-5-gap, x0-gap, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0+5+gap, x0+gap, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0-5-gap, y0-gap, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0+5+gap, y0+gap, colour);
+    }
 }
 
 void RenderUtil::encodeRgb(const unsigned char &r, const unsigned char &g, const unsigned char &b, unsigned int &rgb) {

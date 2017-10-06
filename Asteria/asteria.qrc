@@ -8,5 +8,11 @@
         <file>images/stepf.png</file>
         <file>images/stop.png</file>
         <file>images/detect.png</file>
+        <file>images/down.png</file>
+        <file>images/left.png</file>
+        <file>images/right.png</file>
+        <file>images/up.png</file>
+        <file>images/anticlockwise.png</file>
+        <file>images/clockwise.png</file>
     </qresource>
 </RCC>
