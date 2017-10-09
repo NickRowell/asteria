@@ -98,46 +98,57 @@ Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
  * @brief Computes and returns the matrix that rotates vectors from the SEZ to the CAM frame.
  *
  * @param az
- *  The azimuthal angle of the camera Z axis (i.e. boresight / pointing direction) [radians]
+ *  The azimuthal angle of the camera Z axis (i.e. boresight / pointing direction, measured east-of-north) [radians]
  * @param el
- *  The elevation angle of the camera Z axis (i.e. boresight / pointing direction) [radians]
+ *  The elevation angle of the camera Z axis (i.e. boresight / pointing direction, measured from horizon) [radians]
  * @param roll
- *  The roll angle about the camera Z axis [radians]
+ *  The roll angle about the camera Z axis (positive in the sense of the right-hand-screw rule) [radians]
  * @return
  *  The orthonormal matrix that rotates vectors from the SEZ to the CAM frame.
  */
 Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, const double &roll) {
 
+    // Convert azimuth to the east-of-south version for use with SEZ frame
+    double az_prime = az;
+    CoordinateUtil::eastOfSouthToEastOfNorth(az_prime);
+
     // Compose the azimuth, elevation and roll rotation matrices.
 
-    // Changes in elevation rotate the camera about the camera X axis
+    // Changes in elevation rotate the camera about the SEZ frame Y axis
     Matrix3d r_el;
     double sinEl = std::sin(el);
     double cosEl = std::cos(el);
-    r_el << 1.0,   0.0,    0.0,
-            0.0, cosEl, -sinEl,
-            0.0, sinEl,  cosEl;
-
-    // Changes in azimuth rotate the camera about the camera Y axis
-    Matrix3d r_az;
-    double sinAz = std::sin(az);
-    double cosAz = std::cos(az);
-    r_az << cosAz, 0.0, -sinAz,
+    r_el << cosEl, 0.0,  sinEl,
               0.0, 1.0,    0.0,
-            sinAz, 0.0,  cosAz;
+           -sinEl, 0.0,  cosEl;
 
-    // Changes in roll rotate the camera about the camera Z axis
+    // Changes in azimuth rotate the camera about the SEZ frame Z axis
+    Matrix3d r_az;
+    double sinAz = std::sin(az_prime);
+    double cosAz = std::cos(az_prime);
+    r_az << cosAz, -sinAz, 0.0,
+            sinAz,  cosAz, 0.0,
+              0.0,    0.0, 1.0;
+
+    // Changes in roll rotate the camera about the SEZ frame X axis
     Matrix3d r_roll;
     double sinRoll = std::sin(roll);
     double cosRoll = std::cos(roll);
-    r_roll << cosRoll, -sinRoll, 0.0,
-              sinRoll,  cosRoll, 0.0,
-                  0.0,      0.0, 1.0;
+    r_roll << 1.0,     0.0,      0.0,
+              0.0, cosRoll, -sinRoll,
+              0.0, sinRoll,  cosRoll;
 
     // Compose the combine rotation by appropriate multiplication of the individual rotations
-    Matrix3d r_sez_cam = r_roll * r_az * r_el;
+    Matrix3d r_sez_cam = r_roll * r_el * r_az;
 
-    return r_sez_cam;
+    // We need to apply a fixed rotation that aligns the camera and SEZ frame when the
+    // azimuth, elevation and roll are all zero.
+    Matrix3d delta;
+    delta << 0, -1,  0,
+             0,  0, -1,
+             1,  0,  0;
+
+    return delta * r_sez_cam;
 }
 
 /**
@@ -230,6 +241,7 @@ void CoordinateUtil::sphericalToCartesian(Vector3d &cart, const double &r, const
 /**
  * @brief Shifts an angle to the equivalent angle in the 0->2*PI range by adding or subtracting multiples
  * of 2*PI as necessary.
+ *
  * @param angle
  *  The angle; on exit this is within the range 0->2*PI [radians]
  */
@@ -248,7 +260,7 @@ void CoordinateUtil::translateToRangeZeroToTwoPi(double &angle) {
 
 /**
  * @brief Transforms an angle measured east-of-south to the equivalent angle measured
- * east-or-north. This is useful for converting the equatorial angular coordinate of a
+ * east-of-north. This is useful for converting the equatorial angular coordinate of a
  * position in the SEZ frame to the conventional azimuthal angle.
  *
  * @param angle
@@ -258,3 +270,18 @@ void CoordinateUtil::eastOfSouthToEastOfNorth(double &angle) {
     angle = M_PI - angle;
     CoordinateUtil::translateToRangeZeroToTwoPi(angle);
 }
+
+/**
+ * @brief Transforms an angle measured east-of-north to the equivalent angle measured
+ * east-of-south. This is useful for converting the conventional azimuthal angle to the
+ * equatorial angular coordinate of a position in the SEZ frame.
+ *
+ * @param angle
+ *  The input angle, measured east-of-north. On exit, this will contain the east-of-south angle [radians]
+ */
+void CoordinateUtil::eastOfNorthToEastOfSouth(double &angle) {
+    angle = M_PI - angle;
+    CoordinateUtil::translateToRangeZeroToTwoPi(angle);
+}
+
+

@@ -41,9 +41,9 @@ public:
         parameters[0] = new ParameterUintArray("image_width_height", "Image Width and Height", "pixels", validators[0], 2u, image_width_height);
         parameters[1] = new ParameterDouble("focal_length", "Focal Length", "mm", validators[1], &(state->focal_length));
         parameters[2] = new ParameterDoubleArray("pixel_width_height", "Pixel Width and Height", "um", validators[2], 2u, pixel_width_height);
-        parameters[3] = new ParameterDouble("azimuth", "Azimuth", "deg", validators[3], &(state->azimuth));
-        parameters[4] = new ParameterDouble("elevation", "Elevation", "deg", validators[4], &(state->elevation));
-        parameters[5] = new ParameterDouble("roll", "Roll", "deg", validators[5], &(state->roll));
+        parameters[3] = new ParameterDouble("azimuth", "Azimuth (east of north)", "deg", validators[3], &(state->azimuth));
+        parameters[4] = new ParameterDouble("elevation", "Elevation (from horizon)", "deg", validators[4], &(state->elevation));
+        parameters[5] = new ParameterDouble("roll", "Roll (clockwise around boresight)", "deg", validators[5], &(state->roll));
 
     }
 };

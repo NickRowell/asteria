@@ -101,17 +101,17 @@ public:
     double pixel_height;
 
     /**
-     * @brief Camera azimuthal angle [decimal degrees]
+     * @brief Camera azimuthal angle, measured east of north [decimal degrees]
      */
     double azimuth;
 
     /**
-     * @brief Camera elevation angle [decimal degrees]
+     * @brief Camera elevation angle, measured from horizon [decimal degrees]
      */
     double elevation;
 
     /**
-     * @brief Camera roll angle [decimal degrees]
+     * @brief Camera roll angle, clockwise around the boresight [decimal degrees]
      */
     double roll;
 

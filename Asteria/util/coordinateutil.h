@@ -42,6 +42,8 @@ public:
     static void translateToRangeZeroToTwoPi(double &angle);
 
     static void eastOfSouthToEastOfNorth(double &angle);
+
+    static void eastOfNorthToEastOfSouth(double &angle);
 };
 
 #endif // COORDINATEUTIL_H

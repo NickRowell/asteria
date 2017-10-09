@@ -19,8 +19,8 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     QIcon rightIcon(":/images/right.png");
     QIcon clockwiseIcon(":/images/clockwise.png");
     QIcon anticlockwiseIcon(":/images/anticlockwise.png");
-    QIcon zoomInIcon(":/images/play.png");
-    QIcon zoomOutIcon(":/images/play.png");
+    QIcon zoomInIcon(":/images/plus.png");
+    QIcon zoomOutIcon(":/images/minus.png");
 
 
     up_button = new QPushButton(this);
@@ -79,24 +79,40 @@ void ReferenceStarWidget::loadImage(std::shared_ptr<Image> &newImage) {
 }
 
 void ReferenceStarWidget::up() {
+
+    // TODO: compute change in az/el required to move stars 'up' in image. This will vary
+    // depending on the current roll angle.
+
     state->elevation += 1.0;
     fprintf(stderr, "Performing action: up; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::down() {
+
+    // TODO: compute change in az/el required to move stars 'down' in image. This will vary
+    // depending on the current roll angle.
+
     state->elevation -= 1.0;
     fprintf(stderr, "Performing action: down; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::left() {
+
+    // TODO: compute change in az/el required to move stars 'left' in image. This will vary
+    // depending on the current roll angle.
+
     state->azimuth += 1.0;
     fprintf(stderr, "Performing action: left; azimuth = %f\n", state->azimuth);
     update();
 }
 
 void ReferenceStarWidget::right() {
+
+    // TODO: compute change in az/el required to move stars 'right' in image. This will vary
+    // depending on the current roll angle.
+
     state->azimuth -= 1.0;
     fprintf(stderr, "Performing action: right; azimuth = %f\n", state->azimuth);
     update();
@@ -115,20 +131,20 @@ void ReferenceStarWidget::anticlockwise() {
 }
 
 void ReferenceStarWidget::zoomin() {
-    state->focal_length += 1.0;
+    state->focal_length += 0.1;
     fprintf(stderr, "Performing action: zoomin; f = %f\n", state->focal_length);
     update();
 }
 
 void ReferenceStarWidget::zoomout() {
-    state->focal_length -= 1.0;
+    if(state->focal_length > 0.1) {
+        state->focal_length -= 0.1;
+    }
     fprintf(stderr, "Performing action: zoomout; f = %f\n", state->focal_length);
     update();
 }
 
 void ReferenceStarWidget::slide(double position) {
-    fprintf(stderr, "Position = %f\n", position);
-
     state->ref_star_faint_mag_limit = position;
     update();
 }
@@ -158,6 +174,10 @@ void ReferenceStarWidget::update() {
     double el = MathUtil::toRadians(state->elevation);
     double roll = MathUtil::toRadians(state->roll);
 
+
+    fprintf(stderr, "az/el/roll = %8.5f, %8.5f, %8.5f\n", state->azimuth, state->elevation, state->roll);
+
+
     // Rotation matrices
     Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
     Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
@@ -166,6 +186,9 @@ void ReferenceStarWidget::update() {
 
     // Full transformation
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
+
+    // Transformation BCRF->SEZ
+    Matrix3d r_bcrf_sez = r_ecef_sez * r_bcrf_ecef;
 
     for(ReferenceStar &star : state->refStarCatalogue) {
 
@@ -180,6 +203,19 @@ void ReferenceStarWidget::update() {
         // Transform to CAM frame:
         Vector3d r_cam = r_bcrf_cam * r_bcrf;
 
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+        // TEMP
+        //
+        // Transform to SEZ frame:
+        Vector3d r_sez = r_bcrf_sez * r_bcrf;
+        // Get position in spherical coordinates
+        double r, theta, phi;
+        CoordinateUtil::cartesianToSpherical(r_sez, r, theta, phi);
+        // Transform east-of-south angle to east-of-north for conventional azimuth
+        CoordinateUtil::eastOfSouthToEastOfNorth(theta);
+        //
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
         if(r_cam[2] < 0) {
             // Star is behind the camera
             continue;
@@ -193,15 +229,14 @@ void ReferenceStarWidget::update() {
 
         if(i>0 && i<state->width && j>0 && j<state->height) {
             // Star is visible in image!
-            //fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
             int ii = (int)std::round(i);
             int jj = (int)std::round(j);
 
             // Translate magnitude of star to gap size in cross hair
-            double m0 = 0.0; // Bright magnitude limit
-            double g0 = 5.0; // Maximum gap; for stars at the bright magnitude limit
-            double m1 = 4.0; // Faint magnitude limit
-            double g1 = 1.0; // Minimum gap; for stars at the faint magnitude limit
+            double m0 = -1.0; // Bright magnitude limit
+            double g0 = 6.0; // Maximum gap; for stars at the bright magnitude limit
+            double m1 = state->ref_star_faint_mag_limit; // Faint magnitude limit
+            double g1 = 2.0; // Minimum gap; for stars at the faint magnitude limit
 
             double gap;
             if(star.mag > m1) {
@@ -217,6 +252,12 @@ void ReferenceStarWidget::update() {
             unsigned int gap_int = (unsigned int)std::round(gap);
 
             RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, gap_int, 0xFFFF00FF);
+
+            //+++++++++++++++++++++++++++++++++++++//
+            // TEMP
+            fprintf(stderr, "Visible star at (ra, dec) = (%8.5f, %8.5f); (az, el) = (%8.5f, %8.5f)\n",
+                    MathUtil::toDegrees(star.ra), MathUtil::toDegrees(star.dec), MathUtil::toDegrees(theta), MathUtil::toDegrees(phi));
+            //+++++++++++++++++++++++++++++++++++++//
 
         }
 

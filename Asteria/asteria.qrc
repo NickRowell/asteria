@@ -14,5 +14,7 @@
         <file>images/up.png</file>
         <file>images/anticlockwise.png</file>
         <file>images/clockwise.png</file>
+        <file>images/minus.png</file>
+        <file>images/plus.png</file>
     </qresource>
 </RCC>
