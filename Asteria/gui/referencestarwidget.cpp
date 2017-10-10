@@ -9,38 +9,33 @@
 
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QGroupBox>
 
 ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
+
     medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
-    QIcon upIcon(":/images/up.png");
-    QIcon downIcon(":/images/down.png");
-    QIcon leftIcon(":/images/left.png");
-    QIcon rightIcon(":/images/right.png");
-    QIcon clockwiseIcon(":/images/clockwise.png");
-    QIcon anticlockwiseIcon(":/images/anticlockwise.png");
-    QIcon zoomInIcon(":/images/plus.png");
-    QIcon zoomOutIcon(":/images/minus.png");
+    // Capture mouse clicks etc in the GLMeteorDrawer
+    medianImageViewer->installEventFilter(this);
 
-
-    up_button = new QPushButton(this);
-    up_button->setIcon(upIcon);
-    down_button = new QPushButton(this);
-    down_button->setIcon(downIcon);
-    left_button = new QPushButton(this);
-    left_button->setIcon(leftIcon);
-    right_button = new QPushButton(this);
-    right_button->setIcon(rightIcon);
-    clockwise_button = new QPushButton(this);
-    clockwise_button->setIcon(clockwiseIcon);
-    anticlockwise_button = new QPushButton(this);
-    anticlockwise_button->setIcon(anticlockwiseIcon);
-    zoomin_button = new QPushButton(this);
-    zoomin_button->setIcon(zoomInIcon);
-    zoomout_button = new QPushButton(this);
-    zoomout_button->setIcon(zoomOutIcon);
+    QPushButton * up_button = new QPushButton(this);
+    up_button->setIcon(QIcon(":/images/up.png"));
+    QPushButton * down_button = new QPushButton(this);
+    down_button->setIcon(QIcon(":/images/down.png"));
+    QPushButton * left_button = new QPushButton(this);
+    left_button->setIcon(QIcon(":/images/left.png"));
+    QPushButton * right_button = new QPushButton(this);
+    right_button->setIcon(QIcon(":/images/right.png"));
+    QPushButton * clockwise_button = new QPushButton(this);
+    clockwise_button->setIcon(QIcon(":/images/clockwise.png"));
+    QPushButton * anticlockwise_button = new QPushButton(this);
+    anticlockwise_button->setIcon(QIcon(":/images/anticlockwise.png"));
+    QPushButton * zoomin_button = new QPushButton(this);
+    zoomin_button->setIcon(QIcon(":/images/plus.png"));
+    QPushButton * zoomout_button = new QPushButton(this);
+    zoomout_button->setIcon(QIcon(":/images/minus.png"));
     // TODO: reference star catalogue should know the magnitude range of it's contents
-    slider = new DoubleSlider(this, -1.0, 6.0, state->ref_star_faint_mag_limit, 100);
+    DoubleSlider * slider = new DoubleSlider(this, -1.0, 6.0, state->ref_star_faint_mag_limit, 100);
 
     connect(up_button, SIGNAL(pressed()), this, SLOT(up()));
     connect(down_button, SIGNAL(pressed()), this, SLOT(down()));
@@ -52,6 +47,12 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     connect(zoomout_button, SIGNAL(pressed()), this, SLOT(zoomout()));
     // Player response to user moving the slider
     connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
+
+    refStarMagSliderGroupBox = new QGroupBox(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
+    QVBoxLayout *sliderVbox = new QVBoxLayout;
+    sliderVbox->addWidget(slider);
+    sliderVbox->addStretch(1);
+    refStarMagSliderGroupBox->setLayout(sliderVbox);
 
     QHBoxLayout * controlsLayout = new QHBoxLayout;
     controlsLayout->addWidget(up_button);
@@ -68,7 +69,7 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     QVBoxLayout *medianImageLayout = new QVBoxLayout;
     medianImageLayout->addWidget(medianImageViewer);
     medianImageLayout->addWidget(controls);
-    medianImageLayout->addWidget(slider);
+    medianImageLayout->addWidget(refStarMagSliderGroupBox);
     medianImageLayout->addStretch();
     this->setLayout(medianImageLayout);
 }
@@ -145,6 +146,7 @@ void ReferenceStarWidget::zoomout() {
 
 void ReferenceStarWidget::slide(double position) {
     state->ref_star_faint_mag_limit = position;
+    refStarMagSliderGroupBox->setTitle(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
     update();
 }
 
@@ -219,13 +221,13 @@ void ReferenceStarWidget::update() {
         // Project into image coordinates
         Vector3d r_im = r_cam_im * r_cam;
 
-        double i = r_im[0] / r_im[2];
-        double j = r_im[1] / r_im[2];
+        star.i = r_im[0] / r_im[2];
+        star.j = r_im[1] / r_im[2];
 
-        if(i>0 && i<state->width && j>0 && j<state->height) {
+        if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
             // Star is visible in image!
-            int ii = (int)std::round(i);
-            int jj = (int)std::round(j);
+            int ii = (int)std::round(star.i);
+            int jj = (int)std::round(star.j);
 
             // Translate magnitude of star to gap size in cross hair
             double m0 = -1.0; // Bright magnitude limit
@@ -248,12 +250,6 @@ void ReferenceStarWidget::update() {
 
             RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, gap_int, 0xFFFF00FF);
 
-            //+++++++++++++++++++++++++++++++++++++//
-            // TEMP
-//            fprintf(stderr, "Visible star at (ra, dec) = (%8.5f, %8.5f); (az, el) = (%8.5f, %8.5f)\n",
-//                    MathUtil::toDegrees(star.ra), MathUtil::toDegrees(star.dec), MathUtil::toDegrees(theta), MathUtil::toDegrees(phi));
-            //+++++++++++++++++++++++++++++++++++++//
-
         }
 
     }
@@ -261,6 +257,15 @@ void ReferenceStarWidget::update() {
     medianImageViewer->newFrame(image, true, true, true);
 }
 
-
+bool ReferenceStarWidget::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        QPoint mouse = medianImageViewer->mapFromGlobal(QCursor::pos());
+        fprintf(stderr, "Mouse clicked at %d, %d\n", mouse.x(), mouse.y());
+    } else {
+        // standard event processing
+        return QObject::eventFilter(obj, event);
+    }
+}
 
 

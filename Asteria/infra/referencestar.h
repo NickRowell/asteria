@@ -40,6 +40,16 @@ public:
     const double mag;
 
     /**
+     * @brief The current image plane i coordinate of the reference star [pixels]
+     */
+    double i;
+
+    /**
+     * @brief The current image plane j coordinate of the reference star [pixels]
+     */
+    double j;
+
+    /**
      * @brief Camera-frame unit vector pointing towards the star given the current camera orientation and
      * time.
      */

@@ -7,8 +7,7 @@
 
 class AsteriaState;
 class GLMeteorDrawer;
-class QPushButton;
-class DoubleSlider;
+class QGroupBox;
 
 /**
  * @brief Provides a QWidget used to display the median image overlaid with the current positions of
@@ -36,49 +35,9 @@ public:
     GLMeteorDrawer * medianImageViewer;
 
     /**
-     * @brief Up button; used to increase elevation.
+     * @brief QGroupBox to contain the reference stars faint magnitude limit slider.
      */
-    QPushButton *up_button;
-
-    /**
-     * @brief Down button; used to decrease elevation.
-     */
-    QPushButton *down_button;
-
-    /**
-     * @brief Left button; used to decrease azimuth.
-     */
-    QPushButton *left_button;
-
-    /**
-     * @brief Right button; used to increase azimuth.
-     */
-    QPushButton *right_button;
-
-    /**
-     * @brief Clockwise button; used to increase roll.
-     */
-    QPushButton *clockwise_button;
-
-    /**
-     * @brief Anticlockwise button; used to decrease roll.
-     */
-    QPushButton *anticlockwise_button;
-
-    /**
-     * @brief Zoom in button; used to increase focal length
-     */
-    QPushButton *zoomin_button;
-
-    /**
-     * @brief Zoom out button; used to deccrease focal length
-     */
-    QPushButton *zoomout_button;
-
-    /**
-     * @brief Slider bar used to adjust the reference star faint magnitude limit.
-     */
-    DoubleSlider * slider;
+    QGroupBox *refStarMagSliderGroupBox;
 
 signals:
 
@@ -97,6 +56,9 @@ public slots:
     void loadImage(std::shared_ptr<Image> &newImage);
 
     void update();
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
 
 };
 
