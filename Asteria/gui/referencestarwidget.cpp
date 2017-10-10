@@ -80,40 +80,39 @@ void ReferenceStarWidget::loadImage(std::shared_ptr<Image> &newImage) {
 
 void ReferenceStarWidget::up() {
 
-    // TODO: compute change in az/el required to move stars 'up' in image. This will vary
-    // depending on the current roll angle.
-
-    state->elevation += 1.0;
+    // Compute change in az/el required to move stars 'up' in image.
+    state->elevation += 1.0 * std::cos(MathUtil::toRadians(state->roll));
+    state->azimuth += 1.0 * std::sin(MathUtil::toRadians(state->roll));
     fprintf(stderr, "Performing action: up; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::down() {
 
-    // TODO: compute change in az/el required to move stars 'down' in image. This will vary
-    // depending on the current roll angle.
+    // Compute change in az/el required to move stars 'down' in image.
+    state->elevation -= 1.0 * std::cos(MathUtil::toRadians(state->roll));
+    state->azimuth -= 1.0 * std::sin(MathUtil::toRadians(state->roll));
 
-    state->elevation -= 1.0;
     fprintf(stderr, "Performing action: down; elevation = %f\n", state->elevation);
     update();
 }
 
 void ReferenceStarWidget::left() {
 
-    // TODO: compute change in az/el required to move stars 'left' in image. This will vary
-    // depending on the current roll angle.
+    // Compute change in az/el required to move stars 'left' in image.
+    state->elevation -= 1.0 * std::sin(MathUtil::toRadians(state->roll));
+    state->azimuth += 1.0 * std::cos(MathUtil::toRadians(state->roll));
 
-    state->azimuth += 1.0;
     fprintf(stderr, "Performing action: left; azimuth = %f\n", state->azimuth);
     update();
 }
 
 void ReferenceStarWidget::right() {
 
-    // TODO: compute change in az/el required to move stars 'right' in image. This will vary
-    // depending on the current roll angle.
+    // Compute change in az/el required to move stars 'right' in image.
+    state->elevation += 1.0 * std::sin(MathUtil::toRadians(state->roll));
+    state->azimuth -= 1.0 * std::cos(MathUtil::toRadians(state->roll));
 
-    state->azimuth -= 1.0;
     fprintf(stderr, "Performing action: right; azimuth = %f\n", state->azimuth);
     update();
 }
@@ -173,10 +172,6 @@ void ReferenceStarWidget::update() {
     double az = MathUtil::toRadians(state->azimuth);
     double el = MathUtil::toRadians(state->elevation);
     double roll = MathUtil::toRadians(state->roll);
-
-
-    fprintf(stderr, "az/el/roll = %8.5f, %8.5f, %8.5f\n", state->azimuth, state->elevation, state->roll);
-
 
     // Rotation matrices
     Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
@@ -255,8 +250,8 @@ void ReferenceStarWidget::update() {
 
             //+++++++++++++++++++++++++++++++++++++//
             // TEMP
-            fprintf(stderr, "Visible star at (ra, dec) = (%8.5f, %8.5f); (az, el) = (%8.5f, %8.5f)\n",
-                    MathUtil::toDegrees(star.ra), MathUtil::toDegrees(star.dec), MathUtil::toDegrees(theta), MathUtil::toDegrees(phi));
+//            fprintf(stderr, "Visible star at (ra, dec) = (%8.5f, %8.5f); (az, el) = (%8.5f, %8.5f)\n",
+//                    MathUtil::toDegrees(star.ra), MathUtil::toDegrees(star.dec), MathUtil::toDegrees(theta), MathUtil::toDegrees(phi));
             //+++++++++++++++++++++++++++++++++++++//
 
         }
