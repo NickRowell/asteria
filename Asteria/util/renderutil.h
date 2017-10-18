@@ -18,7 +18,7 @@ public:
                             double &centre_x, double &centre_y, double &a, double &b, double &c, float sigmas, unsigned int &colour);
 
     static void drawCrossHair(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
-                         int x0, int y0, unsigned int gap, unsigned int colour);
+                         int x0, int y0, unsigned int length, unsigned int gap, unsigned int colour);
 
     static void encodeRgb(const unsigned char &r, const unsigned char &g, const unsigned char &b, unsigned int &rgb);
 

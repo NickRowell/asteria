@@ -3,6 +3,9 @@
 
 #include <Eigen/Dense>
 
+/**
+ * @brief NOTE: Not actually used in the project, since I replaced with the Eigen library Quaternion class.
+ */
 class Quaternion {
 
 public:

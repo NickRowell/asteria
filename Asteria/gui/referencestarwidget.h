@@ -4,6 +4,8 @@
 #include "infra/image.h"
 
 #include <QWidget>
+#include <QMouseEvent>
+#include <QWheelEvent>
 
 class AsteriaState;
 class GLMeteorDrawer;
@@ -39,6 +41,32 @@ public:
      */
     QGroupBox *refStarMagSliderGroupBox;
 
+    /**
+     * @brief Previous i coordinate of the mouse pointer, for handling drag events.
+     */
+    int mousePrevI;
+
+    /**
+     * @brief Previous j coordinate of the mouse pointer, for handling drag events.
+     */
+    int mousePrevJ;
+
+    /**
+     * @brief Recrods current pressed/unpressed state of the left mouse button
+     */
+    bool leftButtonIsPressed;
+
+    /**
+     * @brief Recrods current pressed/unpressed state of the middle mouse button
+     */
+    bool middleButtonIsPressed;
+
+    /**
+     * @brief Recrods current pressed/unpressed state of the right mouse button
+     */
+    bool rightButtonIsPressed;
+
+
 signals:
 
 public slots:
@@ -58,7 +86,12 @@ public slots:
     void update();
 
 protected:
-    bool eventFilter(QObject *obj, QEvent *event);
+
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent * event) override;
+    void wheelEvent(QWheelEvent * event) override;
 
 };
 

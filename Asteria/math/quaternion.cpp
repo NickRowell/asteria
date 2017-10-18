@@ -1,6 +1,10 @@
 #include "quaternion.h"
 
 /**
+ * NOTE: Not actually used in the project, since I replaced with the Eigen library Quaternion class.
+ */
+
+/**
  * @brief Constructor for the identity Quaternion.
  */
 Quaternion::Quaternion() : q0(1.0), q1(0.0), q2(0.0), q3(0.0) {

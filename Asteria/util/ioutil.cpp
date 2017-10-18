@@ -58,3 +58,44 @@ int IoUtil::xioctl (int fd, int request, void *arg) {
 
 	return r;
 }
+
+/**
+ * @brief Converts the enum type of a MouseButton to a QString description.
+ * @param button
+ *  The enum type representing the MouseButton
+ * @return
+ *  The name of the enum
+ */
+QString IoUtil::mouseButtonEnumNameFromValue(const Qt::MouseButton button) {
+
+    if (button == Qt::NoButton)      return "NoButton";
+    if (button == Qt::LeftButton)    return "LeftButton";
+    if (button == Qt::RightButton)   return "RightButton";
+    if (button == Qt::MiddleButton)  return "MiddleButton";
+    if (button == Qt::BackButton)    return "BackButton";
+    if (button == Qt::ForwardButton) return "ForwardButton";
+    if (button == Qt::TaskButton)    return "TaskButton";
+    if (button == Qt::ExtraButton4)  return "ExtraButton4";
+    if (button == Qt::ExtraButton5)  return "ExtraButton5";
+    if (button == Qt::ExtraButton6)  return "ExtraButton6";
+    if (button == Qt::ExtraButton7)  return "ExtraButton7";
+    if (button == Qt::ExtraButton8)  return "ExtraButton8";
+    if (button == Qt::ExtraButton9)  return "ExtraButton9";
+    if (button == Qt::ExtraButton10) return "ExtraButton10";
+    if (button == Qt::ExtraButton11) return "ExtraButton11";
+    if (button == Qt::ExtraButton12) return "ExtraButton12";
+    if (button == Qt::ExtraButton13) return "ExtraButton13";
+    if (button == Qt::ExtraButton14) return "ExtraButton14";
+    if (button == Qt::ExtraButton15) return "ExtraButton15";
+    if (button == Qt::ExtraButton16) return "ExtraButton16";
+    if (button == Qt::ExtraButton17) return "ExtraButton17";
+    if (button == Qt::ExtraButton18) return "ExtraButton18";
+    if (button == Qt::ExtraButton19) return "ExtraButton19";
+    if (button == Qt::ExtraButton20) return "ExtraButton20";
+    if (button == Qt::ExtraButton21) return "ExtraButton21";
+    if (button == Qt::ExtraButton22) return "ExtraButton22";
+    if (button == Qt::ExtraButton23) return "ExtraButton23";
+    if (button == Qt::ExtraButton24) return "ExtraButton24";
+    qDebug("QMouseShortcutEntry::addShortcut contained Invalid Qt::MouseButton value");
+    return "NoButton";
+}

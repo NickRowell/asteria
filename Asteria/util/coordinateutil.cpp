@@ -50,7 +50,7 @@ void CoordinateUtil::raDecToAzEl(const double &ra, const double &dec, const doub
  * @return
  *  The orthonormal matrix that rotates vectors from the BCRF to the ECEF.
  */
-Matrix3d CoordinateUtil::getBcrfToEcefRot(const double &gmst) {
+Eigen::Matrix3d CoordinateUtil::getBcrfToEcefRot(const double &gmst) {
 
     // Convert GMST to radians; the transformation from BCRF to ECEF is a rotation about the Z axis
     // by this amount.
@@ -58,7 +58,7 @@ Matrix3d CoordinateUtil::getBcrfToEcefRot(const double &gmst) {
     double sinTheta = std::sin(theta);
     double cosTheta = std::cos(theta);
 
-    Matrix3d r_bcrf_ecef;
+    Eigen::Matrix3d r_bcrf_ecef;
     r_bcrf_ecef <<  cosTheta, sinTheta, 0.0,
                    -sinTheta, cosTheta, 0.0,
                          0.0,      0.0, 1.0;
@@ -78,14 +78,14 @@ Matrix3d CoordinateUtil::getBcrfToEcefRot(const double &gmst) {
  * @return
  *  The orthonormal matrix that rotates vectors from the ECEF to the SEZ frame.
  */
-Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
+Eigen::Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
 
     double sinLong = std::sin(lon);
     double cosLong = std::cos(lon);
     double sinLat = std::sin(lat);
     double cosLat = std::cos(lat);
 
-    Matrix3d r_ecef_sez;
+    Eigen::Matrix3d r_ecef_sez;
 
     r_ecef_sez <<  sinLat * cosLong, sinLat * sinLong, -cosLat,
                            -sinLong,          cosLong,     0.0,
@@ -106,49 +106,75 @@ Matrix3d CoordinateUtil::getEcefToSezRot(const double &lon, const double &lat) {
  * @return
  *  The orthonormal matrix that rotates vectors from the SEZ to the CAM frame.
  */
-Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, const double &roll) {
+Eigen::Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, const double &roll) {
 
     // Convert azimuth to the east-of-south version for use with SEZ frame
     double az_prime = az;
-    CoordinateUtil::eastOfSouthToEastOfNorth(az_prime);
+    CoordinateUtil::eastOfNorthToEastOfSouth(az_prime);
 
     // Compose the azimuth, elevation and roll rotation matrices.
 
-    // Changes in elevation rotate the camera about the SEZ frame Y axis
-    Matrix3d r_el;
+    // Changes in azimuth rotate the camera about the SEZ frame Z axis
+    Eigen::Matrix3d r_az;
+    double sinAz = std::sin(az_prime);
+    double cosAz = std::cos(az_prime);
+    r_az << cosAz, sinAz, 0.0,
+           -sinAz, cosAz, 0.0,
+              0.0,   0.0, 1.0;
+
+    // Changes in elevation rotate the camera about the SEZ frame Y (E) axis
+    Eigen::Matrix3d r_el;
     double sinEl = std::sin(el);
     double cosEl = std::cos(el);
     r_el << cosEl, 0.0,  sinEl,
               0.0, 1.0,    0.0,
            -sinEl, 0.0,  cosEl;
 
-    // Changes in azimuth rotate the camera about the SEZ frame Z axis
-    Matrix3d r_az;
-    double sinAz = std::sin(az_prime);
-    double cosAz = std::cos(az_prime);
-    r_az << cosAz, -sinAz, 0.0,
-            sinAz,  cosAz, 0.0,
-              0.0,    0.0, 1.0;
-
-    // Changes in roll rotate the camera about the SEZ frame X axis
-    Matrix3d r_roll;
+    // Changes in roll rotate the camera about the SEZ frame X (S) axis
+    Eigen::Matrix3d r_roll;
     double sinRoll = std::sin(roll);
     double cosRoll = std::cos(roll);
     r_roll << 1.0,     0.0,      0.0,
               0.0, cosRoll, -sinRoll,
               0.0, sinRoll,  cosRoll;
 
-    // Compose the combine rotation by appropriate multiplication of the individual rotations
-    Matrix3d r_sez_cam = r_roll * r_el * r_az;
+    // Compose the combined rotation by appropriate multiplication of the individual rotations
+    Eigen::Matrix3d r_sez_cam = r_roll * r_el * r_az;
 
     // We need to apply a fixed rotation that aligns the camera and SEZ frame when the
     // azimuth, elevation and roll are all zero.
-    Matrix3d delta;
+    Eigen::Matrix3d delta;
     delta << 0, -1,  0,
              0,  0, -1,
              1,  0,  0;
 
     return delta * r_sez_cam;
+}
+
+/**
+ * @brief Retrieves the azimuth, elevation and roll angles for the camera frame from the corresponding
+ * orthonormal rotation matrix.
+ * @param r_sez_cam
+ *  The orthonormal matrix that rotates vectors from the SEZ to the CAM frame.
+ * @param az
+ *  On exit, contains the azimuthal angle of the camera Z axis (i.e. boresight / pointing direction, measured east-of-north) [radians]
+ * @param el
+ *  On exit, contains the elevation angle of the camera Z axis (i.e. boresight / pointing direction, measured from horizon) [radians]
+ * @param roll
+ *  On exit, contains the roll angle about the camera Z axis (positive in the sense of the right-hand-screw rule) [radians]
+ */
+void CoordinateUtil::getAzElRoll(const Eigen::Matrix3d &r_sez_cam, double &az, double &el, double &roll) {
+
+    Eigen::Vector3d r_sez_cam_x = r_sez_cam.row(0);
+    Eigen::Vector3d r_sez_cam_y = r_sez_cam.row(1);
+    Eigen::Vector3d r_sez_cam_z = r_sez_cam.row(2);
+
+    el = std::asin(r_sez_cam_z[2]);
+
+    az = std::atan2(r_sez_cam_z[1], r_sez_cam_z[0]);
+    CoordinateUtil::eastOfSouthToEastOfNorth(az);
+
+    roll = std::atan2(r_sez_cam_x[2], -r_sez_cam_y[2]);
 }
 
 /**
@@ -169,7 +195,7 @@ Matrix3d CoordinateUtil::getSezToCamRot(const double &az, const double &el, cons
  * @return
  *  The corresponding pinhole camera matrix.
  */
-Matrix3d CoordinateUtil::getCamIntrinsicMatrix(const double &f, const double &sx, const double &sy,
+Eigen::Matrix3d CoordinateUtil::getCamIntrinsicMatrix(const double &f, const double &sx, const double &sy,
                                                const unsigned int &width, const unsigned int &height) {
     // Horizontal focal length [pixels]
     double fx = 1000.0 * f / sx;
@@ -180,11 +206,49 @@ Matrix3d CoordinateUtil::getCamIntrinsicMatrix(const double &f, const double &sx
     double px = (double)width / 2.0;
     double py = (double)height / 2.0;
 
-    Matrix3d r_cam_im;
+    Eigen::Matrix3d r_cam_im;
 
     r_cam_im <<  fx, 0.0,  px,
                 0.0,  fy,  py,
                 0.0, 0.0, 1.0;
+
+    return r_cam_im;
+}
+
+/**
+ * @brief Composes the inverse of the camera frame intrinsic matrix from the focal length and sensor size, adopting the
+ * pinhole camera model. This is an appriximate method that assumes the principal point (projection of the
+ * camera frame origin) is at the centre of the image.
+ *
+ * @param f
+ *  The lens focal length [mm]
+ * @param sx
+ *  The pixel horiontal width [um]
+ * @param sy
+ *  The pixel vertical height [um]
+ * @param width
+ *  The image width [pixels]
+ * @param height
+ *  The image height [pixels]
+ * @return
+ *  The inverse of the corresponding pinhole camera matrix.
+ */
+Eigen::Matrix3d CoordinateUtil::getCamIntrinsicMatrixInverse(const double &f, const double &sx, const double &sy,
+                                               const unsigned int &width, const unsigned int &height) {
+    // Horizontal focal length [pixels]
+    double fx = 1000.0 * f / sx;
+    // Vertical focal length [pixels]
+    double fy = 1000.0 * f / sy;
+
+    // Principal point location
+    double px = (double)width / 2.0;
+    double py = (double)height / 2.0;
+
+    Eigen::Matrix3d r_cam_im;
+
+    r_cam_im <<  1.0/fx,     0.0, -px/fx,
+                    0.0,  1.0/fy, -py/fy,
+                    0.0,     0.0,    1.0;
 
     return r_cam_im;
 }
@@ -201,7 +265,7 @@ Matrix3d CoordinateUtil::getCamIntrinsicMatrix(const double &f, const double &sx
  * @param phi
  *  On exit, contains the angular coordinate perpendicular to the equatorial plane, positive north (declination/latitude/elevation) [radians]
  */
-void CoordinateUtil::cartesianToSpherical(const Vector3d &cart, double &r, double &theta, double &phi) {
+void CoordinateUtil::cartesianToSpherical(const Eigen::Vector3d &cart, double &r, double &theta, double &phi) {
 
     double x = cart[0];
     double y = cart[1];
@@ -232,7 +296,7 @@ void CoordinateUtil::cartesianToSpherical(const Vector3d &cart, double &r, doubl
  * @param phi
  *  The angular coordinate perpendicular to the equatorial plane, positive north (declination/latitude/elevation) [radians]
  */
-void CoordinateUtil::sphericalToCartesian(Vector3d &cart, const double &r, const double &theta, const double &phi) {
+void CoordinateUtil::sphericalToCartesian(Eigen::Vector3d &cart, const double &r, const double &theta, const double &phi) {
     cart[0] = r * std::cos(theta) * std::cos(phi);
     cart[1] = r * std::sin(theta) * std::cos(phi);
     cart[2] = r * std::sin(phi);

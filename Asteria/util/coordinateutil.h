@@ -4,8 +4,6 @@
 // Eigen is used to provide vector algebra
 #include <Eigen/Dense>
 
-using namespace Eigen;
-
 /**
  * @brief The CoordinateUtil class
  * Utilities for coordinate transformation etc.
@@ -27,17 +25,21 @@ public:
 
     static void raDecToAzEl(const double &ra, const double &dec, const double &lat, const double &lst, double &az, double &el);
 
-    static Matrix3d getBcrfToEcefRot(const double &gmst);
+    static Eigen::Matrix3d getBcrfToEcefRot(const double &gmst);
 
-    static Matrix3d getEcefToSezRot(const double &lon, const double &lat);
+    static Eigen::Matrix3d getEcefToSezRot(const double &lon, const double &lat);
 
-    static Matrix3d getSezToCamRot(const double &az, const double &el, const double &roll);
+    static Eigen::Matrix3d getSezToCamRot(const double &az, const double &el, const double &roll);
 
-    static Matrix3d getCamIntrinsicMatrix(const double &f, const double &sx, const double &sy, const unsigned int &width, const unsigned int &height);
+    static void getAzElRoll(const Eigen::Matrix3d &r_sez_cam, double &az, double &el, double &roll);
 
-    static void cartesianToSpherical(const Vector3d &cart, double &r, double &theta, double &phi);
+    static Eigen::Matrix3d getCamIntrinsicMatrix(const double &f, const double &sx, const double &sy, const unsigned int &width, const unsigned int &height);
 
-    static void sphericalToCartesian(Vector3d &cart, const double &r, const double &theta, const double &phi);
+    static Eigen::Matrix3d getCamIntrinsicMatrixInverse(const double &f, const double &sx, const double &sy, const unsigned int &width, const unsigned int &height);
+
+    static void cartesianToSpherical(const Eigen::Vector3d &cart, double &r, double &theta, double &phi);
+
+    static void sphericalToCartesian(Eigen::Vector3d &cart, const double &r, const double &theta, const double &phi);
 
     static void translateToRangeZeroToTwoPi(double &angle);
 

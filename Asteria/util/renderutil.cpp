@@ -160,16 +160,16 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
 }
 
 void RenderUtil::drawCrossHair(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
-                    int x0, int y0, unsigned int gap, unsigned int colour) {
+                    int x0, int y0, unsigned int length, unsigned int gap, unsigned int colour) {
     if(gap==0) {
-        drawLine(annotatedImage, width, height, x0-5, x0+5, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0-5, y0+5, colour);
+        drawLine(annotatedImage, width, height, x0-length, x0+length, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0-length, y0+length, colour);
     }
     else {
-        drawLine(annotatedImage, width, height, x0-5-gap, x0-gap, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0+5+gap, x0+gap, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0-5-gap, y0-gap, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0+5+gap, y0+gap, colour);
+        drawLine(annotatedImage, width, height, x0-length-gap, x0-gap, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0+length+gap, x0+gap, y0, y0, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0-length-gap, y0-gap, colour);
+        drawLine(annotatedImage, width, height, x0, x0, y0+length+gap, y0+gap, colour);
     }
 }
 
