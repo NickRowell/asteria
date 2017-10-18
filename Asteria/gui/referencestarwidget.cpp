@@ -12,17 +12,18 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 
+// TODO: integrate and display detected Sources; enable creation of cross-matches by user clicks.
+// TODO: remove cross-matches for stars that move out of FOV during user adjustment.
 // TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depcting mouse controls.
 // TODO: integrate camera matrix class that provides project and deproject functions and radial distortion etc
 // TODO: formalise the principal point etc; don't base the camera orientation internally on the azimuth, elevation etc.
-// TODO: on clicks, identify the nearest reference star in the image and store to internal pointer for use in cross matching with sources
+
 
 ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
 
     medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
-    // Capture mouse clicks etc in the GLMeteorDrawer
-    medianImageViewer->installEventFilter(this);
+    selectedRefStar = 0;
 
     // Initialise bools to track mouse button presses
     // FIXME: what if the buttons ARE pressed when the class is initialised?
@@ -30,33 +31,9 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     middleButtonIsPressed = false;
     rightButtonIsPressed = false;
 
-    QPushButton * up_button = new QPushButton(this);
-    up_button->setIcon(QIcon(":/images/up.png"));
-    QPushButton * down_button = new QPushButton(this);
-    down_button->setIcon(QIcon(":/images/down.png"));
-    QPushButton * left_button = new QPushButton(this);
-    left_button->setIcon(QIcon(":/images/left.png"));
-    QPushButton * right_button = new QPushButton(this);
-    right_button->setIcon(QIcon(":/images/right.png"));
-    QPushButton * clockwise_button = new QPushButton(this);
-    clockwise_button->setIcon(QIcon(":/images/clockwise.png"));
-    QPushButton * anticlockwise_button = new QPushButton(this);
-    anticlockwise_button->setIcon(QIcon(":/images/anticlockwise.png"));
-    QPushButton * zoomin_button = new QPushButton(this);
-    zoomin_button->setIcon(QIcon(":/images/plus.png"));
-    QPushButton * zoomout_button = new QPushButton(this);
-    zoomout_button->setIcon(QIcon(":/images/minus.png"));
     // TODO: reference star catalogue should know the magnitude range of it's contents
     DoubleSlider * slider = new DoubleSlider(this, -1.0, 6.0, state->ref_star_faint_mag_limit, 100);
 
-    connect(up_button, SIGNAL(pressed()), this, SLOT(up()));
-    connect(down_button, SIGNAL(pressed()), this, SLOT(down()));
-    connect(left_button, SIGNAL(pressed()), this, SLOT(left()));
-    connect(right_button, SIGNAL(pressed()), this, SLOT(right()));
-    connect(clockwise_button, SIGNAL(pressed()), this, SLOT(clockwise()));
-    connect(anticlockwise_button, SIGNAL(pressed()), this, SLOT(anticlockwise()));
-    connect(zoomin_button, SIGNAL(pressed()), this, SLOT(zoomin()));
-    connect(zoomout_button, SIGNAL(pressed()), this, SLOT(zoomout()));
     // Player response to user moving the slider
     connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
 
@@ -66,21 +43,8 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     sliderVbox->addStretch(1);
     refStarMagSliderGroupBox->setLayout(sliderVbox);
 
-    QHBoxLayout * controlsLayout = new QHBoxLayout;
-    controlsLayout->addWidget(up_button);
-    controlsLayout->addWidget(down_button);
-    controlsLayout->addWidget(left_button);
-    controlsLayout->addWidget(right_button);
-    controlsLayout->addWidget(clockwise_button);
-    controlsLayout->addWidget(anticlockwise_button);
-    controlsLayout->addWidget(zoomin_button);
-    controlsLayout->addWidget(zoomout_button);
-    QWidget * controls = new QWidget(this);
-    controls->setLayout(controlsLayout);
-
     QVBoxLayout *medianImageLayout = new QVBoxLayout;
     medianImageLayout->addWidget(medianImageViewer);
-    medianImageLayout->addWidget(controls);
     medianImageLayout->addWidget(refStarMagSliderGroupBox);
     medianImageLayout->addStretch();
     this->setLayout(medianImageLayout);
@@ -97,6 +61,8 @@ void ReferenceStarWidget::mousePressEvent(QMouseEvent *e) {
     QPoint mouse = medianImageViewer->mapFromGlobal(e->globalPos());
     mousePrevI = mouse.x();
     mousePrevJ = mouse.y();
+    mouseStartI = mouse.x();
+    mouseStartJ = mouse.y();
 
     switch(e->button()) {
     case Qt::LeftButton:
@@ -122,12 +88,49 @@ void ReferenceStarWidget::mouseReleaseEvent(QMouseEvent *e) {
     switch(e->button()) {
     case Qt::LeftButton:
         leftButtonIsPressed = false;
+
+        if(mouseStartI == mouse.x() && mouseStartJ == mouse.y()) {
+            // No drag occurred, just a click: locate the closest reference star
+            selectedRefStar = 0;
+            double minDistanceToReferenceStar = std::sqrt(state->width * state->width + state->height * state->height);
+
+            for(ReferenceStar * refStarPtr : visibleReferenceStars) {
+
+                double di = refStarPtr->i - mouse.x();
+                double dj = refStarPtr->j - mouse.y();
+
+                // Quick bounding box check to reject reference stars much further away than the current limit
+                if(std::fabs(di) > minDistanceToReferenceStar || std::fabs(dj) > minDistanceToReferenceStar) {
+                    continue;
+                }
+                // Passed bounding box check: compute Euclidean distance
+                double distanceToReferenceStar = std::sqrt(di * di + dj * dj);
+
+                if(distanceToReferenceStar < minDistanceToReferenceStar) {
+                    minDistanceToReferenceStar = distanceToReferenceStar;
+                    selectedRefStar = refStarPtr;
+                }
+            }
+
+            if(selectedRefStar) {
+                // A ReferenceStar was selected - update the image to indicate it
+                update();
+            }
+        }
         break;
     case Qt::MiddleButton:
         middleButtonIsPressed = false;
         break;
     case Qt::RightButton:
         rightButtonIsPressed = false;
+
+        if(mouseStartI == mouse.x() && mouseStartJ == mouse.y()) {
+            // No drag occurred, just a click: clear the reference star selection
+            if(selectedRefStar) {
+                selectedRefStar = 0;
+                update();
+            }
+        }
         break;
     default:
         fprintf(stderr, "Unsupported button: %s\n", IoUtil::mouseButtonEnumNameFromValue(e->button()).toStdString().c_str());
@@ -254,73 +257,6 @@ void ReferenceStarWidget::wheelEvent(QWheelEvent *e) {
     update();
 }
 
-
-
-void ReferenceStarWidget::up() {
-
-    // Compute change in az/el required to move stars 'up' in image.
-    state->elevation += 1.0 * std::cos(MathUtil::toRadians(state->roll));
-    state->azimuth += 1.0 * std::sin(MathUtil::toRadians(state->roll));
-    fprintf(stderr, "Performing action: up; elevation = %f\n", state->elevation);
-    update();
-}
-
-void ReferenceStarWidget::down() {
-
-    // Compute change in az/el required to move stars 'down' in image.
-    state->elevation -= 1.0 * std::cos(MathUtil::toRadians(state->roll));
-    state->azimuth -= 1.0 * std::sin(MathUtil::toRadians(state->roll));
-
-    fprintf(stderr, "Performing action: down; elevation = %f\n", state->elevation);
-    update();
-}
-
-void ReferenceStarWidget::left() {
-
-    // Compute change in az/el required to move stars 'left' in image.
-    state->elevation += 1.0 * std::sin(MathUtil::toRadians(state->roll));
-    state->azimuth -= 1.0 * std::cos(MathUtil::toRadians(state->roll));
-
-    fprintf(stderr, "Performing action: left; azimuth = %f\n", state->azimuth);
-    update();
-}
-
-void ReferenceStarWidget::right() {
-
-    // Compute change in az/el required to move stars 'right' in image.
-    state->elevation -= 1.0 * std::sin(MathUtil::toRadians(state->roll));
-    state->azimuth += 1.0 * std::cos(MathUtil::toRadians(state->roll));
-
-    fprintf(stderr, "Performing action: right; azimuth = %f\n", state->azimuth);
-    update();
-}
-
-void ReferenceStarWidget::clockwise() {
-    state->roll -= 1.0;
-    fprintf(stderr, "Performing action: clockwise; roll = %f\n", state->roll);
-    update();
-}
-
-void ReferenceStarWidget::anticlockwise() {
-    state->roll += 1.0;
-    fprintf(stderr, "Performing action: anticlockwise; roll = %f\n", state->roll);
-    update();
-}
-
-void ReferenceStarWidget::zoomin() {
-    state->focal_length += 0.1;
-    fprintf(stderr, "Performing action: zoomin; f = %f\n", state->focal_length);
-    update();
-}
-
-void ReferenceStarWidget::zoomout() {
-    if(state->focal_length > 0.1) {
-        state->focal_length -= 0.1;
-    }
-    fprintf(stderr, "Performing action: zoomout; f = %f\n", state->focal_length);
-    update();
-}
-
 void ReferenceStarWidget::slide(double position) {
     state->ref_star_faint_mag_limit = position;
     refStarMagSliderGroupBox->setTitle(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
@@ -343,6 +279,9 @@ void ReferenceStarWidget::update() {
         image->annotatedImage.push_back(0x00000000);
     }
 
+    // Clear the current set of visible reference stars
+    visibleReferenceStars.clear();
+
     // Project the reference stars into the image
     double gmst = TimeUtil::epochToGmst(image->epochTimeUs);
 
@@ -358,11 +297,8 @@ void ReferenceStarWidget::update() {
     Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(az, el, roll);
     Matrix3d r_cam_im = CoordinateUtil::getCamIntrinsicMatrix(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
 
-    // Full transformation
+    // Full transformation BCRF->CAM
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
-
-    // Transformation BCRF->SEZ
-    Matrix3d r_bcrf_sez = r_ecef_sez * r_bcrf_ecef;
 
     for(ReferenceStar &star : state->refStarCatalogue) {
 
@@ -377,19 +313,6 @@ void ReferenceStarWidget::update() {
         // Transform to CAM frame:
         Vector3d r_cam = r_bcrf_cam * r_bcrf;
 
-        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-        // TEMP
-        //
-        // Transform to SEZ frame:
-        Vector3d r_sez = r_bcrf_sez * r_bcrf;
-        // Get position in spherical coordinates
-        double r, theta, phi;
-        CoordinateUtil::cartesianToSpherical(r_sez, r, theta, phi);
-        // Transform east-of-south angle to east-of-north for conventional azimuth
-        CoordinateUtil::eastOfSouthToEastOfNorth(theta);
-        //
-        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
         if(r_cam[2] < 0) {
             // Star is behind the camera
             continue;
@@ -403,6 +326,9 @@ void ReferenceStarWidget::update() {
 
         if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
             // Star is visible in image!
+            visibleReferenceStars.push_back(&star);
+
+            // Quantize coordinates for display in image
             int ii = (int)std::round(star.i);
             int jj = (int)std::round(star.j);
 
@@ -426,12 +352,17 @@ void ReferenceStarWidget::update() {
             unsigned int gap_int = (unsigned int)std::round(gap);
 
             RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 5, gap_int, 0xFFFF00FF);
-
         }
     }
 
     // Draw a crosshair at the image principal point
     RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, image->width/2, image->height/2, 10, 0, 0x00FFFFFF);
+
+    if(selectedRefStar) {
+        int ii = (int)std::round(selectedRefStar->i);
+        int jj = (int)std::round(selectedRefStar->j);
+        RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0xFF00FFFF);
+    }
 
     medianImageViewer->newFrame(image, true, true, true);
 }

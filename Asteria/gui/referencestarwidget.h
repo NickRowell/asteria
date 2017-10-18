@@ -10,6 +10,7 @@
 class AsteriaState;
 class GLMeteorDrawer;
 class QGroupBox;
+class ReferenceStar;
 
 /**
  * @brief Provides a QWidget used to display the median image overlaid with the current positions of
@@ -37,6 +38,16 @@ public:
     GLMeteorDrawer * medianImageViewer;
 
     /**
+     * @brief Vector of ReferenceStars currently visible.
+     */
+    std::vector<ReferenceStar *> visibleReferenceStars;
+
+    /**
+     * @brief Pointer to the currently selected ReferenceStar.
+     */
+    ReferenceStar * selectedRefStar;
+
+    /**
      * @brief QGroupBox to contain the reference stars faint magnitude limit slider.
      */
     QGroupBox *refStarMagSliderGroupBox;
@@ -50,6 +61,16 @@ public:
      * @brief Previous j coordinate of the mouse pointer, for handling drag events.
      */
     int mousePrevJ;
+
+    /**
+     * @brief I coordinate of mouse pointer on button press; for detecting clicks with no drag motion.
+     */
+    int mouseStartI;
+
+    /**
+     * @brief J coordinate of mouse pointer on button press; for detecting clicks with no drag motion.
+     */
+    int mouseStartJ;
 
     /**
      * @brief Recrods current pressed/unpressed state of the left mouse button
@@ -71,14 +92,6 @@ signals:
 
 public slots:
 
-    void up();
-    void down();
-    void left();
-    void right();
-    void clockwise();
-    void anticlockwise();
-    void zoomin();
-    void zoomout();
     void slide(double position);
 
     void loadImage(std::shared_ptr<Image> &newImage);
