@@ -53,15 +53,14 @@ SOURCES += \
     gui/videoplayerwidget.cpp \
     gui/videoplayerthread.cpp \
     util/testutil.cpp \
-    math/quaternion.cpp \
     config/parameterdoublearray.cpp \
     gui/referencestarwidget.cpp \
-    gui/doubleslider.cpp
+    gui/doubleslider.cpp \
+    optics/pinholecamera.cpp \
+    optics/pinholecamerawithradialdistortion.cpp \
+    optics/cameramodelbase.cpp
 
 HEADERS += \
-    optics/GeometricOpticsModel.h \
-    optics/PinholeCameraWithRadialDistortion.h \
-    optics/Camera.h \
     gui/cameraselectionwindow.h \
     gui/configcreationwindow.h \
     gui/mainwindow.h \
@@ -84,7 +83,6 @@ HEADERS += \
     config/detectionparameters.h \
     util/timeutil.h \
     infra/analysisworker.h \
-    optics/Camera.h \
     infra/referencestar.h \
     infra/acquisitionthread.h \
     gui/videodirectorymodel.h \
@@ -118,10 +116,12 @@ HEADERS += \
     gui/videoplayerwidget.h \
     gui/videoplayerthread.h \
     util/testutil.h \
-    math/quaternion.h \
     config/parameterdoublearray.h \
     gui/referencestarwidget.h \
-    gui/doubleslider.h
+    gui/doubleslider.h \
+    optics/pinholecamera.h \
+    optics/cameramodelbase.h \
+    optics/pinholecamerawithradialdistortion.h
 
 LIBS += -ljpeg \
         -lftgl \

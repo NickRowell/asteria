@@ -14,7 +14,7 @@
 
 // TODO: integrate and display detected Sources; enable creation of cross-matches by user clicks.
 // TODO: remove cross-matches for stars that move out of FOV during user adjustment.
-// TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depcting mouse controls.
+// TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depicting mouse controls.
 // TODO: integrate camera matrix class that provides project and deproject functions and radial distortion etc
 // TODO: formalise the principal point etc; don't base the camera orientation internally on the azimuth, elevation etc.
 
@@ -36,6 +36,10 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
 
     // Player response to user moving the slider
     connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
+
+
+
+
 
     refStarMagSliderGroupBox = new QGroupBox(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
     QVBoxLayout *sliderVbox = new QVBoxLayout;
@@ -366,6 +370,3 @@ void ReferenceStarWidget::update() {
 
     medianImageViewer->newFrame(image, true, true, true);
 }
-
-
-
