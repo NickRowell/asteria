@@ -12,34 +12,46 @@ public:
     ~PinholeCameraWithRadialDistortion();
 
     /**
-     * Coefficients of FORWARD radial distortion polynomial (undistorted ->
-     * distorted coordinates). These are the parameters that are estimated in
-     * standard camera calibration reports.
+     * @brief Zeroth-order coefficient of the forward radial distortion polynomial [-].
      *
      * The forward radial distortion factor is computed according to:
      *
-     * C(R) = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
+     * \f$C(R) = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4\f$
      *
-     * Note that the distortion factor is dimensionless, so the units on
-     * the coefficients are as follows:
-     *
-     * K0 [-]
-     * K1 [pixels^{-1}]
-     * K2 [pixels^{-2}]
-     * K3 [pixels^{-3}]
-     * K4 [pixels^{-4}]
+     * where \f$R\f$ is measured from the distortion centre, which coincides with the principal point.
+     * Note that the distortion factor is dimensionless.
      */
-    double K0, K1, K2, K3, K4;
+    double K0;
+    /**
+     * @brief First-order coefficient of the forward radial distortion polynomial [pixels\f$^{-1}\f$].
+     * See documentation for #K0 for a full definition.
+     */
+    double K1;
+    /**
+     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
+     * See documentation for #K0 for a full definition.
+     */
+    double K2;
+    /**
+     * @brief Third-order coefficient of the forward radial distortion polynomial [pixels\f$^{-3}\f$].
+     * See documentation for #K0 for a full definition.
+     */
+    double K3;
+    /**
+     * @brief Fourth-order coefficient of the forward radial distortion polynomial [pixels\f$^{-4}\f$].
+     * See documentation for #K0 for a full definition.
+     */
+    double K4;
 
     /**
      * @brief Enumerates the possible signs of the radial distortion.
      */
     enum RADIAL_DISTORTION {
-        // Points are distorted AWAY FROM the principal point
+        /** Points are distorted AWAY FROM the principal point */
         POSITIVE,
-        // Points are distorted TOWARDS the principal point
+        /** Points are distorted TOWARDS the principal point */
         NEGATIVE,
-        // No distortion
+        /** No distortion */
         ZERO
     };
 
@@ -48,9 +60,15 @@ public:
      */
     RADIAL_DISTORTION CURRENT_RADIAL_DISTORTION;
 
-    double * getParameters(unsigned int &);
+    unsigned int getNumParameters() const;
 
-    void setParameters(double *);
+    void getParameters(double *params) const;
+
+    void getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const;
+
+    void getPartialDerivativesJ(double *derivs, const Eigen::Vector3d & r_cam) const;
+
+    void setParameters(const double *);
 
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 
@@ -72,11 +90,13 @@ public:
      * floating point errors.
      *
      *
-     * @param R Radial distance from the principal point of the pixel in the
-     *          undistorted image, i.e. the scene radiance.
+     * @param R
+     *  Radial distance from the principal point of the pixel in the undistorted
+     * image, i.e. the scene radiance.
      * @return
+     *  The forward radial distortion factor C(R)
      */
-    double getForwardRadialDistortion(const double &R) const;
+    double getForwardRadialDistortionFactor(const double &R) const;
 
     /**
      * This function computes the inverse radial distortion factor as a function
@@ -149,26 +169,31 @@ public:
      * two values. I found empirically that taking the mean of R_i and R'/C(R_i)
      * avoided this and provided much faster convergence.
      *
-     * @param R_prime   Radial distance of the pixel from the principal point
-     *                  in the distorted image, i.e. the detector.
-     * @param tol       Estimation is iterated until this tolerance is reached,
-     *                  i.e. undistorted radial distance is accurate to within
-     *                  this number of pixels.
-     * @return          D(R_prime) if distortion factor is found within the set
-     *                  number of iterations, -1 if not: this means the distortion
-     *                  is positive and too strong, i.e. the distortion factor
-     *                  has become negative within the distorted image area.
+     * @param R_prime
+     *  Radial distance of the pixel from the principal point in the distorted
+     * image, i.e. the detector.
+     * @param tol
+     *  Estimation is iterated until this tolerance is reached, i.e. undistorted
+     * radial distance is accurate to within this number of pixels.
+     * @return
+     *  D(R_prime) if distortion factor is found within the set number of iterations,
+     * -1 if not: this means the distortion is positive and too strong, i.e. the
+     * distortion factor has become negative within the distorted image area.
      */
-    double getBackwardRadialDistortion(const double &R_prime, const double &tol) const;
+    double getBackwardRadialDistortionFactor(const double &R_prime, const double &tol) const;
 
     /**
      * @brief Computes the radially-distorted coordinates of a pixel from the undistorted coordinates.
      * Note that the distortion centre is located at the principal point.
      *
-     * @param i  i coordinate of undistorted pixel [pixels]
-     * @param j  j coordinate of undistorted pixel [pixels]
-     * @param ip On exit, contains i coordinate of distorted pixel [pixels]
-     * @param jp On exit, contains j coordinate of distorted pixel [pixels]
+     * @param i
+     *  i coordinate of undistorted pixel [pixels]
+     * @param j
+     *  j coordinate of undistorted pixel [pixels]
+     * @param ip
+     *  On exit, contains i coordinate of distorted pixel [pixels]
+     * @param jp
+     *  On exit, contains j coordinate of distorted pixel [pixels]
      */
     void getDistortedPixel(const double &i, const double &j, double &ip, double &jp) const;
 
@@ -176,10 +201,14 @@ public:
      * @brief Computes the undistorted coordinates of a pixel from the radially-distorted coordinates.
      * Note that the distortion centre is located at the principal point.
      *
-     * @param ip i coordinate of distorted pixel [pixels]
-     * @param jp j coordinate of distorted pixel [pixels]
-     * @param i  On exit, contains i coordinate of undistorted pixel [pixels]
-     * @param j  On exit, contains j coordinate of undistorted pixel [pixels]
+     * @param ip
+     *  i coordinate of distorted pixel [pixels]
+     * @param jp
+     *  j coordinate of distorted pixel [pixels]
+     * @param i
+     *  On exit, contains i coordinate of undistorted pixel [pixels]
+     * @param j
+     *  On exit, contains j coordinate of undistorted pixel [pixels]
      */
     void getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const;
 

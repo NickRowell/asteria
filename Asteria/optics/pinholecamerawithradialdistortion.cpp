@@ -102,7 +102,7 @@ PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsig
             // factor, and it's precise value is not important.
             float tolerance = 0.01;
 
-            if(getBackwardRadialDistortion(rp_max, tolerance) < 0) {
+            if(getBackwardRadialDistortionFactor(rp_max, tolerance) < 0) {
                 // Encountered failure condition
                 fprintf(stderr, "Positive radial distortion is too strong! Reduce coefficients.\n");
                 return;
@@ -120,7 +120,7 @@ PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsig
             for(float r=0, rp, cr; ; r++) {
                 // Find forwards distortion factor (u->d) at radial distance
                 // r in undistorted image.
-                cr = getForwardRadialDistortion(r);
+                cr = getForwardRadialDistortionFactor(r);
 
                 // If distortion factor becomes negative or zero before loop
                 // is exited, then distortion is too large.
@@ -151,12 +151,163 @@ PinholeCameraWithRadialDistortion::~PinholeCameraWithRadialDistortion() {
 
 }
 
-double * PinholeCameraWithRadialDistortion::getParameters(unsigned int & n) {
-
+unsigned int PinholeCameraWithRadialDistortion::getNumParameters() const {
+    return 9;
 }
 
-void PinholeCameraWithRadialDistortion::setParameters(double * params) {
+void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
+    params[0] = fi;
+    params[1] = fj;
+    params[2] = pi;
+    params[3] = pj;
+    params[4] = K0;
+    params[5] = K1;
+    params[6] = K2;
+    params[7] = K3;
+    params[8] = K4;
+}
 
+void PinholeCameraWithRadialDistortion::getPartialDerivativesI(double *derivs, const Eigen::Vector3d & r_cam) const {
+
+    double x_cam = r_cam[0];
+    double y_cam = r_cam[1];
+    double z_cam = r_cam[2];
+
+    // Get the ideal (undistorted) image coordinates
+    double i, j;
+    PinholeCamera::projectVector(r_cam, i, j);
+
+    // Distance of the undistorted point from the distortion (projection) centre;
+    // determines the magnitude of the radial distortion
+    double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
+
+    // NOTE that dR/dpi = 0.0 and dR/dpj = 0.0 due to dependence of i/j on pi/pj which cancel out
+    double dR_dfi = fi * (x_cam/z_cam) * (x_cam/z_cam) / R;
+    double dR_dfj = fj * (y_cam/z_cam) * (y_cam/z_cam) / R;
+
+    // Magnitude of the radial distortion
+    double CR = getForwardRadialDistortionFactor(R);
+
+    // Partial derivatives of radial distortion factor
+    // CR = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
+    // Derivatives wrt fi,fj
+    double dcr_dfi = K1*dR_dfi + 2*K2*R*dR_dfi* + 3*K3*R*R*dR_dfi + 4*K4*R*R*R*dR_dfi;
+    double dcr_dfj = K1*dR_dfj + 2*K2*R*dR_dfj* + 3*K3*R*R*dR_dfj + 4*K4*R*R*R*dR_dfj;
+    // Derivatives wrt pi,pj are zero due to dR/dpi and dR/dpj = 0.0
+    // Derivatives wrt K0->K4
+    double dcr_dK0 = 1.0;
+    double dcr_dK1 = R;
+    double dcr_dK2 = R*R;
+    double dcr_dK3 = R*R*R;
+    double dcr_dK4 = R*R*R*R;
+
+    // i = fi * (x_cam/z_cam) + pi
+    // i' = (i - pi) * C(R) + pi = fi * (x_cam/z_cam) * C(R) + pi
+
+    // di'/dfi = [x_cam / z_cam] * C(R) + fi * [x_cam / z_cam] * dCR/dfi
+    derivs[0] = (x_cam/z_cam) * CR + fi * (x_cam/z_cam) * dcr_dfi;
+
+    // di'/dfj = fi * [x_cam / z_cam] * dCR/dfj
+    derivs[1] = fi * (x_cam/z_cam) * dcr_dfj;
+
+    // di'/dpi = 1.0 (note that dC(R)/dpi = 0.0)
+    derivs[2] = 1.0;
+
+    // di'/dpj = 0.0 (note that dC(R)/dpj = 0.0)
+    derivs[3] = 0.0;
+
+    // di'/dK0 = [x_cam / z_cam] * fi * dC(R)/dK0
+    derivs[4] = (x_cam/z_cam) * fi * dcr_dK0;
+
+    // di'/dK1 = [x_cam / z_cam] * fi * dC(R)/dK1
+    derivs[5] = (x_cam/z_cam) * fi * dcr_dK1;
+
+    // di'/dK2 = [x_cam / z_cam] * fi * dC(R)/dK2
+    derivs[6] = (x_cam/z_cam) * fi * dcr_dK2;
+
+    // di'/dK3 = [x_cam / z_cam] * fi * dC(R)/dK3
+    derivs[7] = (x_cam/z_cam) * fi * dcr_dK3;
+
+    // di'/dK4 = [x_cam / z_cam] * fi * dC(R)/dK4
+    derivs[8] = (x_cam/z_cam) * fi * dcr_dK4;
+}
+
+void PinholeCameraWithRadialDistortion::getPartialDerivativesJ(double * derivs, const Eigen::Vector3d & r_cam) const {
+
+    double x_cam = r_cam[0];
+    double y_cam = r_cam[1];
+    double z_cam = r_cam[2];
+
+    // Get the ideal (undistorted) image coordinates
+    double i, j;
+    PinholeCamera::projectVector(r_cam, i, j);
+
+    // Distance of the undistorted point from the distortion (projection) centre;
+    // determines the magnitude of the radial distortion
+    double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
+
+    // NOTE that dR/dpi = 0.0 and dR/dpj = 0.0 due to dependence of i/j on pi/pj which cancel out
+    double dR_dfi = fi * (x_cam/z_cam) * (x_cam/z_cam) / R;
+    double dR_dfj = fj * (y_cam/z_cam) * (y_cam/z_cam) / R;
+
+    // Magnitude of the radial distortion
+    double CR = getForwardRadialDistortionFactor(R);
+
+    // Partial derivatives of radial distortion factor
+    // CR = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
+    // Derivatives wrt fi,fj
+    double dcr_dfi = K1*dR_dfi + 2*K2*R*dR_dfi* + 3*K3*R*R*dR_dfi + 4*K4*R*R*R*dR_dfi;
+    double dcr_dfj = K1*dR_dfj + 2*K2*R*dR_dfj* + 3*K3*R*R*dR_dfj + 4*K4*R*R*R*dR_dfj;
+    // Derivatives wrt pi,pj are zero due to dR/dpi and dR/dpj = 0.0
+    // Derivatives wrt K0->K4
+    double dcr_dK0 = 1.0;
+    double dcr_dK1 = R;
+    double dcr_dK2 = R*R;
+    double dcr_dK3 = R*R*R;
+    double dcr_dK4 = R*R*R*R;
+
+    // j = fj * (y_cam/z_cam) + pj
+    // j' = (j - pj) * C(R) + pj = fj * (y_cam/z_cam) * C(R) + pj
+    // with R = sqrt((i-pi)^2 + (j-pj)^2)
+
+    // dj'/dfi = fj * [y_cam / z_cam] * dCR/dfi
+    derivs[0] = fj * (y_cam/z_cam) * dcr_dfi;
+
+    // dj'/dfj = [y_cam / z_cam] * C(R) + fj * [y_cam / z_cam] * dCR/dfj
+    derivs[1] = (y_cam/z_cam) * CR + fj * (y_cam/z_cam) * dcr_dfj;
+
+    // dj'/dpi = 0.0 (note that dC(R)/dpi = 0.0)
+    derivs[2] = 0.0;
+
+    // dj'/dpj = 1.0 (note that dC(R)/dpj = 0.0)
+    derivs[3] = 1.0;
+
+    // dj'/dK0 = [y_cam / z_cam] * fj * dC(R)/dK0
+    derivs[4] = (y_cam/z_cam) * fj * dcr_dK0;
+
+    // dj'/dK1 = [y_cam / z_cam] * fj * dC(R)/dK1
+    derivs[5] = (y_cam/z_cam) * fj * dcr_dK1;
+
+    // dj'/dK2 = [y_cam / z_cam] * fj * dC(R)/dK2
+    derivs[6] = (y_cam/z_cam) * fj * dcr_dK2;
+
+    // dj'/dK3 = [y_cam / z_cam] * fj * dC(R)/dK3
+    derivs[7] = (y_cam/z_cam) * fj * dcr_dK3;
+
+    // dj'/dK4 = [y_cam / z_cam] * fj * dC(R)/dK4
+    derivs[8] = (y_cam/z_cam) * fj * dcr_dK4;
+}
+
+void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
+    fi = params[0];
+    fj = params[1];
+    pi = params[2];
+    pj = params[3];
+    K0 = params[4];
+    K1 = params[5];
+    K2 = params[6];
+    K3 = params[7];
+    K4 = params[8];
 }
 
 Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & i, const double & j) const {
@@ -179,10 +330,9 @@ void PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_
     getDistortedPixel(i_ideal, j_ideal, i, j);
 }
 
-double PinholeCameraWithRadialDistortion::getForwardRadialDistortion(const double &R) const {
+double PinholeCameraWithRadialDistortion::getForwardRadialDistortionFactor(const double &R) const {
 
-    // Use mean focal length to normalise quantities and
-    // keep numbers low
+    // Use mean focal length to normalise quantities and keep numbers low
     double f = (fi + fj)/2.0;
 
     // Normalise radial distance and polynomial coefficients
@@ -197,7 +347,7 @@ double PinholeCameraWithRadialDistortion::getForwardRadialDistortion(const doubl
     // Distortion factor: 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
     // Probably more efficient this way, as it avoids computing large
     // powers directly:
-    double CR = (1 + K0n + Rn*(K1n + Rn*(K2n + Rn*(K3n + Rn*K4n))));
+    double CR = 1 + K0n + Rn*(K1n + Rn*(K2n + Rn*(K3n + Rn*K4n)));
 
     // Check on CR.
     // For negative distortion coefficients, CR is less than one. If the
@@ -212,7 +362,7 @@ double PinholeCameraWithRadialDistortion::getForwardRadialDistortion(const doubl
     return CR;
 }
 
-double PinholeCameraWithRadialDistortion::getBackwardRadialDistortion(const double &R_prime, const double &tol) const {
+double PinholeCameraWithRadialDistortion::getBackwardRadialDistortionFactor(const double &R_prime, const double &tol) const {
 
     // Check for no distortion
     if(R_prime==0.0) {
@@ -229,7 +379,7 @@ double PinholeCameraWithRadialDistortion::getBackwardRadialDistortion(const doub
     while(MAX_ITERATIONS-- > 0) {
 
         // Computes 1+K0+K1R+...
-        CR_i = getForwardRadialDistortion(R_i);
+        CR_i = getForwardRadialDistortionFactor(R_i);
         // Update step
         R_ip1 = 0.5*(R_i + R_prime/CR_i);
 
@@ -259,7 +409,7 @@ void PinholeCameraWithRadialDistortion::getDistortedPixel(const double &i, const
     double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
 
     // Computes 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
-    double CR = getForwardRadialDistortion(R);
+    double CR = getForwardRadialDistortionFactor(R);
 
     ip = (i - pi)*CR + pi;
     jp = (j - pj)*CR + pj;
@@ -268,7 +418,7 @@ void PinholeCameraWithRadialDistortion::getDistortedPixel(const double &i, const
 void PinholeCameraWithRadialDistortion::getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const {
     double rp = std::sqrt((ip-pi)*(ip-pi) + (jp-pj)*(jp-pj));
 
-    double Drp = getBackwardRadialDistortion(rp, 0.01);
+    double Drp = getBackwardRadialDistortionFactor(rp, 0.01);
 
     i = (ip - pi)*Drp + pi;
     j = (jp - pj)*Drp + pj;

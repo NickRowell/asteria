@@ -31,12 +31,18 @@ public:
     double pj;
 
     /**
-     * @brief Pinhole camera matrix. This has the form:
-     *
-     *      fi   0   pi
-     * K =   0  fj   pj
-     *       0   0    1
-     *
+     * @brief Pinhole camera matrix.
+     * This has the form:
+     * \f[
+     * K =
+     * \left[
+     * \begin{array}{rrr}
+     * fi &  0 & pi \\
+     *  0 & fj & pj \\
+     *  0 &  0 &  1
+     * \end{array}
+     * \right]
+     * \f]
      * where fi, fj are the focal lengths and (pi,pj) is the coordinate of
      * the principal point. Note that a non-zero skew parameter (row 0, col 1)
      * is not supported.
@@ -44,15 +50,19 @@ public:
     Eigen::Matrix3d k;
 
     /**
-     * @brief Inverse of camera matrix.
+     * @brief Inverse of the pinhole camera matrix.
      */
     Eigen::Matrix3d kInv;
 
+    unsigned int getNumParameters() const;
 
+    void getParameters(double * params) const;
 
-    double * getParameters(unsigned int &);
+    void getPartialDerivativesI(double *derivs, const Eigen::Vector3d & r_cam) const;
 
-    void setParameters(double *);
+    void getPartialDerivativesJ(double * derivs, const Eigen::Vector3d & r_cam) const;
+
+    void setParameters(const double *);
 
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 

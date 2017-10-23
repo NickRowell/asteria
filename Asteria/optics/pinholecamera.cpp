@@ -18,12 +18,44 @@ PinholeCamera::~PinholeCamera() {
 
 }
 
-double * PinholeCamera::getParameters(unsigned int & n) {
-
+unsigned int PinholeCamera::getNumParameters() const {
+    return 4;
 }
 
-void PinholeCamera::setParameters(double * params) {
+void PinholeCamera::getParameters(double *params) const {
+    params[0] = fi;
+    params[1] = fj;
+    params[2] = pi;
+    params[3] = pj;
+}
 
+void PinholeCamera::getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const {
+    // di/dfi
+    derivs[0] = r_cam[0] / r_cam[2];
+    // di/dfj
+    derivs[1] = 0.0;
+    // di/dpi
+    derivs[2] = 1.0;
+    // di/dpj
+    derivs[3] = 0.0;
+}
+
+void PinholeCamera::getPartialDerivativesJ(double *derivs, const Eigen::Vector3d &r_cam) const {
+    // dj/dfi
+    derivs[0] = 0.0;
+    // dj/dfj
+    derivs[1] = r_cam[1] / r_cam[2];
+    // dj/dpi
+    derivs[2] = 0.0;
+    // dj/dpj
+    derivs[3] = 1.0;
+}
+
+void PinholeCamera::setParameters(const double *params) {
+    fi = params[0];
+    fj = params[1];
+    pi = params[2];
+    pj = params[3];
 }
 
 Eigen::Vector3d PinholeCamera::deprojectPixel(const double & i, const double & j) const {
@@ -32,6 +64,7 @@ Eigen::Vector3d PinholeCamera::deprojectPixel(const double & i, const double & j
 
     // Deproject to get the unit vector in the camera 3D frame
     Eigen::Vector3d r_cam = kInv * r_im;
+    r_cam.normalize();
 
     return r_cam;
 }

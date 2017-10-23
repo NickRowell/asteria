@@ -3,6 +3,11 @@
 
 #include <Eigen/Dense>
 
+
+// TODO: implement the get/set parameters methods
+// TODO: add methods to get partial derivatives of image coordinates wrt the parameters
+// TODO: Add functions to read/write the fields of eahc model to/from file
+
 /**
  * The GeometricOpticsModel class provides a base for all models of the camera
  * projective geometry. The main operations required are projecting vectors expressed
@@ -13,13 +18,24 @@ class CameraModelBase {
 
 public:
 
+    /**
+     * @brief Main constructor for the CameraModelBase.
+     * @param width
+     *  Width of the detector [pixels]
+     * @param height
+     *  Height of the detector [pixels]
+     */
     CameraModelBase(const unsigned int &width, const unsigned int &height);
     ~CameraModelBase();
 
     /**
-     * Width and height of the detector [pixels]
+     * Width of the detector [pixels]
      */
     unsigned int width;
+
+    /**
+     * Height of the detector [pixels]
+     */
     unsigned int height;
 
     // Use functions like this to load/save read/write models to file:
@@ -43,34 +59,59 @@ public:
 //        return os;
 //    }
 
-
-
-
-
+    /**
+     * @brief Get the number of free parameters of the camera geometric optics model.
+     * @return
+     *  The number of free parameters of the camera geometric optics model.
+     */
+    virtual unsigned int getNumParameters() const =0;
 
     /**
      * @brief Get the parameters of the geometric optics model.
-     * @param n On exit, this contains the number of
-     * parameters stored in the array pointed to by the returned value.
-     * @return  Pointer to the start of the array of double values containing
-     * the parameters of the geometric optics model.
+     * @param params  Pointer to the start of the array of double values that on exit
+     * will contain the parameters of the geometric optics model. The number of elements
+     * can be found from getNumParameters().
      */
-    virtual double * getParameters(unsigned int & n) =0;
+    virtual void getParameters(double * params) const =0;
+
+    /**
+     * @brief Get the partial derivatives of the i coordinate with respect to each of
+     * the free parameters.
+     * @param derivs
+     *  Pointer to the start of the array of double values that on exit will contain the partial
+     * derivatives of the parameters of the i coordinate with respect to the parameters
+     * of the geometric optics model. The number of elements can be found from getNumParameters().
+     * @param r_cam
+     *  Camera frame position vector of the point being projected into the image.
+     */
+    virtual void getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const =0;
+
+    /**
+     * @brief Get the partial derivatives of the j coordinate with respect to each of
+     * the free parameters.
+     * @param derivs
+     *  Pointer to the start of the array of double values that on exit will contain the partial
+     * derivatives of the parameters of the j coordinate with respect to the parameters
+     * of the geometric optics model. The number of elements can be found from getNumParameters().
+     * @param r_cam
+     *  Camera frame position vector of the point being projected into the image.
+     */
+    virtual void getPartialDerivativesJ(double * derivs, const Eigen::Vector3d & r_cam) const =0;
 
     /**
      * @brief Set the parameters of the geometric optics model.
      * @param params Pointer to the start of the array of double values containing
      * the parameters of the geometric optics model.
      */
-    virtual void setParameters(double * params) =0;
+    virtual void setParameters(const double * params) =0;
 
 	/**
      * @brief Get the unit vector towards a given detector pixel coordinate.
      *
      * @param i
-     *  i coordinate of pixel in distorted image [pixels]
+     *  i coordinate of pixel in image [pixels]
      * @param j
-     *  j coordinate of pixel in distorted image [pixels]
+     *  j coordinate of pixel in image [pixels]
      * @return
      *  Camera frame unit vector towards the pixel.
 	 */
