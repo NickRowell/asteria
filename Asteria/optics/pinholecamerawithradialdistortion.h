@@ -64,9 +64,9 @@ public:
 
     void getParameters(double *params) const;
 
-    void getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const;
+    void getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const;
 
-    void getPartialDerivativesJ(double *derivs, const Eigen::Vector3d & r_cam) const;
+    void getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Matrix3d &r_sez_cam) const;
 
     void setParameters(const double *);
 

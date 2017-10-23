@@ -167,7 +167,7 @@ void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
     params[8] = K4;
 }
 
-void PinholeCameraWithRadialDistortion::getPartialDerivativesI(double *derivs, const Eigen::Vector3d & r_cam) const {
+void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_cam) const {
 
     double x_cam = r_cam[0];
     double y_cam = r_cam[1];
@@ -203,40 +203,65 @@ void PinholeCameraWithRadialDistortion::getPartialDerivativesI(double *derivs, c
 
     // i = fi * (x_cam/z_cam) + pi
     // i' = (i - pi) * C(R) + pi = fi * (x_cam/z_cam) * C(R) + pi
+    // j = fj * (y_cam/z_cam) + pj
+    // j' = (j - pj) * C(R) + pj = fj * (y_cam/z_cam) * C(R) + pj
+    // with R = sqrt((i-pi)^2 + (j-pj)^2)
 
     // di'/dfi = [x_cam / z_cam] * C(R) + fi * [x_cam / z_cam] * dCR/dfi
     derivs[0] = (x_cam/z_cam) * CR + fi * (x_cam/z_cam) * dcr_dfi;
+    // dj'/dfi = fj * [y_cam / z_cam] * dCR/dfi
+    derivs[1] = fj * (y_cam/z_cam) * dcr_dfi;
 
     // di'/dfj = fi * [x_cam / z_cam] * dCR/dfj
-    derivs[1] = fi * (x_cam/z_cam) * dcr_dfj;
+    derivs[2] = fi * (x_cam/z_cam) * dcr_dfj;
+    // dj'/dfj = [y_cam / z_cam] * C(R) + fj * [y_cam / z_cam] * dCR/dfj
+    derivs[3] = (y_cam/z_cam) * CR + fj * (y_cam/z_cam) * dcr_dfj;
 
     // di'/dpi = 1.0 (note that dC(R)/dpi = 0.0)
-    derivs[2] = 1.0;
+    derivs[4] = 1.0;
+    // dj'/dpi = 0.0 (note that dC(R)/dpi = 0.0)
+    derivs[5] = 0.0;
 
     // di'/dpj = 0.0 (note that dC(R)/dpj = 0.0)
-    derivs[3] = 0.0;
+    derivs[6] = 0.0;
+    // dj'/dpj = 1.0 (note that dC(R)/dpj = 0.0)
+    derivs[7] = 1.0;
 
     // di'/dK0 = [x_cam / z_cam] * fi * dC(R)/dK0
-    derivs[4] = (x_cam/z_cam) * fi * dcr_dK0;
+    derivs[8] = (x_cam/z_cam) * fi * dcr_dK0;
+    // dj'/dK0 = [y_cam / z_cam] * fj * dC(R)/dK0
+    derivs[9] = (y_cam/z_cam) * fj * dcr_dK0;
 
     // di'/dK1 = [x_cam / z_cam] * fi * dC(R)/dK1
-    derivs[5] = (x_cam/z_cam) * fi * dcr_dK1;
+    derivs[10] = (x_cam/z_cam) * fi * dcr_dK1;
+    // dj'/dK1 = [y_cam / z_cam] * fj * dC(R)/dK1
+    derivs[11] = (y_cam/z_cam) * fj * dcr_dK1;
 
     // di'/dK2 = [x_cam / z_cam] * fi * dC(R)/dK2
-    derivs[6] = (x_cam/z_cam) * fi * dcr_dK2;
+    derivs[12] = (x_cam/z_cam) * fi * dcr_dK2;
+    // dj'/dK2 = [y_cam / z_cam] * fj * dC(R)/dK2
+    derivs[13] = (y_cam/z_cam) * fj * dcr_dK2;
 
     // di'/dK3 = [x_cam / z_cam] * fi * dC(R)/dK3
-    derivs[7] = (x_cam/z_cam) * fi * dcr_dK3;
+    derivs[14] = (x_cam/z_cam) * fi * dcr_dK3;
+    // dj'/dK3 = [y_cam / z_cam] * fj * dC(R)/dK3
+    derivs[15] = (y_cam/z_cam) * fj * dcr_dK3;
 
     // di'/dK4 = [x_cam / z_cam] * fi * dC(R)/dK4
-    derivs[8] = (x_cam/z_cam) * fi * dcr_dK4;
+    derivs[16] = (x_cam/z_cam) * fi * dcr_dK4;
+    // dj'/dK4 = [y_cam / z_cam] * fj * dC(R)/dK4
+    derivs[17] = (y_cam/z_cam) * fj * dcr_dK4;
 }
 
-void PinholeCameraWithRadialDistortion::getPartialDerivativesJ(double * derivs, const Eigen::Vector3d & r_cam) const {
+void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam) const {
 
-    double x_cam = r_cam[0];
-    double y_cam = r_cam[1];
-    double z_cam = r_cam[2];
+    // The derivatives are the same as those for the pinhole camera, but multiplied by the forward radial distortion factor
+    PinholeCamera::getExtrinsicPartialDerivatives(derivs, r_sez, r_sez_cam);
+
+    // Now compute the forward radial distortion factor...
+
+    // Get the position vector in the camera frame
+    Eigen::Vector3d r_cam = r_sez_cam * r_sez;
 
     // Get the ideal (undistorted) image coordinates
     double i, j;
@@ -246,56 +271,18 @@ void PinholeCameraWithRadialDistortion::getPartialDerivativesJ(double * derivs, 
     // determines the magnitude of the radial distortion
     double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
 
-    // NOTE that dR/dpi = 0.0 and dR/dpj = 0.0 due to dependence of i/j on pi/pj which cancel out
-    double dR_dfi = fi * (x_cam/z_cam) * (x_cam/z_cam) / R;
-    double dR_dfj = fj * (y_cam/z_cam) * (y_cam/z_cam) / R;
-
     // Magnitude of the radial distortion
     double CR = getForwardRadialDistortionFactor(R);
 
-    // Partial derivatives of radial distortion factor
-    // CR = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
-    // Derivatives wrt fi,fj
-    double dcr_dfi = K1*dR_dfi + 2*K2*R*dR_dfi* + 3*K3*R*R*dR_dfi + 4*K4*R*R*R*dR_dfi;
-    double dcr_dfj = K1*dR_dfj + 2*K2*R*dR_dfj* + 3*K3*R*R*dR_dfj + 4*K4*R*R*R*dR_dfj;
-    // Derivatives wrt pi,pj are zero due to dR/dpi and dR/dpj = 0.0
-    // Derivatives wrt K0->K4
-    double dcr_dK0 = 1.0;
-    double dcr_dK1 = R;
-    double dcr_dK2 = R*R;
-    double dcr_dK3 = R*R*R;
-    double dcr_dK4 = R*R*R*R;
-
-    // j = fj * (y_cam/z_cam) + pj
-    // j' = (j - pj) * C(R) + pj = fj * (y_cam/z_cam) * C(R) + pj
-    // with R = sqrt((i-pi)^2 + (j-pj)^2)
-
-    // dj'/dfi = fj * [y_cam / z_cam] * dCR/dfi
-    derivs[0] = fj * (y_cam/z_cam) * dcr_dfi;
-
-    // dj'/dfj = [y_cam / z_cam] * C(R) + fj * [y_cam / z_cam] * dCR/dfj
-    derivs[1] = (y_cam/z_cam) * CR + fj * (y_cam/z_cam) * dcr_dfj;
-
-    // dj'/dpi = 0.0 (note that dC(R)/dpi = 0.0)
-    derivs[2] = 0.0;
-
-    // dj'/dpj = 1.0 (note that dC(R)/dpj = 0.0)
-    derivs[3] = 1.0;
-
-    // dj'/dK0 = [y_cam / z_cam] * fj * dC(R)/dK0
-    derivs[4] = (y_cam/z_cam) * fj * dcr_dK0;
-
-    // dj'/dK1 = [y_cam / z_cam] * fj * dC(R)/dK1
-    derivs[5] = (y_cam/z_cam) * fj * dcr_dK1;
-
-    // dj'/dK2 = [y_cam / z_cam] * fj * dC(R)/dK2
-    derivs[6] = (y_cam/z_cam) * fj * dcr_dK2;
-
-    // dj'/dK3 = [y_cam / z_cam] * fj * dC(R)/dK3
-    derivs[7] = (y_cam/z_cam) * fj * dcr_dK3;
-
-    // dj'/dK4 = [y_cam / z_cam] * fj * dC(R)/dK4
-    derivs[8] = (y_cam/z_cam) * fj * dcr_dK4;
+    // Scale the partial derivatives accordingly...
+    derivs[0] *= CR;
+    derivs[1] *= CR;
+    derivs[2] *= CR;
+    derivs[3] *= CR;
+    derivs[4] *= CR;
+    derivs[5] *= CR;
+    derivs[6] *= CR;
+    derivs[7] *= CR;
 }
 
 void PinholeCameraWithRadialDistortion::setParameters(const double *params) {

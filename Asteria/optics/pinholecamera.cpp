@@ -1,5 +1,7 @@
 #include "pinholecamera.h"
 
+#include "util/coordinateutil.h"
+
 PinholeCamera::PinholeCamera(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj) :
    CameraModelBase(width, height), fi(fi), fj(fj), pi(pi), pj(pj) {
 
@@ -29,26 +31,59 @@ void PinholeCamera::getParameters(double *params) const {
     params[3] = pj;
 }
 
-void PinholeCamera::getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const {
+void PinholeCamera::getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
     // di/dfi
     derivs[0] = r_cam[0] / r_cam[2];
-    // di/dfj
+    // dj/dfi
     derivs[1] = 0.0;
+    // di/dfj
+    derivs[2] = 0.0;
+    // dj/dfj
+    derivs[3] = r_cam[1] / r_cam[2];
     // di/dpi
-    derivs[2] = 1.0;
+    derivs[4] = 1.0;
+    // dj/dpi
+    derivs[5] = 0.0;
     // di/dpj
-    derivs[3] = 0.0;
+    derivs[6] = 0.0;
+    // dj/dpj
+    derivs[7] = 1.0;
 }
 
-void PinholeCamera::getPartialDerivativesJ(double *derivs, const Eigen::Vector3d &r_cam) const {
-    // dj/dfi
-    derivs[0] = 0.0;
-    // dj/dfj
-    derivs[1] = r_cam[1] / r_cam[2];
-    // dj/dpi
-    derivs[2] = 0.0;
-    // dj/dpj
-    derivs[3] = 1.0;
+void PinholeCamera::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam) const {
+
+    // Get the position vector in the camera frame
+    Eigen::Vector3d r_cam = r_sez_cam * r_sez;
+    double x_cam = r_cam[0];
+    double y_cam = r_cam[1];
+    double z_cam = r_cam[2];
+
+    // Get the partial derivatives of the position vector elements with respect to the quaternion elements
+    Eigen::Vector3d dr_cam_dq0;
+    Eigen::Vector3d dr_cam_dq1;
+    Eigen::Vector3d dr_cam_dq2;
+    Eigen::Vector3d dr_cam_dq3;
+
+    CoordinateUtil::getSezToCamPartials(r_sez, r_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
+
+    double z_cam2 = z_cam * z_cam;
+
+    // di/dq0
+    derivs[0] = (fi/z_cam2) * (z_cam * dr_cam_dq0[0] - x_cam * dr_cam_dq0[2]);
+    // dj/dq0
+    derivs[1] = (fj/z_cam2) * (z_cam * dr_cam_dq0[1] - y_cam * dr_cam_dq0[2]);
+    // di/dq1
+    derivs[2] = (fi/z_cam2) * (z_cam * dr_cam_dq1[0] - x_cam * dr_cam_dq1[2]);
+    // dj/dq1
+    derivs[3] = (fj/z_cam2) * (z_cam * dr_cam_dq1[1] - y_cam * dr_cam_dq1[2]);
+    // di/dq2
+    derivs[4] = (fi/z_cam2) * (z_cam * dr_cam_dq2[0] - x_cam * dr_cam_dq2[2]);
+    // dj/dq2
+    derivs[5] = (fj/z_cam2) * (z_cam * dr_cam_dq2[1] - y_cam * dr_cam_dq2[2]);
+    // di/dq3
+    derivs[6] = (fi/z_cam2) * (z_cam * dr_cam_dq3[0] - x_cam * dr_cam_dq3[2]);
+    // dj/dq3
+    derivs[7] = (fj/z_cam2) * (z_cam * dr_cam_dq3[1] - y_cam * dr_cam_dq3[2]);
 }
 
 void PinholeCamera::setParameters(const double *params) {

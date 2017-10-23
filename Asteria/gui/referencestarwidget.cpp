@@ -37,10 +37,6 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     // Player response to user moving the slider
     connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
 
-
-
-
-
     refStarMagSliderGroupBox = new QGroupBox(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
     QVBoxLayout *sliderVbox = new QVBoxLayout;
     sliderVbox->addWidget(slider);

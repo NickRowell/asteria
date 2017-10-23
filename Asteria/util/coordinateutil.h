@@ -46,6 +46,9 @@ public:
     static void eastOfSouthToEastOfNorth(double &angle);
 
     static void eastOfNorthToEastOfSouth(double &angle);
+
+    static void getSezToCamPartials(const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam, Eigen::Vector3d &dr_cam_dq0,
+                                    Eigen::Vector3d &dr_cam_dq1, Eigen::Vector3d &dr_cam_dq2, Eigen::Vector3d &dr_cam_dq3);
 };
 
 #endif // COORDINATEUTIL_H

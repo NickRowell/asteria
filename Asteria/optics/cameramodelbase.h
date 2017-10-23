@@ -75,28 +75,32 @@ public:
     virtual void getParameters(double * params) const =0;
 
     /**
-     * @brief Get the partial derivatives of the i coordinate with respect to each of
-     * the free parameters.
+     * @brief Get the partial derivatives of the (i,j) coordinates with respect to each of
+     * the intrinsic parameters of the camera model.
      * @param derivs
      *  Pointer to the start of the array of double values that on exit will contain the partial
-     * derivatives of the parameters of the i coordinate with respect to the parameters
-     * of the geometric optics model. The number of elements can be found from getNumParameters().
+     * derivatives of the (i,j) coordinates with respect to the intrinsic parameters of the geometric
+     * optics model. The number of elements can be found from 2*getNumParameters().
      * @param r_cam
      *  Camera frame position vector of the point being projected into the image.
      */
-    virtual void getPartialDerivativesI(double * derivs, const Eigen::Vector3d & r_cam) const =0;
+    virtual void getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const =0;
 
     /**
-     * @brief Get the partial derivatives of the j coordinate with respect to each of
-     * the free parameters.
+     * @brief Get the partial derivatives of the (i,j) coordinates with respect to each of
+     * the extrinsic parameters of the camera model, being the four quaternion elements that
+     * specify the orientation of the camera in the external frame.
      * @param derivs
      *  Pointer to the start of the array of double values that on exit will contain the partial
-     * derivatives of the parameters of the j coordinate with respect to the parameters
-     * of the geometric optics model. The number of elements can be found from getNumParameters().
-     * @param r_cam
-     *  Camera frame position vector of the point being projected into the image.
+     * derivatives of the (i,j) coordinates with respect to the extrinsic parameters. There are
+     * eight elements, being the derivatives of the (i,j) coordinates with respect to the four
+     * quaternion elements.
+     * @param r_sez
+     *  External frame position vector of the point.
+     * @param r_sez_cam
+     *  The orthonormal matrix that rotates vectors from the external frame to the camera frame.
      */
-    virtual void getPartialDerivativesJ(double * derivs, const Eigen::Vector3d & r_cam) const =0;
+    virtual void getExtrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_sez, const Eigen::Matrix3d & r_sez_cam) const =0;
 
     /**
      * @brief Set the parameters of the geometric optics model.
