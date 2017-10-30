@@ -50,7 +50,7 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     this->setLayout(medianImageLayout);
 }
 
-void ReferenceStarWidget::loadImage(std::shared_ptr<Image> &newImage) {
+void ReferenceStarWidget::loadImage(std::shared_ptr<Imageuc> &newImage) {
     image = newImage;
     update();
 }

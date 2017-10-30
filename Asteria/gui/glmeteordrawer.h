@@ -1,7 +1,7 @@
 #ifndef GLMETEORDRAWER_H
 #define GLMETEORDRAWER_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <memory>           // shared_ptr
 #include <FTGL/ftgl.h>
@@ -106,7 +106,7 @@ protected:
 
 public slots:
 
-    void newFrame(std::shared_ptr<Image> image, bool renderOverlay, bool renderTopField, bool renderBottomField);
+    void newFrame(std::shared_ptr<Imageuc> image, bool renderOverlay, bool renderTopField, bool renderBottomField);
 };
 
 #endif // GLMETEORDRAWER_H

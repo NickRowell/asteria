@@ -30,7 +30,7 @@ QSize GLMeteorDrawer::sizeHint() const {
     return QSize(width, height);
 }
 
-void GLMeteorDrawer::newFrame(std::shared_ptr<Image> image, bool renderOverlay, bool renderTopField, bool renderBottomField) {
+void GLMeteorDrawer::newFrame(std::shared_ptr<Imageuc> image, bool renderOverlay, bool renderTopField, bool renderBottomField) {
 
     // Render the full frame
     if(renderTopField && renderBottomField) {

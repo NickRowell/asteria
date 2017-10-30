@@ -1,7 +1,7 @@
 #ifndef VIDEOPLAYERWIDGET_H
 #define VIDEOPLAYERWIDGET_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 #include "gui/videoplayerthread.h"
 #include "infra/analysisvideostats.h"
 
@@ -99,7 +99,7 @@ public:
 signals:
 
 public slots:
-    void loadClip(std::vector<std::shared_ptr<Image>> images, std::shared_ptr<Image> splash);
+    void loadClip(std::vector<std::shared_ptr<Imageuc>> images, std::shared_ptr<Imageuc> splash);
     void updateVideoStats(const AnalysisVideoStats &stats);
 
 private slots:

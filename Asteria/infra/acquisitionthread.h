@@ -2,7 +2,7 @@
 #define ACQUISITIONTHREAD_H
 
 #include "infra/asteriastate.h"
-#include "infra/image.h"
+#include "infra/imageuc.h"
 #include "infra/ringbuffer.h"
 #include "infra/concurrentqueue.h"
 #include "infra/acquisitionvideostats.h"
@@ -39,7 +39,7 @@ public:
     static const std::string actionNames[];
 
 signals:
-    void acquiredImage(std::shared_ptr<Image>, bool renderOverlay, bool renderTopField, bool renderBottomField);
+    void acquiredImage(std::shared_ptr<Imageuc>, bool renderOverlay, bool renderTopField, bool renderBottomField);
     void videoStats(const AcquisitionVideoStats &);
     void acquiredClip(std::string utc);
     void acquiredCalibration(std::string utc);
@@ -115,19 +115,19 @@ private:
      * Used to buffer the acquired frames so that we have some footage from before an event.
      * This is the 'detection head' footage.
      */
-    RingBuffer<std::shared_ptr<Image>> detectionHeadBuffer;
+    RingBuffer<std::shared_ptr<Imageuc>> detectionHeadBuffer;
 
     /**
      * @brief eventFrames
      * Buffer to store the detection and 'detection tail' footage
      */
-    std::vector<std::shared_ptr<Image>> eventFrames;
+    std::vector<std::shared_ptr<Imageuc>> eventFrames;
 
     /**
      * @brief calibrationFrames
      * Buffer to store the calibration footage
      */
-    std::vector<std::shared_ptr<Image>> calibrationFrames;
+    std::vector<std::shared_ptr<Imageuc>> calibrationFrames;
 
     /**
      * @brief state

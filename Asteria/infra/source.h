@@ -4,8 +4,7 @@
 #include <vector>
 
 /**
- * @brief The Source class
- * Represents a source extracted from an image.
+ * @brief Represents a source extracted from an image.
  */
 class Source
 {
@@ -13,8 +12,7 @@ public:
     Source();
 
     /**
-     * @brief pixels
-     * Contains the indices of the pixels assigned to this source
+     * @brief Contains the indices of the pixels assigned to this source.
      */
     std::vector<unsigned int> pixels;
 
@@ -44,7 +42,7 @@ public:
     double l1, l2;
 
     /**
-     * @brief Orientation of the flux-weighted sample dispersion matrix [rads]. This is the angle
+     * @brief Orientation of the flux-weighted sample dispersion matrix [radians]. This is the angle
      * between the major axis of the dispersion matrix and the X axis of the image.
      */
     double orientation;

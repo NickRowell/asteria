@@ -95,7 +95,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
     connect(slider, SIGNAL(sliderMoved(int)), replayThread, SLOT(queueFrameIndex(int)));
 
     // Display image when one is queued
-    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Image>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Image>, bool, bool, bool)));
+    connect(replayThread, SIGNAL(queueNewFrame(std::shared_ptr<Imageuc>, bool, bool, bool)), display, SLOT(newFrame(std::shared_ptr<Imageuc>, bool, bool, bool)));
     connect(replayThread, SIGNAL (videoStats(const AnalysisVideoStats &)), this, SLOT (updateVideoStats(const AnalysisVideoStats &)));
 
     // Arrange layout
@@ -118,7 +118,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent, const unsigned int &width,
 }
 
 
-void VideoPlayerWidget::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
+void VideoPlayerWidget::loadClip(std::vector<std::shared_ptr<Imageuc> > images, std::shared_ptr<Imageuc> splash) {
 
     // Set the range of the slider according to how many frames we have
     slider->setRange(0, images.size()-1);

@@ -2,7 +2,7 @@
 #define CALIBRATIONWORKER_H
 
 #include "infra/asteriastate.h"
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <linux/videodev2.h>
 #include <vector>               // vector
@@ -15,7 +15,7 @@ class CalibrationWorker : public QObject
     Q_OBJECT
 
 public:
-    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Image>> calibrationFrames = std::vector<std::shared_ptr<Image>>());
+    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~CalibrationWorker();
 
 public slots:
@@ -30,7 +30,7 @@ private:
 
     AsteriaState * state;
 
-    std::vector<std::shared_ptr<Image>> calibrationFrames;
+    std::vector<std::shared_ptr<Imageuc>> calibrationFrames;
 };
 
 #endif // ANALYSISWORKER_H

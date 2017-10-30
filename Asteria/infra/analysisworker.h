@@ -2,7 +2,7 @@
 #define ANALYSISWORKER_H
 
 #include "infra/asteriastate.h"
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <linux/videodev2.h>
 #include <vector>               // vector
@@ -15,7 +15,7 @@ class AnalysisWorker : public QObject
     Q_OBJECT
 
 public:
-    AnalysisWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Image>> eventFrames = std::vector<std::shared_ptr<Image>>());
+    AnalysisWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Imageuc>> eventFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~AnalysisWorker();
 
 public slots:
@@ -30,7 +30,7 @@ private:
 
     AsteriaState * state;
 
-    std::vector<std::shared_ptr<Image>> eventFrames;
+    std::vector<std::shared_ptr<Imageuc>> eventFrames;
 };
 
 #endif // ANALYSISWORKER_H

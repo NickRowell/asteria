@@ -6,6 +6,9 @@
 #include "util/renderutil.h"
 #include "util/coordinateutil.h"
 #include "util/mathutil.h"
+#include "infra/calibrationinventory.h"
+
+#include "infra/image.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -21,7 +24,7 @@
 #include <QGridLayout>
 #include <QThread>
 
-CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Image>> calibrationFrames)
+CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Imageuc>> calibrationFrames)
     : QObject(parent), state(state), calibrationFrames(calibrationFrames) {
 
 }
@@ -39,6 +42,10 @@ void CalibrationWorker::process() {
 
     fprintf(stderr, "Got %lu frames for calibration\n", calibrationFrames.size());
 
+    // The calibration data is assigned to fields of the CalibrationInventory for storage
+    CalibrationInventory calInv;
+    calInv.epochTimeUs = calibrationFrames.front()->epochTimeUs;
+
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
     unsigned int field = calibrationFrames.front()->field;
 
@@ -47,7 +54,7 @@ void CalibrationWorker::process() {
 
     for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
 
-        Image &image = *calibrationFrames[i];
+        Imageuc &image = *calibrationFrames[i];
 
         // Accumulate pixel values
         for(unsigned int k=0; k<image.height; k++) {
@@ -127,24 +134,24 @@ void CalibrationWorker::process() {
     }
 
     // Construct an image of the noise level in each pixel to detect fixed pattern noise etc
-    std::vector<unsigned char> stdVals;
+    std::vector<double> stdVals;
     for(unsigned int i=0; i<state->width*state->height; i++) {
         double std = std::sqrt(varianceVals[i]);
-        unsigned char pixel = (unsigned char)floor(std);
-        stdVals.push_back(pixel);
+        stdVals.push_back(std);
     }
-    Image noise(state->width, state->height);
-    noise.field = field;
-    noise.epochTimeUs = midTimeStamp;
-    noise.rawImage = stdVals;
 
-    Image median(state->width, state->height);
-    median.field = field;
-    median.epochTimeUs = midTimeStamp;
-    median.rawImage = medianVals;
+//    std::shared_ptr<Image<double>> noise = make_shared<Image<double>>(state->width, state->height);
+//    noise->field = field;
+//    noise->epochTimeUs = midTimeStamp;
+//    noise->rawImage = stdVals;
+
+    std::shared_ptr<Imageuc> median = make_shared<Imageuc>(state->width, state->height);
+    median->field = field;
+    median->epochTimeUs = midTimeStamp;
+    median->rawImage = medianVals;
 
     // Measure the background image from the median
-    Image background(state->width, state->height);
+    std::shared_ptr<Imageuc> background = make_shared<Imageuc>(state->width, state->height);
     // Algorithm for background calculation: each pixel is the median value of the pixels surrounding it in
     // a window of some particular width.
     // Sliding window extends out to this many pixels on each side of the central pixel
@@ -183,49 +190,32 @@ void CalibrationWorker::process() {
                 med = pixels[pixels.size()/2];
             }
             unsigned int pixIdx = k*state->width + l;
-            background.rawImage[pixIdx] = med;
+            background->rawImage[pixIdx] = med;
         }
     }
 
-    // Extract sources from the median image
-    std::vector<Source> sources = SourceDetector::getSources(median.rawImage, background.rawImage, noise.rawImage,
-                                                             state->width, state->height, state->source_detection_threshold_sigmas);
+    // Set these images to the fields in the CalibrationInventory
+    calInv.medianImage = median;
+//    calInv.noiseImage = noise;
+    calInv.backgroundImage = background;
 
-    // Create an image of the extracted sources
-    std::vector<unsigned int> sourcesImage(state->width*state->height, 0);
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //                Extract observed sources               //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    for(unsigned int s=0; s<sources.size(); s++) {
-
-        Source source = sources[s];
-
-        // Get a random colour for this source
-        unsigned char red = (unsigned char) rand();
-        unsigned char green = (unsigned char) rand();
-        unsigned char blue = (unsigned char) rand();
-
-        unsigned int rgb;
-        RenderUtil::encodeRgb(red, green, blue, rgb);
-
-        // Loop over the pixels assigned to this source
-        for(unsigned int p=0; p<source.pixels.size(); p++) {
-            // Index of the pixel that's part of the current source
-            unsigned int pixel = source.pixels[p];
-            // Insert colour for this pixels
-            sourcesImage[pixel] = rgb;
-        }
-
-        // Invert the colour
-        unsigned int negColour = 0xFFFFFFFF;
-
-        // Now draw a cross on the centroid and an ellipse to represent the dispersion matrix
-        RenderUtil::drawEllipse(sourcesImage, state->width, state->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
-    }
+//    calInv.sources = SourceDetector::getSources(median->rawImage, background->rawImage, noise->rawImage,
+//                                                             state->width, state->height, state->source_detection_threshold_sigmas);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //       Project the reference stars into the image      //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // TODO: need an initial guess of the geometric calibration
+
 
     // Get the transformation from BCRF to IM
 
@@ -274,11 +264,25 @@ void CalibrationWorker::process() {
 
     }
 
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //    Cross-match reference stars and observed sources   //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // TODO: allow these to be specified manually somehow; maybe a field of the constructor can be non-null?
+
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //           Compute the geometric calibration           //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
 
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
-    double readNoiseAdu = 5.0;
+    calInv.readNoiseAdu = 5.0;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -288,7 +292,7 @@ void CalibrationWorker::process() {
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
-    std::string utc = TimeUtil::epochToUtcString(calibrationFrames[0u]->epochTimeUs);
+    std::string utc = TimeUtil::epochToUtcString(calibrationFrames.front()->epochTimeUs);
     std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
     std::string mm = TimeUtil::extractMonthFromUtcString(utc);
     std::string dd = TimeUtil::extractDayFromUtcString(utc);
@@ -305,145 +309,7 @@ void CalibrationWorker::process() {
         return;
     }
 
-    //
-    // TEMP: save sources image to file
-    //
-    char sourcesFilename [100];
-    sprintf(sourcesFilename, "%s/sources.ppm", path.c_str());
-    std::ofstream output(sourcesFilename);
-    output << "P6\n";
-    // Write the data section
-    output << state->width << " " << state->height << " 255\n";
-    // Write raster
-    for(unsigned int pix : sourcesImage) {
-        unsigned char r, g, b;
-        RenderUtil::decodeRgb(r, g, b, pix);
-
-        output << r;
-        output << g;
-        output << b;
-    }
-    output.close();
-    //
-    //
-    //
-
-    // Save calibration data to text file
-    char calibrationDataFilename [100];
-    sprintf(calibrationDataFilename, "%s/calibration.dat", path.c_str());
-    std::ofstream out1(calibrationDataFilename);
-    out1 << "# \n";
-    out1 << "# read_noise=" << readNoiseAdu << "\n";
-    out1 << "# Camera.azimuth=" << state->azimuth << "\n";
-    out1 << "# Camera.elevation=" << state->elevation << "\n";
-    out1 << "# Camera.roll=" << state->roll << "\n";
-    out1.close();
-
-    char rnPlotfilename [100];
-    sprintf(rnPlotfilename, "%s/readnoise.png", path.c_str());
-
-    std::stringstream ss;
-
-    // This script produces a histogram of the deviations:
-//    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
-//    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
-//    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
-//    ss << "set style fill transparent solid 0.5 noborder\n";
-//    ss << "set boxwidth 0.95 relative\n";
-//    ss << "set xlabel \"Deviation from median [ADU]\" font \"Helvetica,14\"\n";
-//    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mxtics 2\n";
-//    ss << "set xrange [-10:10]\n";
-//    ss << "set format x \"%g\"\n";
-//    ss << "set ylabel \"Frequency [-]\" font \"Helvetica,14\"\n";
-//    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mytics 2\n";
-//    ss << "set yrange [*:*]\n";
-//    ss << "set format y \"%g\"\n";
-//    ss << "set key off\n";
-//    ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
-//    ss << "set title \"Readnoise estimate\"\n";
-//    ss << "set output \"" << rnPlotfilename << "\"\n";
-//    ss << "plot \"-\" w boxes notitle\n";
-//    for(int i=0; i<512; i++) {
-//        ss << (i-256) << " " << histogramOfDeviations[i] << "\n";
-//    }
-//    ss << "e\n";
-
-    // This script produces a plot of scatter versus signal level
-    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
-    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
-    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
-    ss << "set xlabel \"Signal [ADU]\" font \"Helvetica,14\"\n";
-    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-    ss << "set mxtics 2\n";
-    ss << "set xrange [*:*]\n";
-    ss << "set format x \"%g\"\n";
-    ss << "set ylabel \"σ^{2} [ADU^{2}]\" font \"Helvetica,14\"\n";
-    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-    ss << "set mytics 2\n";
-    ss << "set yrange [0:*]\n";
-    ss << "set format y \"%g\"\n";
-    ss << "set key off\n";
-    ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
-    ss << "set title \"Readnoise estimate\"\n";
-    ss << "set output \"" << rnPlotfilename << "\"\n";
-    ss << "plot \"-\" w d notitle\n";
-    for(unsigned int i=0; i<state->width*state->height; i++) {
-        char buffer[80] = "";
-//        sprintf(buffer, "%d\t%d\n", medianVals[i], madVals[i]);
-        sprintf(buffer, "%f\t%f\n", meanVals[i], varianceVals[i]);
-        ss << buffer;
-    }
-    ss << "e\n";
-
-    // Get the path to a temporary file
-    std::string tmpFileName = std::tmpnam(nullptr);
-    std::ofstream ofs (tmpFileName, std::ofstream::out);
-    ofs << ss.str();
-    ofs.close();
-
-    char command [100];
-    sprintf(command, "gnuplot < %s", tmpFileName.c_str());
-    system(command);
-
-    char filename [100];
-    string utcFrame = TimeUtil::epochToUtcString(calibrationFrames[0]->epochTimeUs);
-
-    // Write out the median image
-    sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << median;
-        out.close();
-    }
-
-    // Write out the background image
-    sprintf(filename, "%s/background_%s.pgm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << background;
-        out.close();
-    }
-
-    // Write out the variance image
-    sprintf(filename, "%s/noise_%s.pgm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << noise;
-        out.close();
-    }
-
-    // Write out the raw calibration frames
-    for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
-        Image &image = *calibrationFrames[i];
-        char filename [100];
-        string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
-        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
-        std::ofstream out(filename);
-        out << image;
-        out.close();
-    }
+    calInv.saveToDir(path);
 
     // All done - emit signal
     emit finished(utc);

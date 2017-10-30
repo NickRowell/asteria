@@ -25,6 +25,8 @@ public:
     static bool createDir(std::string parent, std::string child);
 
     static bool createDirs(std::string topLevel, std::vector<std::string> subLevels);
+
+    static bool fileExists(std::string path);
 };
 
 #endif	/* GLUTILS_H */

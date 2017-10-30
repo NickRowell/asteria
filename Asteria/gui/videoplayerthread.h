@@ -1,7 +1,7 @@
 #ifndef REPLAYVIDEOTHREAD_H
 #define REPLAYVIDEOTHREAD_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 #include "infra/analysisvideostats.h"
 
 #include <memory>
@@ -26,12 +26,12 @@ public:
     /**
      * @brief The clip we're playing, stored as a sorted vector of shared_ptrs to Images.
      */
-    std::vector<std::shared_ptr<Image>> frames;
+    std::vector<std::shared_ptr<Imageuc>> frames;
 
     /**
      * @brief Image to display before the clip starts and whenever it stops.
      */
-    std::shared_ptr<Image> splash;
+    std::shared_ptr<Imageuc> splash;
 
     /**
      * @brief The total length of the clip [secs]
@@ -86,7 +86,7 @@ public:
 protected:
     void run() Q_DECL_OVERRIDE;
 
-    void processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField);
+    void processFrame(unsigned int fIdx, std::shared_ptr<Imageuc> image, bool isTopField, bool isBottomField);
 
 public slots:
     /**
@@ -96,7 +96,7 @@ public slots:
      * @param splash
      *      The splash image, i.e. the image to display when the clip is stopped.
      */
-    void loadClip(std::vector<std::shared_ptr<Image>> images, std::shared_ptr<Image> splash);
+    void loadClip(std::vector<std::shared_ptr<Imageuc>> images, std::shared_ptr<Imageuc> splash);
 
     /**
      * @brief Toggle the de-interlaced stepping flag.
@@ -128,7 +128,7 @@ public slots:
 
 signals:
     void videoStats(const AnalysisVideoStats &);
-    void queueNewFrame(std::shared_ptr<Image> image, bool, bool, bool);
+    void queueNewFrame(std::shared_ptr<Imageuc> image, bool, bool, bool);
     void queuedFrameIndex(int fIdx);
 };
 

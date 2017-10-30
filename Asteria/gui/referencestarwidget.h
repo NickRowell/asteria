@@ -1,7 +1,7 @@
 #ifndef REFERENCESTARWIDGET_H
 #define REFERENCESTARWIDGET_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <QWidget>
 #include <QMouseEvent>
@@ -30,7 +30,7 @@ public:
     /**
      * @brief The image currently being displayed.
      */
-    std::shared_ptr<Image> image;
+    std::shared_ptr<Imageuc> image;
 
     /**
      * @brief Image viewer for the median image.
@@ -94,7 +94,7 @@ public slots:
 
     void slide(double position);
 
-    void loadImage(std::shared_ptr<Image> &newImage);
+    void loadImage(std::shared_ptr<Imageuc> &newImage);
 
     void update();
 

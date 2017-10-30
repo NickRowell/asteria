@@ -3,7 +3,7 @@
 
 #define RECALIBRATE
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <QWidget>
 

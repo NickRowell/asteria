@@ -1,6 +1,7 @@
 #include "infra/acquisitionthread.h"
 #include "infra/analysisworker.h"
 #include "infra/calibrationworker.h"
+#include "infra/meteorimagelocationmeasurement.h"
 #include "util/jpgutil.h"
 #include "util/timeutil.h"
 #include "util/ioutil.h"
@@ -531,7 +532,7 @@ void AcquisitionThread::run() {
 
 
 
-        std::shared_ptr<Image> image = make_shared<Image>(state->width, state->height);
+        std::shared_ptr<Imageuc> image = make_shared<Imageuc>(state->width, state->height);
         image->epochTimeUs = epochTimeStamp_us;
         image->field = format->fmt.pix.field;
 
@@ -591,7 +592,7 @@ void AcquisitionThread::run() {
         }
 
         // Retrieve the previous image...
-        std::shared_ptr<Image> prev = detectionHeadBuffer.back();
+        std::shared_ptr<Imageuc> prev = detectionHeadBuffer.back();
         // ...then add the current image to the buffer.
         detectionHeadBuffer.push(image);
 
@@ -605,6 +606,8 @@ void AcquisitionThread::run() {
         // Any other state - DETECTING, RECORDING, CALIBRATING - we now check for event
         // occurrence between the current frame and the previous one.
         bool event = false;
+
+        MeteorImageLocationMeasurement loc;
 
         if(prev) {
 
@@ -620,10 +623,10 @@ void AcquisitionThread::run() {
                 if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
                     if(newPixel - oldPixel > 0) {
-                        image->changedPixelsPositive.push_back(p);
+                        loc.changedPixelsPositive.push_back(p);
                     }
                     else {
-                        image->changedPixelsNegative.push_back(p);
+                        loc.changedPixelsNegative.push_back(p);
                     }
                 }
             }
@@ -644,7 +647,7 @@ void AcquisitionThread::run() {
             if(event) {
                 transitionToState(RECORDING);
                 // Copy the detection head buffer contents to the event frames buffer
-                std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
+                std::vector<std::shared_ptr<Imageuc>> detectionHeadFrames = detectionHeadBuffer.unroll();
                 eventFrames.insert(eventFrames.end(), detectionHeadFrames.begin(), detectionHeadFrames.end());
             }
 
@@ -700,7 +703,7 @@ void AcquisitionThread::run() {
                 // Transition to RECORDING to capture the event
                 transitionToState(RECORDING);
                 // Copy the detection head buffer contents to the event frames buffer
-                std::vector<std::shared_ptr<Image>> detectionHeadFrames = detectionHeadBuffer.unroll();
+                std::vector<std::shared_ptr<Imageuc>> detectionHeadFrames = detectionHeadBuffer.unroll();
                 eventFrames.insert(eventFrames.end(), detectionHeadFrames.begin(), detectionHeadFrames.end());
             }
             else {
@@ -732,7 +735,7 @@ void AcquisitionThread::run() {
         }
 
         if(!state->headless && showOverlayImage) {
-            image->generateAnnotatedImage();
+            image->generateAnnotatedImage(loc);
         }
 
         // Notify attached listeners that a new frame is available

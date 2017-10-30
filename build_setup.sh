@@ -45,7 +45,7 @@ sudo apt-get install doxygen
 sudo apt-get install freeglut3 freeglut3-dev
 # JPEG libs for decompressing JPEG images from webcams
 sudo apt-get install libjpeg-dev
-# FTGL and Freetype for improved text rendering in OpenGL:
+# FTGL and Freetype for improved text rendering in OpenGL (this may no longer be used):
 sudo apt-get install ftgl-dev libfreetype6-dev libfreetype6
 
 # Gnuplot is used for plotting
@@ -57,6 +57,15 @@ sudo apt-get install gnuplot
 # INCLUDEPATH += /usr/include/eigen3/
 sudo apt-get install libeigen3-dev
 sudo apt-get install libeigen3-doc
+
+# Use the Boost C++ libraries for certain things (e.g. serialisation)
+sudo apt-get install libboost-all-dev
+# NOTE: Either install using the command above, or download the packages and unpack manually using:
+# $ cd <boost root>
+# $ ./bootstrap
+# $ .b2 install
+# Then, add the following line to the .pro file (boost unpacked in /opt/boost/):
+# INCLUDEPATH += /opt/boost/boost_1_65_1/
 
 # Other useful stuff:
 sudo apt-get install v4l-utils

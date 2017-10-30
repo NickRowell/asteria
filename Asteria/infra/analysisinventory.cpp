@@ -1,5 +1,6 @@
 #include "infra/analysisinventory.h"
 #include "util/timeutil.h"
+#include "util/fileutil.h"
 
 #include <regex>
 #include <fstream>
@@ -42,7 +43,7 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
             std::string childPath = path + "/" + child->d_name;
             // Load the image from file and store a shared pointer to it in the vector
             std::ifstream input(childPath);
-            auto seq = std::make_shared<Image>();
+            auto seq = std::make_shared<Imageuc>();
             input >> *seq;
             inv->eventFrames.push_back(seq);
             input.close();
@@ -54,23 +55,41 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
             std::string childPath = path + "/" + child->d_name;
             // Load the image from file and store a shared pointer to it in the peakHold variable
             std::ifstream input(childPath);
-            auto peakHoldImage = std::make_shared<Image>();
+            auto peakHoldImage = std::make_shared<Imageuc>();
             input >> *peakHoldImage;
             inv->peakHold = peakHoldImage;
             input.close();
         }
+
     }
     closedir (dir);
 
+    // Load derived data products
+    std::string locationData = path + "/localisation.xml";
+    if(FileUtil::fileExists(locationData)) {
+        std::ifstream ifs(locationData);
+        boost::archive::xml_iarchive ia(ifs, boost::archive::no_header);
+        // write class instance to archive
+        ia & BOOST_SERIALIZATION_NVP(inv->locs);
+        ifs.close();
+    }
+    else {
+        // Initialise empty location data for each frame
+        inv->locs = std::vector<MeteorImageLocationMeasurement>(inv->eventFrames.size(), MeteorImageLocationMeasurement());
+    }
+
     // Sort the image sequence into ascending order of capture time
-    std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Image::comparePtrToImage);
+    std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Imageuc::comparePtrToImage);
+
+    // Sort the location measurements into ascending order of capture time
+    std::sort(inv->locs.begin(), inv->locs.end());
 
     // Generate annnotated images for each raw image, showing analysis of individual frame
     for(unsigned int i=0; i<inv->eventFrames.size(); i++) {
-        inv->eventFrames[i]->generateAnnotatedImage();
+        inv->eventFrames[i]->generateAnnotatedImage(inv->locs[i]);
     }
     // Generate annotated image for the peakHold image, showing analysis of clip
-    inv->peakHold->generatePeakholdAnnotatedImage(inv->eventFrames);
+    inv->peakHold->generatePeakholdAnnotatedImage(inv->eventFrames, inv->locs);
 
     return inv;
 }

@@ -14,7 +14,7 @@ VideoPlayerThread::~VideoPlayerThread() {
     wait();
 }
 
-void VideoPlayerThread::loadClip(std::vector<std::shared_ptr<Image> > images, std::shared_ptr<Image> splash) {
+void VideoPlayerThread::loadClip(std::vector<std::shared_ptr<Imageuc> > images, std::shared_ptr<Imageuc> splash) {
 
     // Stop any current replay
     stop();
@@ -94,7 +94,7 @@ void VideoPlayerThread::queueFrameIndex(int fIdx) {
     idx = fIdx;
 }
 
-void VideoPlayerThread::processFrame(unsigned int fIdx, std::shared_ptr<Image> image, bool isTopField, bool isBottomField) {
+void VideoPlayerThread::processFrame(unsigned int fIdx, std::shared_ptr<Imageuc> image, bool isTopField, bool isBottomField) {
 
     // Compute AnalysisVideoStats
 

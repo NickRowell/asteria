@@ -3,7 +3,7 @@
 
 #define REANALYSE
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 #include "gui/videoplayerthread.h"
 #include "infra/analysisvideostats.h"
 

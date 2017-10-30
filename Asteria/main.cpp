@@ -6,7 +6,7 @@
 #include "gui/treeitem.h"
 #include "config/configstore.h"
 #include "util/v4l2util.h"
-#include "infra/image.h"
+#include "infra/imageuc.h"
 #include "infra/acquisitionthread.h"
 #include "infra/acquisitionvideostats.h"
 #include "infra/analysisvideostats.h"
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
     catchUnixSignals();
 
-    qRegisterMetaType<std::shared_ptr<Image>>("std::shared_ptr<Image>");
+    qRegisterMetaType<std::shared_ptr<Imageuc>>("std::shared_ptr<Imageuc>");
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<TreeItem>("TreeItem");
     qRegisterMetaType<AcquisitionThread::AcquisitionState>("AcquisitionThread::AcquisitionState");

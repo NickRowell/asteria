@@ -1,7 +1,7 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <vector>
 #include <memory>               // shared_ptr

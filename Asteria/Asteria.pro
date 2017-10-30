@@ -18,7 +18,6 @@ SOURCES += \
     config/configstore.cpp \
     gui/configparameterfamilytab.cpp \
     config/parameterdir.cpp \
-    infra/image.cpp \
     config/parameteruint.cpp \
     config/parameteruintarray.cpp \
     util/timeutil.cpp \
@@ -58,7 +57,9 @@ SOURCES += \
     gui/doubleslider.cpp \
     optics/pinholecamera.cpp \
     optics/pinholecamerawithradialdistortion.cpp \
-    optics/cameramodelbase.cpp
+    optics/cameramodelbase.cpp \
+    infra/imageuc.cpp \
+    infra/meteorimagelocationmeasurement.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -75,7 +76,6 @@ HEADERS += \
     config/systemparameters.h \
     config/cameraparameters.h \
     config/parameterdir.h \
-    infra/image.h \
     config/parameteruint.h \
     config/validate.h \
     config/parameteruintarray.h \
@@ -121,15 +121,19 @@ HEADERS += \
     gui/doubleslider.h \
     optics/pinholecamera.h \
     optics/cameramodelbase.h \
-    optics/pinholecamerawithradialdistortion.h
+    optics/pinholecamerawithradialdistortion.h \
+    infra/imageuc.h \
+    infra/image.h \
+    infra/meteorimagelocationmeasurement.h
 
-LIBS += -ljpeg \
-        -lftgl \
-        -lfreetype \
-        -lGLU
+# Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
+LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization
+LIBS += -ljpeg -lftgl -lfreetype -lGLU
 
+# Includes headers/sources to be compiled into project
 INCLUDEPATH += /usr/include/freetype2/ \
-               /usr/include/eigen3/
+               /usr/include/eigen3/ \
+               /usr/local/include/boost
 
 CONFIG += c++11
 

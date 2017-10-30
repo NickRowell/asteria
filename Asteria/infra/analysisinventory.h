@@ -1,7 +1,7 @@
 #ifndef ANALYSISINVENTORY_H
 #define ANALYSISINVENTORY_H
 
-#include "infra/image.h"
+#include "infra/imageuc.h"
 
 #include <dirent.h>
 #include <memory>
@@ -22,9 +22,11 @@ class AnalysisInventory : public QObject {
 public:
     AnalysisInventory();
 
-    std::shared_ptr<Image> peakHold;
+    std::shared_ptr<Imageuc> peakHold;
 
-    std::vector<std::shared_ptr<Image>> eventFrames;
+    std::vector<std::shared_ptr<Imageuc>> eventFrames;
+
+    std::vector<MeteorImageLocationMeasurement> locs;
 
 public slots:
 

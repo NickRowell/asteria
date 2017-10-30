@@ -3,6 +3,7 @@
 #include "util/ioutil.h"
 #include "util/fileutil.h"
 #include "util/mathutil.h"
+#include "infra/meteorimagelocationmeasurement.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -16,11 +17,13 @@
 #include <QGridLayout>
 #include <QThread>
 
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
-// TODO: add a parameter that prevents the frames being written to disk. This would allow us to
-//       re-run analyses using existing clips loaded from disk rather than directly from the camera.
+BOOST_CLASS_IMPLEMENTATION(std::vector<MeteorImageLocationMeasurement>, boost::serialization::object_serializable)
+BOOST_CLASS_IMPLEMENTATION(MeteorImageLocationMeasurement, boost::serialization::object_serializable)
 
-AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Image>> eventFrames)
+AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Imageuc>> eventFrames)
     : QObject(parent), state(state), eventFrames(eventFrames) {
 
 }
@@ -56,31 +59,32 @@ void AnalysisWorker::process() {
     //  - path deviates from model fit
     //  -
 
+
+    // Initialise the vector of image location measurements
+    std::vector<MeteorImageLocationMeasurement> locs(eventFrames.size());
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
-        // Clear any localisation etc fields filled by acquisition thread. We prefer to recompute everything.
-        eventFrames[i]->changedPixelsPositive.clear();
-        eventFrames[i]->changedPixelsNegative.clear();
+        locs[i].epochTimeUs = eventFrames[i]->epochTimeUs;
     }
 
     for(unsigned int i = 1; i < eventFrames.size(); ++i) {
 
         // Get the current frame and the previous one
-        Image &prev = *eventFrames[i-1];
-        Image &image = *eventFrames[i];
+        Imageuc &prev = *eventFrames[i-1];
+        Imageuc &image = *eventFrames[i];
         for(unsigned int p=0; p< state->width * state->height; p++) {
             unsigned char newPixel = image.rawImage[p];
             unsigned char oldPixel = prev.rawImage[p];
             if((unsigned int)abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                 if(newPixel - oldPixel > 0) {
-                    image.changedPixelsPositive.push_back(p);
+                    locs[i].changedPixelsPositive.push_back(p);
                 }
                 else {
-                    image.changedPixelsNegative.push_back(p);
+                    locs[i].changedPixelsNegative.push_back(p);
                 }
             }
         }
 
-        if(image.changedPixelsPositive.size() + image.changedPixelsNegative.size() > state->n_changed_pixels_for_trigger) {
+        if(locs[i].changedPixelsPositive.size() + locs[i].changedPixelsNegative.size() > state->n_changed_pixels_for_trigger) {
 
             // Event detected! Trigger localisation algorithm(s)
 
@@ -92,16 +96,16 @@ void AnalysisWorker::process() {
             std::vector<unsigned int> xs;
             std::vector<unsigned int> ys;
 
-            for(unsigned int p = 0; p < image.changedPixelsPositive.size(); ++p) {
-                unsigned int pIdx = image.changedPixelsPositive[p];
+            for(unsigned int p = 0; p < locs[i].changedPixelsPositive.size(); ++p) {
+                unsigned int pIdx = locs[i].changedPixelsPositive[p];
                 unsigned int x = pIdx % state->width;
                 unsigned int y = pIdx / state->width;
                 xs.push_back(x);
                 ys.push_back(y);
             }
 
-            for(unsigned int p = 0; p < image.changedPixelsNegative.size(); ++p) {
-                unsigned int pIdx = image.changedPixelsNegative[p];
+            for(unsigned int p = 0; p < locs[i].changedPixelsNegative.size(); ++p) {
+                unsigned int pIdx = locs[i].changedPixelsNegative[p];
                 unsigned int x = pIdx % state->width;
                 unsigned int y = pIdx / state->width;
                 xs.push_back(x);
@@ -128,41 +132,38 @@ void AnalysisWorker::process() {
 //            image.bb_ymax=std::min(y_med + 3*y_mad, (int)state->height-1);
 
             // Alternatively - fit to 90th percentiles of data
-            image.coarse_localisation_success = true;
+            locs[i].coarse_localisation_success = true;
             std::sort(xs.begin(), xs.end());
             std::sort(ys.begin(), ys.end());
             unsigned int p5 = xs.size() / 20;
-            image.bb_xmin=xs[p5];
-            image.bb_xmax=xs[xs.size() - 1 - p5];
-            image.bb_ymin=ys[p5];
-            image.bb_ymax=ys[ys.size() - 1 - p5];
+            locs[i].bb_xmin=xs[p5];
+            locs[i].bb_xmax=xs[xs.size() - 1 - p5];
+            locs[i].bb_ymin=ys[p5];
+            locs[i].bb_ymax=ys[ys.size() - 1 - p5];
 
             // Finer localisation: centre of flux of pixels within the coarse box
             double sum = 0.0;
-            image.x_flux_centroid = 0.0;
-            image.y_flux_centroid = 0.0;
-            for(double x = image.bb_xmin; x <= image.bb_xmax; x++) {
-                for(double y = image.bb_ymin; y <= image.bb_ymax; y++) {
+            locs[i].x_flux_centroid = 0.0;
+            locs[i].y_flux_centroid = 0.0;
+            for(double x = locs[i].bb_xmin; x <= locs[i].bb_xmax; x++) {
+                for(double y = locs[i].bb_ymin; y <= locs[i].bb_ymax; y++) {
                     unsigned int pIdx = y*image.width + x;
                     unsigned int pixel = image.rawImage[pIdx];
                     sum += pixel;
                     // TODO: do we need the 0.5 offset here?
-                    image.x_flux_centroid += (x+0.5)*pixel;
-                    image.y_flux_centroid += (y+0.5)*pixel;
+                    locs[i].x_flux_centroid += (x+0.5)*pixel;
+                    locs[i].y_flux_centroid += (y+0.5)*pixel;
                 }
             }
-            image.x_flux_centroid /= sum;
-            image.y_flux_centroid /= sum;
+            locs[i].x_flux_centroid /= sum;
+            locs[i].y_flux_centroid /= sum;
 
             // TODO: now perform finer localisation
-
         }
         else {
-            image.coarse_localisation_success = false;
+            locs[i].coarse_localisation_success = false;
         }
-
     }
-
 
     // Create new directory to store results for this clip. The path is set by the
     // date and time of the first frame
@@ -184,12 +185,12 @@ void AnalysisWorker::process() {
     }
 
     // Write all the images to file and create a peak hold image
-    Image peakHold(state->width, state->height, static_cast<unsigned char>(0));
+    Imageuc peakHold(state->width, state->height, static_cast<unsigned char>(0));
     peakHold.epochTimeUs = eventFrames[0]->epochTimeUs;
 
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
 
-        Image &image = *eventFrames[i];
+        Imageuc &image = *eventFrames[i];
 
         // Write the image data out to a file
         char filename [100];
@@ -217,6 +218,14 @@ void AnalysisWorker::process() {
     std::ofstream out(filename);
     out << peakHold;
     out.close();
+
+    // Write out the localisation information
+    sprintf(filename, "%s/localisation.xml", path.c_str());
+    std::ofstream ofs(filename);
+    boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
+    // write class instance to archive
+    oa & BOOST_SERIALIZATION_NVP(locs);
+    ofs.close();
 
     // All done - emit signal
     emit finished(utc);

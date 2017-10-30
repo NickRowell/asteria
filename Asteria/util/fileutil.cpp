@@ -144,3 +144,22 @@ bool FileUtil::createDirs(std::string topLevel, std::vector<std::string> subLeve
     }
     return true;
 }
+
+bool FileUtil::fileExists(std::string path) {
+
+    // First, check if path exists. NOTE: we MUST use lstat(...) rather than stat(...),
+    // otherwise this will follow any symlinks.
+    struct stat info;
+    if( lstat( path.c_str(), &info ) != 0 ) {
+        // File does not exist
+        return false;
+    }
+
+    if(S_ISREG(info.st_mode)) {
+        // Regular file
+        return true;
+    }
+
+    // Something else
+    return false;
+}
