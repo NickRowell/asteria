@@ -6,8 +6,43 @@
 #include <fstream>
 #include <iostream>
 #include <functional>
+#include <memory>               // shared_ptr
+#include <dirent.h>
+
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+
+BOOST_CLASS_IMPLEMENTATION(std::vector<MeteorImageLocationMeasurement>, boost::serialization::object_serializable)
+BOOST_CLASS_IMPLEMENTATION(MeteorImageLocationMeasurement, boost::serialization::object_serializable)
 
 AnalysisInventory::AnalysisInventory() {
+
+}
+
+AnalysisInventory::AnalysisInventory(const std::vector<std::shared_ptr<Imageuc>> &eventFrames) : eventFrames(eventFrames), locs(eventFrames.size()) {
+
+    for(unsigned int i = 0; i < eventFrames.size(); ++i) {
+        locs[i].epochTimeUs = eventFrames[i]->epochTimeUs;
+    }
+
+    // Read image width & height from first frame
+    unsigned int width = eventFrames[0]->width;
+    unsigned int height = eventFrames[0]->height;
+
+    // Create a peak hold image
+    peakHold = std::make_shared<Imageuc>(width, height);
+    peakHold->epochTimeUs = eventFrames[0]->epochTimeUs;
+    for(unsigned int i = 0; i < eventFrames.size(); ++i) {
+        Imageuc &image = *eventFrames[i];
+        // Compute peak hold image
+        for(unsigned int k=0; k<image.height; k++) {
+            for(unsigned int l=0; l<image.width; l++) {
+                unsigned int offset = k*image.width + l;
+                peakHold->rawImage[offset] = std::max(peakHold->rawImage[offset], image.rawImage[offset]);
+            }
+        }
+    }
+
 
 }
 
@@ -94,8 +129,58 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
     return inv;
 }
 
-void AnalysisInventory::saveToDir(std::string path) {
+void AnalysisInventory::saveToDir(std::string topLevelPath) {
 
+    // Create new directory to store results for this clip. The path is set by the
+    // date and time of the first frame
+    std::string utc = TimeUtil::epochToUtcString(eventFrames[0u]->epochTimeUs);
+    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
+    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
+    std::string dd = TimeUtil::extractDayFromUtcString(utc);
+
+    std::vector<std::string> subLevels;
+    subLevels.push_back(yyyy);
+    subLevels.push_back(mm);
+    subLevels.push_back(dd);
+    subLevels.push_back(utc);
+    std::string path = topLevelPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+
+    if(!FileUtil::createDirs(topLevelPath, subLevels)) {
+        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
+        return;
+    }
+
+    // Write the raw images to file
+    for(unsigned int i = 0; i < eventFrames.size(); ++i) {
+
+        Imageuc &image = *eventFrames[i];
+
+        // Write the image data out to a file
+        char filename [100];
+        std::string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
+        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
+
+        // PGM (grey image)
+        std::ofstream out(filename);
+        out << image;
+        out.close();
+    }
+
+    // Write out the peak hold image
+    char filename [100];
+    std::string utcFrame = TimeUtil::epochToUtcString(eventFrames[0]->epochTimeUs);
+    sprintf(filename, "%s/peakhold_%s.pgm", path.c_str(), utcFrame.c_str());
+    std::ofstream out(filename);
+    out << *peakHold;
+    out.close();
+
+    // Write out the localisation information
+    sprintf(filename, "%s/localisation.xml", path.c_str());
+    std::ofstream ofs(filename);
+    boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
+    // write class instance to archive
+    oa & BOOST_SERIALIZATION_NVP(locs);
+    ofs.close();
 }
 
 void AnalysisInventory::deleteClip() {

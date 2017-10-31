@@ -5,8 +5,8 @@ doxygen doxygen.config
 
 # Compile latex source
 cd doc/latex/
-pdflatex refman.tex
-pdflatex refman.tex
+lualatex refman.tex
+lualatex refman.tex
 mv refman.pdf ../
 cd ../../
 
