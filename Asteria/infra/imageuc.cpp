@@ -5,7 +5,7 @@
 
 #include <numeric>
 
-Imageuc::Imageuc() {
+Imageuc::Imageuc() : Image<unsigned char>() {
 }
 
 Imageuc::Imageuc(const Imageuc& copyme) : Image<unsigned char>(copyme), annotatedImage(copyme.annotatedImage),
@@ -21,15 +21,6 @@ Imageuc::Imageuc(unsigned int &width, unsigned int &height, unsigned char val) :
 Imageuc::~Imageuc() {
 }
 
-/**
- * Serialises the Image to a ostream. The philosophy is that any valid fields are written, except for transient ones
- * such as the overlay image which are generated on-the-fly at runtime.
- *
- * @brief operator <<
- * @param output
- * @param image
- * @return
- */
 void Imageuc::writeToStream(std::ostream &output) const {
 
     // Function to write an Image to file
@@ -61,15 +52,6 @@ void Imageuc::writeToStream(std::ostream &output) const {
      return;
 }
 
-/**
- * Function to read an Image from in input stream. This makes only cursory checks on the
- * validity of the image as it's expected that we'll only ever read Images written by this
- * software so there's very low risk of corruption.
- * @brief operator >>
- * @param input
- * @param D
- * @return
- */
 void Imageuc::readFromStream(std::istream &input) {
 
     // Function to load an Image from file
@@ -182,7 +164,6 @@ void Imageuc::readFromStream(std::istream &input) {
 
     return;
 }
-
 
 void Imageuc::generateAnnotatedImage(const MeteorImageLocationMeasurement &loc) {
 

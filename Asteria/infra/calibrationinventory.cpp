@@ -5,10 +5,13 @@
 
 #include <regex>
 #include <fstream>
-#include <iostream>
 #include <functional>
 
 CalibrationInventory::CalibrationInventory() {
+
+}
+
+CalibrationInventory::CalibrationInventory(const std::vector<std::shared_ptr<Imageuc> > &calibrationFrames) : calibrationFrames(calibrationFrames) {
 
 }
 
@@ -231,7 +234,7 @@ void CalibrationInventory::saveToDir(std::string path) {
     sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
-        out << medianImage;
+        out << *medianImage;
         out.close();
     }
 
@@ -239,15 +242,15 @@ void CalibrationInventory::saveToDir(std::string path) {
     sprintf(filename, "%s/background_%s.pgm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
-        out << backgroundImage;
+        out << *backgroundImage;
         out.close();
     }
 
     // Write out the variance image
-    sprintf(filename, "%s/noise_%s.pgm", path.c_str(), utcFrame.c_str());
+    sprintf(filename, "%s/noise_%s.pfm", path.c_str(), utcFrame.c_str());
     {
         std::ofstream out(filename);
-        out << noiseImage;
+        out << *noiseImage;
         out.close();
     }
 

@@ -2,6 +2,7 @@
 #define CALIBRATIONINVENTORY_H
 
 #include "infra/imageuc.h"
+#include "infra/imaged.h"
 #include "infra/source.h"
 #include "optics/cameramodelbase.h"
 
@@ -25,7 +26,7 @@ class CalibrationInventory : public QObject {
 public:
 
     CalibrationInventory();
-
+    CalibrationInventory(const std::vector<std::shared_ptr<Imageuc>> &calibrationFrames);
 
     /**
      * @brief Records the epoch time in microseconds, i.e. the time elapsed since 1970-01-01T00:00:00Z,
@@ -41,7 +42,7 @@ public:
     /**
      * @brief The noise image.
      */
-    std::shared_ptr<Imageuc> noiseImage;
+    std::shared_ptr<Imaged> noiseImage;
 
     /**
      * @brief The background image.

@@ -2,11 +2,10 @@
 #include "util/timeutil.h"
 #include "util/fileutil.h"
 
-#include <regex>
 #include <fstream>
 #include <iostream>
 #include <functional>
-#include <memory>               // shared_ptr
+#include <memory>
 #include <dirent.h>
 
 #include <boost/archive/xml_oarchive.hpp>
@@ -42,8 +41,6 @@ AnalysisInventory::AnalysisInventory(const std::vector<std::shared_ptr<Imageuc>>
             }
         }
     }
-
-
 }
 
 AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
@@ -55,12 +52,9 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         return NULL;
     }
 
-    // Regex suitable for identifying images with filenames starting 'peakhold'
-    const std::regex peakHoldRegex = std::regex("peakhold");
-
     AnalysisInventory * inv = new AnalysisInventory();
 
-    // Loop over the contents of the directory
+    // Load raw data products (the captured images)
     struct dirent *child;
     while ((child = readdir (dir)) != NULL) {
 
@@ -68,8 +62,6 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         if(strcmp(child->d_name,".") == 0 || strcmp(child->d_name,"..") == 0) {
             continue;
         }
-
-        // Parse the filename to decide what type of file it is using regex
 
         // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
         // These are the raw frames from the sequence
@@ -83,23 +75,21 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
             inv->eventFrames.push_back(seq);
             input.close();
         }
-
-        // Detect the peak hold image
-        if(std::regex_search(child->d_name, peakHoldRegex, std::regex_constants::match_continuous)) {
-            // Build full path to the item
-            std::string childPath = path + "/" + child->d_name;
-            // Load the image from file and store a shared pointer to it in the peakHold variable
-            std::ifstream input(childPath);
-            auto peakHoldImage = std::make_shared<Imageuc>();
-            input >> *peakHoldImage;
-            inv->peakHold = peakHoldImage;
-            input.close();
-        }
-
     }
     closedir (dir);
 
     // Load derived data products
+
+    // Load peakhold image
+    std::string peakHoldImage = path + "/peakhold.pgm";
+    if(FileUtil::fileExists(peakHoldImage)) {
+        std::ifstream ifs(peakHoldImage);
+        auto peakHoldImage = std::make_shared<Imageuc>();
+        ifs >> *peakHoldImage;
+        inv->peakHold = peakHoldImage;
+        ifs.close();
+    }
+
     std::string locationData = path + "/localisation.xml";
     if(FileUtil::fileExists(locationData)) {
         std::ifstream ifs(locationData);
@@ -168,8 +158,7 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
 
     // Write out the peak hold image
     char filename [100];
-    std::string utcFrame = TimeUtil::epochToUtcString(eventFrames[0]->epochTimeUs);
-    sprintf(filename, "%s/peakhold_%s.pgm", path.c_str(), utcFrame.c_str());
+    sprintf(filename, "%s/peakhold.pgm", path.c_str());
     std::ofstream out(filename);
     out << *peakHold;
     out.close();

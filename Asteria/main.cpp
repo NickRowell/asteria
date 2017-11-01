@@ -37,6 +37,7 @@ int main(int argc, char **argv)
     // Test the Levenberg-Marquardt fitter
 //    TestUtil::testLevenbergMarquardtFitter();
 //    TestUtil::testRaDecAzElConversion();
+//    TestUtil::testImagedReadWrite();
 
     catchUnixSignals();
 

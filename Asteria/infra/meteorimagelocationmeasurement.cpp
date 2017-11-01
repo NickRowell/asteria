@@ -16,7 +16,7 @@ MeteorImageLocationMeasurement::MeteorImageLocationMeasurement() :
 }
 
 MeteorImageLocationMeasurement::MeteorImageLocationMeasurement(const MeteorImageLocationMeasurement & copyme) :
-changedPixelsPositive(copyme.changedPixelsNegative), changedPixelsNegative(copyme.changedPixelsNegative) {
+changedPixelsPositive(copyme.changedPixelsPositive), changedPixelsNegative(copyme.changedPixelsNegative) {
 
     // No point using initialiser list for PODs
     epochTimeUs = copyme.epochTimeUs;
@@ -32,7 +32,7 @@ changedPixelsPositive(copyme.changedPixelsNegative), changedPixelsNegative(copym
 
 MeteorImageLocationMeasurement& MeteorImageLocationMeasurement::operator =(const MeteorImageLocationMeasurement & copyme) {
 
-    changedPixelsPositive = copyme.changedPixelsNegative;
+    changedPixelsPositive = copyme.changedPixelsPositive;
     changedPixelsNegative = copyme.changedPixelsNegative;
     epochTimeUs = copyme.epochTimeUs;
     coarse_localisation_success = copyme.coarse_localisation_success;
@@ -42,6 +42,8 @@ MeteorImageLocationMeasurement& MeteorImageLocationMeasurement::operator =(const
     bb_ymax = copyme.bb_ymax;
     x_flux_centroid = copyme.x_flux_centroid;
     y_flux_centroid = copyme.y_flux_centroid;
+
+    return *this;
 }
 
 bool MeteorImageLocationMeasurement::operator < (const MeteorImageLocationMeasurement& loc) const {

@@ -1,5 +1,5 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef IMAGEUC_H
+#define IMAGEUC_H
 
 #include "infra/image.h"
 #include "infra/meteorimagelocationmeasurement.h"
@@ -33,6 +33,7 @@ public:
     std::vector<unsigned int> annotatedImage;
 
     void writeToStream(std::ostream &output) const;
+
     void readFromStream(std::istream &input);
 
     /**
@@ -50,4 +51,4 @@ public:
 
 };
 
-#endif // IMAGE_H
+#endif // IMAGEUC_H

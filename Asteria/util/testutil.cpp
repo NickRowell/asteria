@@ -4,6 +4,9 @@
 #include "util/coordinateutil.h"
 #include "util/mathutil.h"
 #include "util/timeutil.h"
+#include "infra/imaged.h"
+
+#include <fstream>
 
 #include <Eigen/Dense>
 
@@ -152,4 +155,43 @@ void TestUtil::testRaDecAzElConversion() {
 
     fprintf(stderr, "Azimuth / Elevation by single formula    = %8.5f / %8.5f\n", MathUtil::toDegrees(az), MathUtil::toDegrees(el));
     fprintf(stderr, "Azimuth / Elevation by chained rotations = %8.5f / %8.5f\n", MathUtil::toDegrees(theta), MathUtil::toDegrees(phi));
+}
+
+/**
+ * @brief Tests the functions to write & read Image<double> types to/from files.
+ */
+void TestUtil::testImagedReadWrite() {
+
+    // Create a dummy image
+    unsigned int width = 2u;
+    unsigned int height = 2u;
+    Imaged testIm(width, height);
+    testIm.epochTimeUs = 12345ll;
+    testIm.rawImage[0] = 5.4;
+    testIm.rawImage[1] = 6.3;
+    testIm.rawImage[2] = 3.14159265357989;
+    testIm.rawImage[3] = -1.0;
+
+    char filename [100];
+    sprintf(filename, "/home/nrowell/Temp/imaged.pfm");
+
+    std::ofstream out(filename);
+    out << testIm;
+    out.close();
+
+    // Read in the same file
+    Imaged testIm2 = Imaged();
+    std::ifstream ifs(filename);
+    ifs >> testIm2;
+    ifs.close();
+
+    fprintf(stderr, "Recovered size = %d x %d\n", testIm2.width, testIm2.height);
+    fprintf(stderr, "Number of samples = %d\n", testIm2.rawImage.size());
+
+    for(unsigned int i=0; i<testIm2.rawImage.size(); i++) {
+        fprintf(stderr, "rawImage[%d] = %f\n", i, testIm2.rawImage[i]);
+    }
+
+
+
 }

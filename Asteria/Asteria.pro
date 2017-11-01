@@ -59,7 +59,8 @@ SOURCES += \
     optics/pinholecamerawithradialdistortion.cpp \
     optics/cameramodelbase.cpp \
     infra/imageuc.cpp \
-    infra/meteorimagelocationmeasurement.cpp
+    infra/meteorimagelocationmeasurement.cpp \
+    infra/imaged.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -124,7 +125,8 @@ HEADERS += \
     optics/pinholecamerawithradialdistortion.h \
     infra/imageuc.h \
     infra/image.h \
-    infra/meteorimagelocationmeasurement.h
+    infra/meteorimagelocationmeasurement.h \
+    infra/imaged.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization

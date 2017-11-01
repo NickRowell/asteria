@@ -10,6 +10,8 @@ public:
 
     static void testRaDecAzElConversion();
 
+    static void testImagedReadWrite();
+
 };
 
 #endif // TESTUTIL_H

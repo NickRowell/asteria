@@ -43,7 +43,7 @@ void CalibrationWorker::process() {
     fprintf(stderr, "Got %lu frames for calibration\n", calibrationFrames.size());
 
     // The calibration data is assigned to fields of the CalibrationInventory for storage
-    CalibrationInventory calInv;
+    CalibrationInventory calInv(calibrationFrames);
     calInv.epochTimeUs = calibrationFrames.front()->epochTimeUs;
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
@@ -140,10 +140,9 @@ void CalibrationWorker::process() {
         stdVals.push_back(std);
     }
 
-//    std::shared_ptr<Image<double>> noise = make_shared<Image<double>>(state->width, state->height);
-//    noise->field = field;
-//    noise->epochTimeUs = midTimeStamp;
-//    noise->rawImage = stdVals;
+    std::shared_ptr<Imaged> noise = make_shared<Imaged>(state->width, state->height);
+    noise->epochTimeUs = midTimeStamp;
+    noise->rawImage = stdVals;
 
     std::shared_ptr<Imageuc> median = make_shared<Imageuc>(state->width, state->height);
     median->field = field;
@@ -196,7 +195,7 @@ void CalibrationWorker::process() {
 
     // Set these images to the fields in the CalibrationInventory
     calInv.medianImage = median;
-//    calInv.noiseImage = noise;
+    calInv.noiseImage = noise;
     calInv.backgroundImage = background;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -259,7 +258,7 @@ void CalibrationWorker::process() {
 
         if(i>0 && i<state->width && j>0 && j<state->height) {
             // Star is visible in image!
-            fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
+//            fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
         }
 
     }
@@ -270,7 +269,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO: allow these to be specified manually somehow; maybe a field of the constructor can be non-null?
+    // TODO: allow these to be specified manually somehow; maybe a field of the constructor?
 
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//

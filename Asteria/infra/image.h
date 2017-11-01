@@ -1,5 +1,5 @@
-#ifndef IMAGETEMPLATE_H
-#define IMAGETEMPLATE_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include <vector>
 #include <memory>
@@ -15,7 +15,7 @@ template<class T> class Image
 
 public:
 
-    Image() {
+    Image() : width(0), height(0), epochTimeUs(0ll), rawImage(0) {
         // Nothing to do
     }
 
@@ -56,8 +56,18 @@ public:
      */
     std::vector<T> rawImage;
 
+    /**
+     * @brief Serialises the Image to a ostream.
+     * @param output
+     *  The ostream to write to.
+     */
     virtual void writeToStream(std::ostream &output) const =0;
 
+    /**
+     * @brief Deserialises the Image from an istream.
+     * @param input
+     *  The istream to read from.
+     */
     virtual void readFromStream(std::istream &input) =0;
 
     /**
@@ -86,7 +96,6 @@ public:
         return (*a < *b);
     }
 
-
     friend std::ostream &operator<<(std::ostream &output, const Image &image) {
         image.writeToStream(output);
         return output;
@@ -100,4 +109,4 @@ public:
 };
 
 
-#endif // IMAGETEMPLATE_H
+#endif // IMAGE_H
