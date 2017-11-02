@@ -1,7 +1,12 @@
 #include "infra/calibrationinventory.h"
 #include "util/timeutil.h"
-
+#include "util/fileutil.h"
 #include "util/renderutil.h"
+#include "util/serializationutil.h"
+
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
 
 #include <regex>
 #include <fstream>
@@ -17,16 +22,15 @@ CalibrationInventory::CalibrationInventory(const std::vector<std::shared_ptr<Ima
 
 CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
 
-    // Load all the images found here...
+    std::string raw = path + "/raw";
+    std::string processed = path + "/processed";
+
+    // Load the raw images
     DIR *dir;
-    if ((dir = opendir (path.c_str())) == NULL) {
+    if ((dir = opendir (raw.c_str())) == NULL) {
         // Couldn't open the directory!
         return NULL;
     }
-
-    // Regex suitable for identifying images with filenames starting 'median'
-    const std::regex medianRegex = std::regex("median");
-    const std::regex backgroundRegex = std::regex("background");
 
     CalibrationInventory * inv = new CalibrationInventory();
 
@@ -39,13 +43,11 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
             continue;
         }
 
-        // Parse the filename to decide what type of file it is using regex
-
         // Match files with names starting with UTC string, e.g. 2017-06-14T19:41:09.282Z.pgm
         // These are the raw calibration frames
         if(std::regex_search(child->d_name, TimeUtil::utcRegex, std::regex_constants::match_continuous)) {
             // Build full path to the item
-            std::string childPath = path + "/" + child->d_name;
+            std::string childPath = raw + "/" + child->d_name;
             // Load the image from file and store a shared pointer to it in the vector
             std::ifstream input(childPath);
             auto seq = std::make_shared<Imageuc>();
@@ -53,45 +55,133 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
             inv->calibrationFrames.push_back(seq);
             input.close();
         }
-
-        // Detect the median image
-        if(std::regex_search(child->d_name, medianRegex, std::regex_constants::match_continuous)) {
-            // Build full path to the item
-            std::string childPath = path + "/" + child->d_name;
-            // Load the image from file
-            std::ifstream input(childPath);
-            auto medianImage = std::make_shared<Imageuc>();
-            input >> *medianImage;
-            inv->medianImage = medianImage;
-            input.close();
-        }
-
-        // Detect the background image
-        if(std::regex_search(child->d_name, backgroundRegex, std::regex_constants::match_continuous)) {
-            // Build full path to the item
-            std::string childPath = path + "/" + child->d_name;
-            // Load the image from file
-            std::ifstream input(childPath);
-            auto backgroundImage = std::make_shared<Imageuc>();
-            input >> *backgroundImage;
-            inv->backgroundImage = backgroundImage;
-            input.close();
-        }
-
-        // Detect the text file containing the calibration data
-        if(strcmp(child->d_name, "calibration.dat") == 0) {
-            fprintf(stderr, "Found %s\n", child->d_name);
-        }
     }
     closedir (dir);
 
     // Sort the calibration image sequence into ascending order of capture time
     std::sort(inv->calibrationFrames.begin(), inv->calibrationFrames.end(), Imageuc::comparePtrToImage);
 
+    // Load the median, background and noise images
+
+    // Load the median image
+    std::string medianImagePath = processed + "/median.pgm";
+    if(FileUtil::fileExists(medianImagePath)) {
+        std::ifstream ifs(medianImagePath);
+        auto medianImage = std::make_shared<Imageuc>();
+        ifs >> *medianImage;
+        inv->medianImage = medianImage;
+        ifs.close();
+    }
+
+    // Load the background image
+    std::string bkgImagePath = processed + "/background.pgm";
+    if(FileUtil::fileExists(bkgImagePath)) {
+        std::ifstream ifs(bkgImagePath);
+        auto bkgImage = std::make_shared<Imageuc>();
+        ifs >> *bkgImage;
+        inv->backgroundImage = bkgImage;
+        ifs.close();
+    }
+
+    // Load the noise image
+    std::string noiseImagePath = processed + "/noise.pfm";
+    if(FileUtil::fileExists(noiseImagePath)) {
+        std::ifstream ifs(noiseImagePath);
+        auto noiseImage = std::make_shared<Imaged>();
+        ifs >> *noiseImage;
+        inv->noiseImage = noiseImage;
+        ifs.close();
+    }
+
+    // Load the additional serialized calibration data fields
+
+    std::string calibrationData = processed + "/calibration.xml";
+    if(FileUtil::fileExists(calibrationData)) {
+        std::ifstream ifs(calibrationData);
+        boost::archive::xml_iarchive ia(ifs, boost::archive::no_header);
+        ia & BOOST_SERIALIZATION_NVP(inv->epochTimeUs);
+        ia & BOOST_SERIALIZATION_NVP(inv->sources);
+        ia & BOOST_SERIALIZATION_NVP(inv->readNoiseAdu);
+        ia & BOOST_SERIALIZATION_NVP(inv->q_sez_cam);
+//        ia & BOOST_SERIALIZATION_NVP(inv->cam);
+        ifs.close();
+
+        fprintf(stderr, "Loaded quaternion: %f, %f, %f, %f\n", inv->q_sez_cam.w(), inv->q_sez_cam.x(), inv->q_sez_cam.y(), inv->q_sez_cam.z());
+
+    }
+
+
+
+
+
+
     return inv;
 }
 
 void CalibrationInventory::saveToDir(std::string path) {
+
+    // Create raw/ and processed/ subdirectories
+    FileUtil::createDir(path, "raw");
+    FileUtil::createDir(path, "processed");
+    std::string raw = path + "/raw";
+    std::string processed = path + "/processed";
+
+    // Write out the raw calibration frames
+    for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
+        Imageuc &image = *calibrationFrames[i];
+        char filename [100];
+        std::string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
+        sprintf(filename, "%s/%s.pgm", raw.c_str(), utcFrame.c_str());
+        std::ofstream out(filename);
+        out << image;
+        out.close();
+    }
+
+    // Write out processed data
+
+    char filename [100];
+
+    // Write out the median image
+    sprintf(filename, "%s/median.pgm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << *medianImage;
+        out.close();
+    }
+
+    // Write out the background image
+    sprintf(filename, "%s/background.pgm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << *backgroundImage;
+        out.close();
+    }
+
+    // Write out the variance image
+    sprintf(filename, "%s/noise.pfm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << *noiseImage;
+        out.close();
+    }
+
+    // Save calibration data to text file
+    char calibrationDataFilename [100];
+    sprintf(calibrationDataFilename, "%s/calibration.xml", processed.c_str());
+    {
+        std::ofstream ofs(calibrationDataFilename);
+        boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
+        // write class instance to archive
+        oa & BOOST_SERIALIZATION_NVP(epochTimeUs);
+        oa & BOOST_SERIALIZATION_NVP(sources);
+        oa & BOOST_SERIALIZATION_NVP(readNoiseAdu);
+        oa & BOOST_SERIALIZATION_NVP(q_sez_cam);
+//        oa & BOOST_SERIALIZATION_NVP(cam);
+        ofs.close();
+    }
+
+    // Now compute and write out some additional products that are not formally used by the calibration
+    // but are useful for visualisation and debugging.
 
     // Create an image of the extracted sources
     std::vector<unsigned int> sourcesImage(medianImage->width*medianImage->height, 0);
@@ -119,13 +209,11 @@ void CalibrationInventory::saveToDir(std::string path) {
         // Invert the colour
         unsigned int negColour = 0xFFFFFFFF;
 
-        // Now draw a cross on the centroid and an ellipse to represent the dispersion matrix
+        // Now draw an ellipse to represent the dispersion matrix
         RenderUtil::drawEllipse(sourcesImage, medianImage->width, medianImage->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
     }
 
-    //
-    // TEMP: save sources image to file
-    //
+    // Save sources image to file
     char sourcesFilename [100];
     sprintf(sourcesFilename, "%s/sources.ppm", path.c_str());
     std::ofstream output(sourcesFilename);
@@ -142,51 +230,12 @@ void CalibrationInventory::saveToDir(std::string path) {
         output << b;
     }
     output.close();
-    //
-    //
-    //
 
-    // Save calibration data to text file
-    char calibrationDataFilename [100];
-    sprintf(calibrationDataFilename, "%s/calibration.dat", path.c_str());
-    std::ofstream out1(calibrationDataFilename);
-    out1 << "# \n";
-    out1 << "# read_noise=" << readNoiseAdu << "\n";
-//    out1 << "# Camera.azimuth=" << state->azimuth << "\n";
-//    out1 << "# Camera.elevation=" << state->elevation << "\n";
-//    out1 << "# Camera.roll=" << state->roll << "\n";
-    out1.close();
 
     char rnPlotfilename [100];
     sprintf(rnPlotfilename, "%s/readnoise.png", path.c_str());
 
     std::stringstream ss;
-
-    // This script produces a histogram of the deviations:
-//    ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
-//    ss << "set style line 20 lc rgb \"#ddccdd\" lt 1 lw 1.5\n";
-//    ss << "set style line 21 lc rgb \"#ddccdd\" lt 1 lw 0.5\n";
-//    ss << "set style fill transparent solid 0.5 noborder\n";
-//    ss << "set boxwidth 0.95 relative\n";
-//    ss << "set xlabel \"Deviation from median [ADU]\" font \"Helvetica,14\"\n";
-//    ss << "set xtics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mxtics 2\n";
-//    ss << "set xrange [-10:10]\n";
-//    ss << "set format x \"%g\"\n";
-//    ss << "set ylabel \"Frequency [-]\" font \"Helvetica,14\"\n";
-//    ss << "set ytics out nomirror offset 0.0,0.0 rotate by 0.0 scale 1.0\n";
-//    ss << "set mytics 2\n";
-//    ss << "set yrange [*:*]\n";
-//    ss << "set format y \"%g\"\n";
-//    ss << "set key off\n";
-//    ss << "set grid xtics mxtics ytics mytics back ls 20, ls 21\n";
-//    ss << "set title \"Readnoise estimate\"\n";
-//    ss << "set output \"" << rnPlotfilename << "\"\n";
-//    ss << "plot \"-\" w boxes notitle\n";
-//    for(int i=0; i<512; i++) {
-//        ss << (i-256) << " " << histogramOfDeviations[i] << "\n";
-//    }
-//    ss << "e\n";
 
     // This script produces a plot of scatter versus signal level
     ss << "set terminal pngcairo dashed enhanced color size 640,480 font \"Helvetica\"\n";
@@ -207,12 +256,10 @@ void CalibrationInventory::saveToDir(std::string path) {
     ss << "set title \"Readnoise estimate\"\n";
     ss << "set output \"" << rnPlotfilename << "\"\n";
     ss << "plot \"-\" w d notitle\n";
+
     for(unsigned int i=0; i<medianImage->width*medianImage->height; i++) {
-        char buffer[80] = "";
-//        sprintf(buffer, "%d\t%d\n", medianVals[i], madVals[i]);
-
-
-//        sprintf(buffer, "%f\t%f\n", meanVals[i], varianceVals[i]);
+        char buffer[200] = "";
+        sprintf(buffer, "%d\t%f\n", medianImage->rawImage[i], noiseImage->rawImage[i]);
         ss << buffer;
     }
     ss << "e\n";
@@ -226,43 +273,5 @@ void CalibrationInventory::saveToDir(std::string path) {
     char command [100];
     sprintf(command, "gnuplot < %s", tmpFileName.c_str());
     system(command);
-
-    char filename [100];
-    std::string utcFrame = TimeUtil::epochToUtcString(epochTimeUs);
-
-    // Write out the median image
-    sprintf(filename, "%s/median_%s.pgm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << *medianImage;
-        out.close();
-    }
-
-    // Write out the background image
-    sprintf(filename, "%s/background_%s.pgm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << *backgroundImage;
-        out.close();
-    }
-
-    // Write out the variance image
-    sprintf(filename, "%s/noise_%s.pfm", path.c_str(), utcFrame.c_str());
-    {
-        std::ofstream out(filename);
-        out << *noiseImage;
-        out.close();
-    }
-
-    // Write out the raw calibration frames
-    for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
-        Imageuc &image = *calibrationFrames[i];
-        char filename [100];
-        std::string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
-        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
-        std::ofstream out(filename);
-        out << image;
-        out.close();
-    }
 
 }

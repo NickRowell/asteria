@@ -283,6 +283,11 @@ void CalibrationWorker::process() {
     // TODO: Get readnoise estimate from data
     calInv.readNoiseAdu = 5.0;
 
+    calInv.q_sez_cam.w() = 0.5;
+    calInv.q_sez_cam.x() = -0.5;
+    calInv.q_sez_cam.y() = 0.5;
+    calInv.q_sez_cam.z() = -0.5;
+
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //          Save calibration results to disk             //

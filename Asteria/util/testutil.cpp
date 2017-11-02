@@ -179,6 +179,8 @@ void TestUtil::testImagedReadWrite() {
     out << testIm;
     out.close();
 
+    fprintf(stderr, "%f\t%f\t%f\t%f\n", testIm.rawImage[0], testIm.rawImage[1], testIm.rawImage[2], testIm.rawImage[3]);
+
     // Read in the same file
     Imaged testIm2 = Imaged();
     std::ifstream ifs(filename);

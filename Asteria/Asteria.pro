@@ -126,7 +126,8 @@ HEADERS += \
     infra/imageuc.h \
     infra/image.h \
     infra/meteorimagelocationmeasurement.h \
-    infra/imaged.h
+    infra/imaged.h \
+    util/serializationutil.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization
