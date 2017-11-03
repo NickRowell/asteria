@@ -105,9 +105,6 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         ia & BOOST_SERIALIZATION_NVP(inv->q_sez_cam);
 //        ia & BOOST_SERIALIZATION_NVP(inv->cam);
         ifs.close();
-
-        fprintf(stderr, "Loaded quaternion: %f, %f, %f, %f\n", inv->q_sez_cam.w(), inv->q_sez_cam.x(), inv->q_sez_cam.y(), inv->q_sez_cam.z());
-
     }
 
     return inv;
@@ -185,7 +182,6 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     {
         std::ofstream ofs(calibrationDataFilename);
         boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
-        // write class instance to archive
         oa & BOOST_SERIALIZATION_NVP(epochTimeUs);
         oa & BOOST_SERIALIZATION_NVP(sources);
         oa & BOOST_SERIALIZATION_NVP(readNoiseAdu);
@@ -197,60 +193,17 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     // Now compute and write out some additional products that are not formally used by the calibration
     // but are useful for visualisation and debugging.
 
-    // Create an RGB image of the extracted sources
-//    std::shared_ptr<Imageuc> image = make_shared<Imageuc>(medianImage->width*medianImage->height);
-
-
-    std::vector<unsigned int> sourcesImage(medianImage->width*medianImage->height, 0);
-
-    for(unsigned int s=0; s<sources.size(); s++) {
-
-        Source source = sources[s];
-
-        // Get a random colour for this source
-        unsigned char red = (unsigned char) rand();
-        unsigned char green = (unsigned char) rand();
-        unsigned char blue = (unsigned char) rand();
-
-        unsigned int rgb;
-        RenderUtil::encodeRgb(red, green, blue, rgb);
-
-        // Loop over the pixels assigned to this source
-        for(unsigned int p=0; p<source.pixels.size(); p++) {
-            // Index of the pixel that's part of the current source
-            unsigned int pixel = source.pixels[p];
-            // Insert colour for this pixels
-            sourcesImage[pixel] = rgb;
-        }
-
-        // Invert the colour
-        unsigned int negColour = 0xFFFFFFFF;
-
-        // Now draw an ellipse to represent the dispersion matrix
-        RenderUtil::drawEllipse(sourcesImage, medianImage->width, medianImage->height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
+    // Create an RGB image of the extracted sources and save to file
+    std::shared_ptr<Imageui> image = RenderUtil::renderSourcesImage(sources, medianImage->width, medianImage->height);
+    sprintf(filename, "%s/sources.ppm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << *image;
+        out.close();
     }
-
-    // Save sources image to file
-    char sourcesFilename [100];
-    sprintf(sourcesFilename, "%s/sources.ppm", path.c_str());
-    std::ofstream output(sourcesFilename);
-    output << "P6\n";
-    // Write the data section
-    output << medianImage->width << " " << medianImage->height << " 255\n";
-    // Write raster
-    for(unsigned int pix : sourcesImage) {
-        unsigned char r, g, b;
-        RenderUtil::decodeRgb(r, g, b, pix);
-
-        output << r;
-        output << g;
-        output << b;
-    }
-    output.close();
-
 
     char rnPlotfilename [100];
-    sprintf(rnPlotfilename, "%s/readnoise.png", path.c_str());
+    sprintf(rnPlotfilename, "%s/readnoise.png", processed.c_str());
 
     std::stringstream ss;
 
@@ -290,7 +243,6 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     char command [100];
     sprintf(command, "gnuplot < %s", tmpFileName.c_str());
     system(command);
-
 }
 
 void CalibrationInventory::deleteCalibration() {

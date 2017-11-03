@@ -43,9 +43,7 @@ void Imageuc::writeToStream(std::ostream &output) const {
 
     // Pointer to the start of the vector of pixels
     const char* pointer = reinterpret_cast<const char*>(&rawImage[0]);
-    // Number of bytes in total
     size_t bytes = rawImage.size() * sizeof(rawImage[0]);
-    // Write bytes
     output.write(pointer, bytes);
 
     return;
@@ -150,7 +148,6 @@ void Imageuc::readFromStream(std::istream &input) {
     // Read data section
     rawImage.resize(width*height, (unsigned char)0);
     size_t  bytes = width * height * sizeof(unsigned char);
-
     char* pointer = reinterpret_cast<char*>(&rawImage[0]);
     input.read(pointer, bytes);
 

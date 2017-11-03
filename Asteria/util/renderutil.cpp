@@ -3,12 +3,11 @@
 #include <cmath>
 #include <cstdio>
 
-RenderUtil::RenderUtil()
-{
+RenderUtil::RenderUtil() {
 
 }
 
-void RenderUtil::drawLine(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
+void RenderUtil::drawLine(std::vector<unsigned int> &pixels, unsigned int &width, unsigned int &height,
                           int x0, int x1, int y0, int y1, unsigned int colour) {
 
     // If point is at the same coordinates in both frames, r=0 and the
@@ -39,11 +38,11 @@ void RenderUtil::drawLine(std::vector<unsigned int> &annotatedImage, unsigned in
         }
 
         unsigned int pIdx = j * width + i;
-        annotatedImage[pIdx] = colour;
+        pixels[pIdx] = colour;
     }
 }
 
-void RenderUtil::drawCircle(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
+void RenderUtil::drawCircle(std::vector<unsigned int> &pixels, unsigned int &width, unsigned int &height,
                             double centre_x, double centre_y, double radius, unsigned int colour) {
 
     // Angular step between points on circumference that lie one pixel apart
@@ -62,30 +61,11 @@ void RenderUtil::drawCircle(std::vector<unsigned int> &annotatedImage, unsigned 
         }
 
         unsigned int pIdx = j * width + i;
-        annotatedImage[pIdx] = colour;
+        pixels[pIdx] = colour;
     }
 }
 
-/**
- * @brief RenderUtil::drawEllipse
- * @param annotatedImage
- * @param width
- * @param height
- * @param centre_x
- * @param centre_y
- * @param a
- * @param b
- * @param c
- * @param sigmas
- * @param colour
- * Covariance matrix is
- *
- * [a b]
- * [b c]
- *
- * in units is pixels.
- */
-void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
+void RenderUtil::drawEllipse(std::vector<unsigned int> &pixels, unsigned int &width, unsigned int &height,
                              double &centre_x, double &centre_y, double &a, double &b, double &c, float sigmas, unsigned int &colour) {
 
     // Eigenvalues of image covariance matrix:
@@ -155,23 +135,61 @@ void RenderUtil::drawEllipse(std::vector<unsigned int> &annotatedImage, unsigned
         }
 
         unsigned int pIdx = j * width + i;
-        annotatedImage[pIdx] = colour;
+        pixels[pIdx] = colour;
     }
 }
 
-void RenderUtil::drawCrossHair(std::vector<unsigned int> &annotatedImage, unsigned int &width, unsigned int &height,
+void RenderUtil::drawCrossHair(std::vector<unsigned int> &pixels, unsigned int &width, unsigned int &height,
                     int x0, int y0, unsigned int length, unsigned int gap, unsigned int colour) {
     if(gap==0) {
-        drawLine(annotatedImage, width, height, x0-length, x0+length, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0-length, y0+length, colour);
+        drawLine(pixels, width, height, x0-length, x0+length, y0, y0, colour);
+        drawLine(pixels, width, height, x0, x0, y0-length, y0+length, colour);
     }
     else {
-        drawLine(annotatedImage, width, height, x0-length-gap, x0-gap, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0+length+gap, x0+gap, y0, y0, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0-length-gap, y0-gap, colour);
-        drawLine(annotatedImage, width, height, x0, x0, y0+length+gap, y0+gap, colour);
+        drawLine(pixels, width, height, x0-length-gap, x0-gap, y0, y0, colour);
+        drawLine(pixels, width, height, x0+length+gap, x0+gap, y0, y0, colour);
+        drawLine(pixels, width, height, x0, x0, y0-length-gap, y0-gap, colour);
+        drawLine(pixels, width, height, x0, x0, y0+length+gap, y0+gap, colour);
     }
 }
+
+
+std::shared_ptr<Imageui> RenderUtil::renderSourcesImage(std::vector<Source> &sources, unsigned int &width, unsigned int &height) {
+
+    unsigned int black = 0x000000FF;
+
+    auto image = std::make_shared<Imageui>(width, height, black);
+
+    for(unsigned int s=0; s<sources.size(); s++) {
+
+        Source source = sources[s];
+
+        // Get a random colour for this source
+        unsigned char red = (unsigned char) rand();
+        unsigned char green = (unsigned char) rand();
+        unsigned char blue = (unsigned char) rand();
+
+        unsigned int rgba;
+        RenderUtil::encodeRgba(red, green, blue, 0xFF, rgba);
+
+        // Loop over the pixels assigned to this source
+        for(unsigned int p=0; p<source.pixels.size(); p++) {
+            // Index of the pixel that's part of the current source
+            unsigned int pixel = source.pixels[p];
+            // Insert colour for this pixels
+            image->rawImage[pixel] = rgba;
+        }
+
+        // Colour to draw the ellipse
+        unsigned int negColour = 0xFFFFFFFF;
+
+        // Now draw an ellipse to represent the dispersion matrix
+        RenderUtil::drawEllipse(image->rawImage, width, height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
+    }
+
+    return image;
+}
+
 
 void RenderUtil::encodeRgb(const unsigned char &r, const unsigned char &g, const unsigned char &b, unsigned int &rgb) {
     rgb = (r << 16) + (g << 8) + b;
@@ -181,4 +199,15 @@ void RenderUtil::decodeRgb(unsigned char &r, unsigned char &g, unsigned char &b,
     r = (rgb >> 16) & 0xFF;
     g = (rgb >>  8) & 0xFF;
     b = (rgb >>  0) & 0xFF;
+}
+
+void RenderUtil::encodeRgba(const unsigned char &r, const unsigned char &g, const unsigned char &b, const unsigned char &a, unsigned int &rgba) {
+    rgba = (r << 24) + (g << 16) + (b << 8) + a;
+}
+
+void RenderUtil::decodeRgba(unsigned char &r, unsigned char &g, unsigned char &b, unsigned char &a, const unsigned int &rgba) {
+    r = (rgba >> 24) & 0xFF;
+    g = (rgba >> 16) & 0xFF;
+    b = (rgba >>  8) & 0xFF;
+    a = (rgba >>  0) & 0xFF;
 }
