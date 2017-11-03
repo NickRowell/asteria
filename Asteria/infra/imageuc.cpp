@@ -8,8 +8,7 @@
 Imageuc::Imageuc() : Image<unsigned char>() {
 }
 
-Imageuc::Imageuc(const Imageuc& copyme) : Image<unsigned char>(copyme), field(copyme.field), annotatedImage(copyme.annotatedImage)
-     {
+Imageuc::Imageuc(const Imageuc& copyme) : Image<unsigned char>(copyme), field(copyme.field), annotatedImage(copyme.annotatedImage) {
 }
 
 Imageuc::Imageuc(unsigned int &width, unsigned int &height) : Image<unsigned char>(width, height), field(0u), annotatedImage(width * height) {
@@ -149,7 +148,7 @@ void Imageuc::readFromStream(std::istream &input) {
     }
 
     // Read data section
-    rawImage.resize(width*height, 0.0);
+    rawImage.resize(width*height, (unsigned char)0);
     size_t  bytes = width * height * sizeof(unsigned char);
 
     char* pointer = reinterpret_cast<char*>(&rawImage[0]);

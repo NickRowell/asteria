@@ -7,6 +7,11 @@
 #include <iostream>
 #include <linux/videodev2.h>
 
+/**
+ * @brief Represents an image with unsigned char (i.e. 8-bit) pixels. These are especially useful for
+ * representing images captured by a camera. The class contains additional functions and fields designed
+ * specifically for handling captured images.
+ */
 class Imageuc : public Image<unsigned char>
 {
 

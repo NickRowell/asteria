@@ -60,7 +60,8 @@ SOURCES += \
     optics/cameramodelbase.cpp \
     infra/imageuc.cpp \
     infra/meteorimagelocationmeasurement.cpp \
-    infra/imaged.cpp
+    infra/imaged.cpp \
+    infra/imageui.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -127,7 +128,8 @@ HEADERS += \
     infra/image.h \
     infra/meteorimagelocationmeasurement.h \
     infra/imaged.h \
-    util/serializationutil.h
+    util/serializationutil.h \
+    infra/imageui.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization
