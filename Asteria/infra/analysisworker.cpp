@@ -151,7 +151,12 @@ void AnalysisWorker::process() {
     }
 
 
-    // Write the AnalysisInventory to disk:
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //            Save analysis results to disk              //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
     inv.saveToDir(state->videoDirPath);
 
     // All done - emit signal

@@ -4,13 +4,13 @@
 #include "util/renderutil.h"
 #include "util/serializationutil.h"
 
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
-
+#include <dirent.h>
 #include <regex>
 #include <fstream>
 #include <functional>
+
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
 CalibrationInventory::CalibrationInventory() {
 
@@ -110,15 +110,29 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
 
     }
 
-
-
-
-
-
     return inv;
 }
 
-void CalibrationInventory::saveToDir(std::string path) {
+void CalibrationInventory::saveToDir(std::string topLevelPath) {
+
+    // Create new directory to store results for this clip. The path is set by the
+    // date and time of the first frame
+    std::string utc = TimeUtil::epochToUtcString(calibrationFrames.front()->epochTimeUs);
+    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
+    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
+    std::string dd = TimeUtil::extractDayFromUtcString(utc);
+
+    std::vector<std::string> subLevels;
+    subLevels.push_back(yyyy);
+    subLevels.push_back(mm);
+    subLevels.push_back(dd);
+    subLevels.push_back(utc);
+    std::string path = topLevelPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
+
+    if(!FileUtil::createDirs(topLevelPath, subLevels)) {
+        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
+        return;
+    }
 
     // Create raw/ and processed/ subdirectories
     FileUtil::createDir(path, "raw");
@@ -183,7 +197,10 @@ void CalibrationInventory::saveToDir(std::string path) {
     // Now compute and write out some additional products that are not formally used by the calibration
     // but are useful for visualisation and debugging.
 
-    // Create an image of the extracted sources
+    // Create an RGB image of the extracted sources
+//    std::shared_ptr<Imageuc> image = make_shared<Imageuc>(medianImage->width*medianImage->height);
+
+
     std::vector<unsigned int> sourcesImage(medianImage->width*medianImage->height, 0);
 
     for(unsigned int s=0; s<sources.size(); s++) {
@@ -274,4 +291,9 @@ void CalibrationInventory::saveToDir(std::string path) {
     sprintf(command, "gnuplot < %s", tmpFileName.c_str());
     system(command);
 
+}
+
+void CalibrationInventory::deleteCalibration() {
+    // TODO: use this to delete each file of a calibration specifically rather than
+    // relying on deleting everything in the directory, which is unsafe.
 }

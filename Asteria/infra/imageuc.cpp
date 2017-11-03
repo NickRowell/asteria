@@ -8,14 +8,14 @@
 Imageuc::Imageuc() : Image<unsigned char>() {
 }
 
-Imageuc::Imageuc(const Imageuc& copyme) : Image<unsigned char>(copyme), annotatedImage(copyme.annotatedImage),
-    field(copyme.field) {
+Imageuc::Imageuc(const Imageuc& copyme) : Image<unsigned char>(copyme), field(copyme.field), annotatedImage(copyme.annotatedImage)
+     {
 }
 
-Imageuc::Imageuc(unsigned int &width, unsigned int &height) : Image<unsigned char>(width, height), annotatedImage(width * height) {
+Imageuc::Imageuc(unsigned int &width, unsigned int &height) : Image<unsigned char>(width, height), field(0u), annotatedImage(width * height) {
 }
 
-Imageuc::Imageuc(unsigned int &width, unsigned int &height, unsigned char val) : Image<unsigned char>(width, height, val), annotatedImage(width * height, val) {
+Imageuc::Imageuc(unsigned int &width, unsigned int &height, unsigned char val) : Image<unsigned char>(width, height, val), field(0u), annotatedImage(width * height, val) {
 }
 
 Imageuc::~Imageuc() {
@@ -41,15 +41,15 @@ void Imageuc::writeToStream(std::ostream &output) const {
     output << width << " " << height << " 255\n";
 
     // Write raster
-    for(unsigned int k=0; k<height; k++) {
-        for(unsigned int l=0; l<width; l++) {
-            unsigned int offset = k*width + l;
-            unsigned char pix = rawImage[offset];
-            output << pix;
-        }
-    }
 
-     return;
+    // Pointer to the start of the vector of pixels
+    const char* pointer = reinterpret_cast<const char*>(&rawImage[0]);
+    // Number of bytes in total
+    size_t bytes = rawImage.size() * sizeof(rawImage[0]);
+    // Write bytes
+    output.write(pointer, bytes);
+
+    return;
 }
 
 void Imageuc::readFromStream(std::istream &input) {
@@ -148,19 +148,12 @@ void Imageuc::readFromStream(std::istream &input) {
         return;
     }
 
-    // Read data section. Don't do getline because zeros are interpreted as newline characters.
-    for(unsigned int i=0; i<width*height; i++) {
+    // Read data section
+    rawImage.resize(width*height, 0.0);
+    size_t  bytes = width * height * sizeof(unsigned char);
 
-        // Check that input is good
-        if(!input.good()) {
-            // Ran out of data early
-            fprintf(stderr, "Found wrong amount of data: expected %d pixels, found %d\n", width*height, i);
-            return;
-        }
-
-        unsigned char pix = (unsigned char)input.get();
-        rawImage.push_back(pix);
-    }
+    char* pointer = reinterpret_cast<char*>(&rawImage[0]);
+    input.read(pointer, bytes);
 
     return;
 }

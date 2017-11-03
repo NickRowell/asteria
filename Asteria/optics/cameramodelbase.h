@@ -3,10 +3,9 @@
 
 #include <Eigen/Dense>
 
-
+// TODO: Add functions to read/write the fields of each model to/from file
 // TODO: implement the get/set parameters methods
 // TODO: add methods to get partial derivatives of image coordinates wrt the parameters
-// TODO: Add functions to read/write the fields of eahc model to/from file
 
 /**
  * The GeometricOpticsModel class provides a base for all models of the camera

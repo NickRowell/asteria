@@ -2,12 +2,6 @@
 #define METEORIMAGELOCATIONMEASUREMENT_H
 
 #include <vector>
-#include <fstream>
-
-// include headers that implement a archive in XML format
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
 
 /**
  * @brief This class encapsulates the results of several localisation algorithms applied
@@ -82,27 +76,6 @@ public:
      */
     double x_flux_centroid;
     double y_flux_centroid;
-
-private:
-    friend class boost::serialization::access;
-    // When the class Archive corresponds to an output archive, the
-    // & operator is defined similar to <<.  Likewise, when the class Archive
-    // is a type of input archive the & operator is defined similar to >>.
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        // The use of the BOOST_SERIALIZATION_NVP macro is necessary for XML archives.
-        ar & BOOST_SERIALIZATION_NVP(epochTimeUs);
-        ar & BOOST_SERIALIZATION_NVP(changedPixelsPositive);
-        ar & BOOST_SERIALIZATION_NVP(changedPixelsNegative);
-        ar & BOOST_SERIALIZATION_NVP(coarse_localisation_success);
-        ar & BOOST_SERIALIZATION_NVP(bb_xmin);
-        ar & BOOST_SERIALIZATION_NVP(bb_xmax);
-        ar & BOOST_SERIALIZATION_NVP(bb_ymin);
-        ar & BOOST_SERIALIZATION_NVP(bb_ymax);
-        ar & BOOST_SERIALIZATION_NVP(x_flux_centroid);
-        ar & BOOST_SERIALIZATION_NVP(y_flux_centroid);
-    }
 
 };
 

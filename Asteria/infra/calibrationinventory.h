@@ -6,8 +6,6 @@
 #include "infra/source.h"
 #include "optics/cameramodelbase.h"
 
-
-#include <dirent.h>
 #include <memory>
 
 #include <Eigen/Dense>
@@ -79,7 +77,9 @@ public slots:
 
     static CalibrationInventory * loadFromDir(std::string path);
 
-    void saveToDir(std::string path);
+    void saveToDir(std::string topLevelPath);
+
+    void deleteCalibration();
 
 };
 

@@ -1,6 +1,7 @@
 #include "infra/analysisinventory.h"
 #include "util/timeutil.h"
 #include "util/fileutil.h"
+#include "util/serializationutil.h"
 
 #include <fstream>
 #include <iostream>
@@ -10,9 +11,6 @@
 
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
-
-BOOST_CLASS_IMPLEMENTATION(std::vector<MeteorImageLocationMeasurement>, boost::serialization::object_serializable)
-BOOST_CLASS_IMPLEMENTATION(MeteorImageLocationMeasurement, boost::serialization::object_serializable)
 
 AnalysisInventory::AnalysisInventory() {
 
@@ -45,9 +43,12 @@ AnalysisInventory::AnalysisInventory(const std::vector<std::shared_ptr<Imageuc>>
 
 AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
 
-    // Load all the images found here...
+    std::string raw = path + "/raw";
+    std::string processed = path + "/processed";
+
+    // Load the raw images
     DIR *dir;
-    if ((dir = opendir (path.c_str())) == NULL) {
+    if ((dir = opendir (raw.c_str())) == NULL) {
         // Couldn't open the directory!
         return NULL;
     }
@@ -67,7 +68,7 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         // These are the raw frames from the sequence
         if(std::regex_search(child->d_name, TimeUtil::utcRegex, std::regex_constants::match_continuous)) {
             // Build full path to the item
-            std::string childPath = path + "/" + child->d_name;
+            std::string childPath = raw + "/" + child->d_name;
             // Load the image from file and store a shared pointer to it in the vector
             std::ifstream input(childPath);
             auto seq = std::make_shared<Imageuc>();
@@ -78,10 +79,13 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
     }
     closedir (dir);
 
+    // Sort the image sequence into ascending order of capture time
+    std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Imageuc::comparePtrToImage);
+
     // Load derived data products
 
     // Load peakhold image
-    std::string peakHoldImage = path + "/peakhold.pgm";
+    std::string peakHoldImage = processed + "/peakhold.pgm";
     if(FileUtil::fileExists(peakHoldImage)) {
         std::ifstream ifs(peakHoldImage);
         auto peakHoldImage = std::make_shared<Imageuc>();
@@ -90,7 +94,7 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         ifs.close();
     }
 
-    std::string locationData = path + "/localisation.xml";
+    std::string locationData = processed + "/localisation.xml";
     if(FileUtil::fileExists(locationData)) {
         std::ifstream ifs(locationData);
         boost::archive::xml_iarchive ia(ifs, boost::archive::no_header);
@@ -102,9 +106,6 @@ AnalysisInventory *AnalysisInventory::loadFromDir(std::string path) {
         // Initialise empty location data for each frame
         inv->locs = std::vector<MeteorImageLocationMeasurement>(inv->eventFrames.size(), MeteorImageLocationMeasurement());
     }
-
-    // Sort the image sequence into ascending order of capture time
-    std::sort(inv->eventFrames.begin(), inv->eventFrames.end(), Imageuc::comparePtrToImage);
 
     // Sort the location measurements into ascending order of capture time
     std::sort(inv->locs.begin(), inv->locs.end());
@@ -140,7 +141,14 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
         return;
     }
 
-    // Write the raw images to file
+    // Create raw/ and processed/ subdirectories
+    FileUtil::createDir(path, "raw");
+    FileUtil::createDir(path, "processed");
+    std::string raw = path + "/raw";
+    std::string processed = path + "/processed";
+
+    // Write out raw images
+
     for(unsigned int i = 0; i < eventFrames.size(); ++i) {
 
         Imageuc &image = *eventFrames[i];
@@ -148,7 +156,7 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
         // Write the image data out to a file
         char filename [100];
         std::string utcFrame = TimeUtil::epochToUtcString(image.epochTimeUs);
-        sprintf(filename, "%s/%s.pgm", path.c_str(), utcFrame.c_str());
+        sprintf(filename, "%s/%s.pgm", raw.c_str(), utcFrame.c_str());
 
         // PGM (grey image)
         std::ofstream out(filename);
@@ -156,15 +164,17 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
         out.close();
     }
 
+    // Write out processed data
+
     // Write out the peak hold image
     char filename [100];
-    sprintf(filename, "%s/peakhold.pgm", path.c_str());
+    sprintf(filename, "%s/peakhold.pgm", processed.c_str());
     std::ofstream out(filename);
     out << *peakHold;
     out.close();
 
     // Write out the localisation information
-    sprintf(filename, "%s/localisation.xml", path.c_str());
+    sprintf(filename, "%s/localisation.xml", processed.c_str());
     std::ofstream ofs(filename);
     boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
     // write class instance to archive

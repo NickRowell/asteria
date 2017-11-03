@@ -278,7 +278,6 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
     calInv.readNoiseAdu = 5.0;
@@ -294,27 +293,8 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Create new directory to store results for this clip. The path is set by the
-    // date and time of the first frame
-    std::string utc = TimeUtil::epochToUtcString(calibrationFrames.front()->epochTimeUs);
-    std::string yyyy = TimeUtil::extractYearFromUtcString(utc);
-    std::string mm = TimeUtil::extractMonthFromUtcString(utc);
-    std::string dd = TimeUtil::extractDayFromUtcString(utc);
-
-    std::vector<std::string> subLevels;
-    subLevels.push_back(yyyy);
-    subLevels.push_back(mm);
-    subLevels.push_back(dd);
-    subLevels.push_back(utc);
-    string path = state->calibrationDirPath + "/" + yyyy + "/" + mm + "/" + dd + "/" + utc;
-
-    if(!FileUtil::createDirs(state->calibrationDirPath, subLevels)) {
-        fprintf(stderr, "Couldn't create directory %s\n", path.c_str());
-        return;
-    }
-
-    calInv.saveToDir(path);
+    calInv.saveToDir(state->calibrationDirPath);
 
     // All done - emit signal
-    emit finished(utc);
+    emit finished(TimeUtil::epochToUtcString(calibrationFrames[0u]->epochTimeUs));
 }
