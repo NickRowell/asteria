@@ -3,12 +3,10 @@
 
 #include <Eigen/Dense>
 
-// TODO: Add functions to read/write the fields of each model to/from file
-// TODO: implement the get/set parameters methods
-// TODO: add methods to get partial derivatives of image coordinates wrt the parameters
+#include "util/serializationutil.h"
 
 /**
- * The GeometricOpticsModel class provides a base for all models of the camera
+ * @brief The CameraModelBase class provides a base for all models of the camera
  * projective geometry. The main operations required are projecting vectors expressed
  * in the 3D camera frame to a point in the image, and deprojecting points in the
  * image to a 3D vector in the camera frame.
@@ -18,6 +16,11 @@ class CameraModelBase {
 public:
 
     /**
+     * @brief Default constructor for the CameraModelBase.
+     */
+    CameraModelBase();
+
+    /**
      * @brief Main constructor for the CameraModelBase.
      * @param width
      *  Width of the detector [pixels]
@@ -25,6 +28,7 @@ public:
      *  Height of the detector [pixels]
      */
     CameraModelBase(const unsigned int &width, const unsigned int &height);
+
     ~CameraModelBase();
 
     /**
@@ -36,27 +40,6 @@ public:
      * Height of the detector [pixels]
      */
     unsigned int height;
-
-    // Use functions like this to load/save read/write models to file:
-//    friend std::ostream& operator<<(std::ostream& os, const CameraModel& cam)
-//    {
-//        os << "\nDetector geometry:\n"
-//           << "\nPinhole camera matrix:\n" << cam.K
-//           << "\nInverse pinhole camera matrix:\n" << cam.invK
-//           << "\nImage dimensions: " << cam.width << " " << cam.height
-//           << "\nRadial distortion coefficients:"
-//           << "\nK0 = " << cam.K0
-//           << "\nK1 = " << cam.K1
-//           << "\nK2 = " << cam.K2
-//           << "\nK3 = " << cam.K3
-//           << "\nK4 = " << cam.K4
-//           << "\nExposure time [s] = " << cam.exposure_time
-//           << "\n\n";
-
-//        // Return a reference to the original ostream so that we can chain
-//        // stream insertion operations.
-//        return os;
-//    }
 
     /**
      * @brief Get the number of free parameters of the camera geometric optics model.
@@ -131,6 +114,20 @@ public:
      *  On exit, contains the j image coordinates [pixels]
 	 */
     virtual void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const =0;
+
+    /**
+     * @brief Returns the name of the camera model implemented by the derived class.
+     * @return
+     *  The name of the camera model implemented by the derived class.
+     */
+    virtual std::string getModelName() const =0;
+
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & BOOST_SERIALIZATION_NVP(width);
+        ar & BOOST_SERIALIZATION_NVP(height);
+    }
 
 };
 

@@ -1,6 +1,11 @@
-#include "pinholecamera.h"
-
+#include "optics/pinholecamera.h"
 #include "util/coordinateutil.h"
+
+BOOST_CLASS_EXPORT(PinholeCamera)
+
+PinholeCamera::PinholeCamera() : CameraModelBase(), fi(0.0), fj(0.0), pi(0.0), pj(0.0) {
+
+}
 
 PinholeCamera::PinholeCamera(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj) :
    CameraModelBase(width, height), fi(fi), fj(fj), pi(pi), pj(pj) {
@@ -29,6 +34,13 @@ void PinholeCamera::getParameters(double *params) const {
     params[1] = fj;
     params[2] = pi;
     params[3] = pj;
+}
+
+void PinholeCamera::setParameters(const double *params) {
+    fi = params[0];
+    fj = params[1];
+    pi = params[2];
+    pj = params[3];
 }
 
 void PinholeCamera::getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
@@ -86,12 +98,6 @@ void PinholeCamera::getExtrinsicPartialDerivatives(double *derivs, const Eigen::
     derivs[7] = (fj/z_cam2) * (z_cam * dr_cam_dq3[1] - y_cam * dr_cam_dq3[2]);
 }
 
-void PinholeCamera::setParameters(const double *params) {
-    fi = params[0];
-    fj = params[1];
-    pi = params[2];
-    pj = params[3];
-}
 
 Eigen::Vector3d PinholeCamera::deprojectPixel(const double & i, const double & j) const {
     // Homogenous vector of the image plane coordinates
@@ -109,4 +115,8 @@ void PinholeCamera::projectVector(const Eigen::Vector3d & r_cam, double & i, dou
     Eigen::Vector3d r_im = k * r_cam;
     i = r_im[0] / r_im[2];
     j = r_im[1] / r_im[2];
+}
+
+std::string PinholeCamera::getModelName() const {
+    return "PinholeCamera";
 }

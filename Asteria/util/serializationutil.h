@@ -6,8 +6,11 @@
 
 #include <Eigen/Dense>
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/export.hpp>
 
 BOOST_CLASS_IMPLEMENTATION(std::vector<MeteorImageLocationMeasurement>, boost::serialization::object_serializable)
 BOOST_CLASS_IMPLEMENTATION(MeteorImageLocationMeasurement, boost::serialization::object_serializable)
@@ -94,6 +97,41 @@ namespace boost {
             ar & BOOST_SERIALIZATION_NVP(g.x_flux_centroid);
             ar & BOOST_SERIALIZATION_NVP(g.y_flux_centroid);
         }
+
+//        template<class Archive>
+//        void serialize(Archive & ar, CameraModelBase & g, const unsigned int version) {
+
+//            ar & BOOST_SERIALIZATION_NVP(g.width);
+//            ar & BOOST_SERIALIZATION_NVP(g.height);
+//        }
+
+//        template<class Archive>
+//        void serialize(Archive & ar, PinholeCamera & g, const unsigned int version) {
+
+//            ar.template register_type<CameraModelBase>();
+//            ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(CameraModelBase);
+
+//            ar & BOOST_SERIALIZATION_NVP(g.fi);
+//            ar & BOOST_SERIALIZATION_NVP(g.fj);
+//            ar & BOOST_SERIALIZATION_NVP(g.pi);
+//            ar & BOOST_SERIALIZATION_NVP(g.pj);
+//        }
+
+//        template<class Archive>
+//        void serialize(Archive & ar, PinholeCameraWithRadialDistortion & g, const unsigned int version) {
+
+//            ar & BOOST_SERIALIZATION_NVP(g.width);
+//            ar & BOOST_SERIALIZATION_NVP(g.height);
+//            ar & BOOST_SERIALIZATION_NVP(g.fi);
+//            ar & BOOST_SERIALIZATION_NVP(g.fj);
+//            ar & BOOST_SERIALIZATION_NVP(g.pi);
+//            ar & BOOST_SERIALIZATION_NVP(g.pj);
+//            ar & BOOST_SERIALIZATION_NVP(g.K0);
+//            ar & BOOST_SERIALIZATION_NVP(g.K1);
+//            ar & BOOST_SERIALIZATION_NVP(g.K2);
+//            ar & BOOST_SERIALIZATION_NVP(g.K3);
+//            ar & BOOST_SERIALIZATION_NVP(g.K4);
+//        }
 
 
 

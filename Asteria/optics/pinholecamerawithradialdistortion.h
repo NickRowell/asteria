@@ -7,8 +7,40 @@ class PinholeCameraWithRadialDistortion : public PinholeCamera {
 
 public:
 
+    /**
+     * @brief Default constructor for the PinholeCameraWithRadialDistortion.
+     */
+    PinholeCameraWithRadialDistortion();
+
+    /**
+     * @brief Main constructor for the PinholeCameraWithRadialDistortion.
+     *
+     * @param width
+     *  Width of the detector [pixels]
+     * @param height
+     *  Height of the detector [pixels]
+     * @param fi
+     *  Focal length in the i (horizontal) direction [pixels]
+     * @param fj
+     *  Focal length in the j (vertical) direction [pixels]
+     * @param pi
+     *  Coordinate of the principal point in the i (horizontal) direction [pixels]
+     * @param pj
+     *  Coordinate of the principal point in the j (vertical) direction [pixels]
+     * @param k0
+     *  Zeroth-order coefficient of the radial distortion polynomal [-]
+     * @param k1
+     *  First-order coefficient of the radial distortion polynomal [pixels\f$^{-1}\f$]
+     * @param k2
+     *  Second-order coefficient of the radial distortion polynomal [pixels\f$^{-2}\f$]
+     * @param k3
+     *  Third-order coefficient of the radial distortion polynomal [pixels\f$^{-3}\f$]
+     * @param k4
+     *  Fourth-order coefficient of the radial distortion polynomal [pixels\f$^{-4}\f$]
+     */
     PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
                                       const double &k0, const double &k1, const double &k2, const double &k3, const double &k4);
+
     ~PinholeCameraWithRadialDistortion();
 
     /**
@@ -73,6 +105,8 @@ public:
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 
     void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
+
+    std::string getModelName() const;
 
     /**
      * Computes the magnitude of the radial distortion at the given distance
@@ -211,6 +245,16 @@ public:
      *  On exit, contains j coordinate of undistorted pixel [pixels]
      */
     void getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
+        ar & BOOST_SERIALIZATION_NVP(K0);
+        ar & BOOST_SERIALIZATION_NVP(K1);
+        ar & BOOST_SERIALIZATION_NVP(K2);
+        ar & BOOST_SERIALIZATION_NVP(K3);
+        ar & BOOST_SERIALIZATION_NVP(K4);
+    }
 
 };
 

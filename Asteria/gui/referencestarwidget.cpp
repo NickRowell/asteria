@@ -12,11 +12,10 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 
+// TODO: integrate the new camera models.
 // TODO: integrate and display detected Sources; enable creation of cross-matches by user clicks.
 // TODO: remove cross-matches for stars that move out of FOV during user adjustment.
 // TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depicting mouse controls.
-// TODO: integrate camera matrix class that provides project and deproject functions and radial distortion etc
-// TODO: formalise the principal point etc; don't base the camera orientation internally on the azimuth, elevation etc.
 
 
 ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
@@ -233,8 +232,6 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
 
     update();
 }
-
-
 
 void ReferenceStarWidget::wheelEvent(QWheelEvent *e) {
 

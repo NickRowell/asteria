@@ -7,6 +7,7 @@
 #include "util/coordinateutil.h"
 #include "util/mathutil.h"
 #include "infra/calibrationinventory.h"
+#include "optics/pinholecamerawithradialdistortion.h"
 
 #include "infra/image.h"
 
@@ -277,6 +278,12 @@ void CalibrationWorker::process() {
     //           Compute the geometric calibration           //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+//    CameraModelBase * cam = new PinholeCamera(state->width, state->height, 300.0, 300.0, 320.0, 240.0);
+
+    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
+
+    calInv.cam = cam;
 
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data

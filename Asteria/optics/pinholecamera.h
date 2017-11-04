@@ -7,7 +7,28 @@ class PinholeCamera : public CameraModelBase {
 
 public:
 
+    /**
+     * @brief Default constructor for the PinholeCamera.
+     */
+    PinholeCamera();
+
+    /**
+     * @brief Main constructor for the PinholeCamera.
+     * @param width
+     *  Width of the detector [pixels]
+     * @param height
+     *  Height of the detector [pixels]
+     * @param fi
+     *  Focal length in the i (horizontal) direction [pixels]
+     * @param fj
+     *  Focal length in the j (vertical) direction [pixels]
+     * @param pi
+     *  Coordinate of the principal point in the i (horizontal) direction [pixels]
+     * @param pj
+     *  Coordinate of the principal point in the j (vertical) direction [pixels]
+     */
     PinholeCamera(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj);
+
     ~PinholeCamera();
 
     /**
@@ -67,6 +88,18 @@ public:
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 
     void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
+
+    std::string getModelName() const;
+
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(CameraModelBase);
+        ar & BOOST_SERIALIZATION_NVP(fi);
+        ar & BOOST_SERIALIZATION_NVP(fj);
+        ar & BOOST_SERIALIZATION_NVP(pi);
+        ar & BOOST_SERIALIZATION_NVP(pj);
+    }
 
 };
 

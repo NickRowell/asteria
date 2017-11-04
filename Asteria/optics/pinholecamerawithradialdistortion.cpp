@@ -1,4 +1,11 @@
-#include "pinholecamerawithradialdistortion.h"
+#include "optics/pinholecamerawithradialdistortion.h"
+
+BOOST_CLASS_EXPORT(PinholeCameraWithRadialDistortion)
+
+PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion()  :
+    PinholeCamera(), K0(0.0), K1(0.0), K2(0.0), K3(0.0), K4(0.0) {
+
+}
 
 PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi,
     const double &fj, const double &pi, const double &pj, const double &k0, const double &k1, const double &k2, const double &k3, const double &k4) :
@@ -315,6 +322,10 @@ void PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_
 
     // Apply radial distortion
     getDistortedPixel(i_ideal, j_ideal, i, j);
+}
+
+std::string PinholeCameraWithRadialDistortion::getModelName() const {
+    return "PinholeCameraWithRadialDistortion";
 }
 
 double PinholeCameraWithRadialDistortion::getForwardRadialDistortionFactor(const double &R) const {

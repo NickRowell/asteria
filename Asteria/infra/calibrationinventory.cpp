@@ -3,14 +3,13 @@
 #include "util/fileutil.h"
 #include "util/renderutil.h"
 #include "util/serializationutil.h"
+#include "optics/pinholecamera.h"
+#include "optics/pinholecamerawithradialdistortion.h"
 
 #include <dirent.h>
 #include <regex>
 #include <fstream>
 #include <functional>
-
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
 
 CalibrationInventory::CalibrationInventory() {
 
@@ -103,7 +102,7 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         ia & BOOST_SERIALIZATION_NVP(inv->sources);
         ia & BOOST_SERIALIZATION_NVP(inv->readNoiseAdu);
         ia & BOOST_SERIALIZATION_NVP(inv->q_sez_cam);
-//        ia & BOOST_SERIALIZATION_NVP(inv->cam);
+        ia & BOOST_SERIALIZATION_NVP(inv->cam);
         ifs.close();
     }
 
@@ -186,7 +185,7 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
         oa & BOOST_SERIALIZATION_NVP(sources);
         oa & BOOST_SERIALIZATION_NVP(readNoiseAdu);
         oa & BOOST_SERIALIZATION_NVP(q_sez_cam);
-//        oa & BOOST_SERIALIZATION_NVP(cam);
+        oa & BOOST_SERIALIZATION_NVP(cam);
         ofs.close();
     }
 
