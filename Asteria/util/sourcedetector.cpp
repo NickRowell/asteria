@@ -29,7 +29,7 @@ SourceDetector::SourceDetector() {
  *            that the integrated flux lies above the background level [dimensionless].
  * @return Vector containing the Sources detected in the window
  */
-std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &median, std::vector<unsigned char> &background, std::vector<unsigned char> &noise,
+std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &median, std::vector<unsigned char> &background, std::vector<double> &noise,
                                                unsigned int &width, unsigned int &height, double &source_detection_threshold_sigmas) {
 
     // Create an array and List of Samples. The array is used to get a sample for a given coordinate, and
@@ -105,7 +105,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
         for(unsigned int sIdx : source.pixels) {
             double adu = (double)median[sIdx] - (double)background[sIdx];
             source.adu += adu;
-            source.sigma_adu += (double)noise[sIdx] * (double)noise[sIdx];
+            source.sigma_adu += noise[sIdx] * noise[sIdx];
 
             unsigned int x = sIdx % width;
             unsigned int y = sIdx / width;

@@ -205,8 +205,8 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-//    calInv.sources = SourceDetector::getSources(median->rawImage, background->rawImage, noise->rawImage,
-//                                                             state->width, state->height, state->source_detection_threshold_sigmas);
+    calInv.sources = SourceDetector::getSources(median->rawImage, background->rawImage, noise->rawImage,
+                                                             state->width, state->height, state->source_detection_threshold_sigmas);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

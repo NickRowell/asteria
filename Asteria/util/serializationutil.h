@@ -133,12 +133,6 @@ namespace boost {
 //            ar & BOOST_SERIALIZATION_NVP(g.K4);
 //        }
 
-
-
-
-
-
-
     } // namespace serialization
 } // namespace boost
 
