@@ -48,110 +48,45 @@ void CalibrationWorker::process() {
     calInv.epochTimeUs = calibrationFrames.front()->epochTimeUs;
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
-    unsigned int field = calibrationFrames.front()->field;
 
-    // Compute the median image; for each pixel, store a vector of all the values
-    std::vector< std::vector<unsigned char>> pixels(state->width * state->height);
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //   Estimate the signal, noise and background images    //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    for(unsigned int i = 0; i < calibrationFrames.size(); ++i) {
+    // This algorithm estimates the signal and noise images from the stack of calibration frames from the
+    // trimmed mean and standard deviations of each pixel. This is preferable over other robust statistics
+    // such as the median and MAD for the following reason: since the pixel values are clamped to [0:255] range
+    // we cannot have far outliers that serioiusly bias the mean; any outliers will be modest and will be removed
+    // by using the trimmed mean. The median is quantized and will not be as accurate as the mean given the limited
+    // range of values.
 
-        Imageuc &image = *calibrationFrames[i];
+    std::vector<double> signal(state->width * state->height);
+    std::vector<double> noise(state->width * state->height);
 
-        // Accumulate pixel values
-        for(unsigned int k=0; k<image.height; k++) {
-            for(unsigned int l=0; l<image.width; l++) {
-                unsigned int pixIdx = k*image.width + l;
-                pixels[pixIdx].push_back(image.rawImage[pixIdx]);
-            }
+    // Loop over the pixels
+    for(unsigned int p=0; p<state->width * state->height; p++) {
+
+        // Extract the pixel value in each of the calibration frames
+        std::vector<double> pixels(calibrationFrames.size());
+        for(unsigned int f = 0; f < calibrationFrames.size(); f++) {
+            double pixel = static_cast<double>(calibrationFrames[f]->rawImage[p]);
+            pixels[f] = pixel;
         }
+
+        // Now compute the trimmed mean & sample standard deviation
+        double trimmed_mean = 0.0;
+        double trimmed_std = 0.0;
+        MathUtil::getTrimmedMeanStd(pixels, trimmed_mean, trimmed_std, 0.05);
+
+        signal[p] = trimmed_mean;
+        noise[p] = trimmed_std;
     }
 
-    // Compute the median, MAD and RMS value of each pixel
-    std::vector<unsigned char> medianVals;
-    std::vector<unsigned char> madVals;
-    std::vector<double> meanVals;
-    std::vector<double> varianceVals;
-    double maxVariance = 0;
-    int histogramOfDeviations[512] = {0};
+    // Now post-process the signal value to get an estimate of the source-free background level in each pixel
+    std::vector<double> background(state->width * state->height);
 
-    for(unsigned int k=0; k<state->height; k++) {
-        for(unsigned int l=0; l<state->width; l++) {
-            unsigned int pixIdx = k*state->width + l;
-
-            vector<unsigned char> pixel = pixels[pixIdx];
-
-            double mean = 0.0;
-            double meanOfSquare = 0.0;
-            for(unsigned int p = 0; p < pixel.size(); p++) {
-                double dPix = (double)pixel[p];
-                mean += dPix;
-                meanOfSquare += (dPix * dPix);
-            }
-            mean /= (double)pixel.size();
-            meanOfSquare /= (double)pixel.size();
-            double variance = meanOfSquare - (mean*mean);
-            meanVals.push_back(mean);
-            varianceVals.push_back(variance);
-            maxVariance = std::max(variance, maxVariance);
-
-            unsigned char med;
-            unsigned char mad;
-            std::sort(pixel.begin(), pixel.end());
-
-            // Compute the median value
-            if(pixel.size() % 2 == 0) {
-                // Even number of elements - take average of central two
-                unsigned int a = (int)pixel[pixel.size()/2];
-                unsigned int b = (int)pixel[pixel.size()/2 - 1];
-                unsigned int c = (a + b)/2;
-                unsigned char d = c & 0xFF;
-                med = d;
-            }
-            else {
-                // Odd number of elements - pick central one
-                med = pixel[pixel.size()/2];
-            }
-
-            // Compute the MAD value
-            std::vector<unsigned int> absDevs;
-            for(unsigned int p = 0; p < pixel.size(); ++p) {
-                int dev = (int)pixel[p] - med;
-                histogramOfDeviations[dev+256]++;
-                absDevs.push_back(abs(dev));
-            }
-
-            std::sort(absDevs.begin(), absDevs.end());
-
-            if (pixel.size() % 2 == 0) {
-                mad = (absDevs[pixel.size() / 2 - 1] + absDevs[pixel.size() / 2]) / 2;
-            }
-            else {
-                mad = absDevs[pixel.size() / 2];
-            }
-
-            medianVals.push_back(med);
-            madVals.push_back(mad);
-        }
-    }
-
-    // Construct an image of the noise level in each pixel to detect fixed pattern noise etc
-    std::vector<double> stdVals;
-    for(unsigned int i=0; i<state->width*state->height; i++) {
-        double std = std::sqrt(varianceVals[i]);
-        stdVals.push_back(std);
-    }
-
-    std::shared_ptr<Imaged> noise = make_shared<Imaged>(state->width, state->height);
-    noise->epochTimeUs = midTimeStamp;
-    noise->rawImage = stdVals;
-
-    std::shared_ptr<Imageuc> median = make_shared<Imageuc>(state->width, state->height);
-    median->field = field;
-    median->epochTimeUs = midTimeStamp;
-    median->rawImage = medianVals;
-
-    // Measure the background image from the median
-    std::shared_ptr<Imageuc> background = make_shared<Imageuc>(state->width, state->height);
     // Algorithm for background calculation: each pixel is the median value of the pixels surrounding it in
     // a window of some particular width.
     // Sliding window extends out to this many pixels on each side of the central pixel
@@ -166,38 +101,34 @@ void CalibrationWorker::process() {
             unsigned int l_max = std::min((int)l + hw, (int)state->width);
 
             // Pixels within the window
-            std::vector<unsigned char> pixels;
+            std::vector<double> pixels;
             for(unsigned int kp=k_min; kp<k_max; kp++) {
                 for(unsigned int lp=l_min; lp<l_max; lp++) {
                     unsigned int pixIdx = kp*state->width + lp;
-                    pixels.push_back(medianVals[pixIdx]);
+                    pixels.push_back(signal[pixIdx]);
                 }
             }
 
             // Get the median value in the window
-            std::sort(pixels.begin(), pixels.end());
-            unsigned char med;
-            if(pixels.size() % 2 == 0) {
-                // Even number of elements - take average of central two
-                unsigned int a = (int)pixels[pixels.size()/2];
-                unsigned int b = (int)pixels[pixels.size()/2 - 1];
-                unsigned int c = (a + b)/2;
-                unsigned char d = c & 0xFF;
-                med = d;
-            }
-            else {
-                // Odd number of elements - pick central one
-                med = pixels[pixels.size()/2];
-            }
+            double median = MathUtil::getMedian(pixels);
+
             unsigned int pixIdx = k*state->width + l;
-            background->rawImage[pixIdx] = med;
+            background[pixIdx] = median;
         }
     }
 
-    // Set these images to the fields in the CalibrationInventory
-    calInv.medianImage = median;
-    calInv.noiseImage = noise;
-    calInv.backgroundImage = background;
+
+    calInv.noise = make_shared<Imaged>(state->width, state->height);
+    calInv.noise->epochTimeUs = midTimeStamp;
+    calInv.noise->rawImage = noise;
+
+    calInv.signal = make_shared<Imaged>(state->width, state->height);
+    calInv.signal->epochTimeUs = midTimeStamp;
+    calInv.signal->rawImage = signal;
+
+    calInv.background = make_shared<Imaged>(state->width, state->height);
+    calInv.background->epochTimeUs = midTimeStamp;
+    calInv.background->rawImage = background;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -205,7 +136,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calInv.sources = SourceDetector::getSources(median->rawImage, background->rawImage, noise->rawImage,
+    calInv.sources = SourceDetector::getSources(calInv.signal->rawImage, calInv.background->rawImage, calInv.noise->rawImage,
                                                              state->width, state->height, state->source_detection_threshold_sigmas);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//

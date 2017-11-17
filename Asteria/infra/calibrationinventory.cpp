@@ -60,35 +60,35 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
     // Sort the calibration image sequence into ascending order of capture time
     std::sort(inv->calibrationFrames.begin(), inv->calibrationFrames.end(), Imageuc::comparePtrToImage);
 
-    // Load the median, background and noise images
+    // Load the signal, background and noise images
 
-    // Load the median image
-    std::string medianImagePath = processed + "/median.pgm";
-    if(FileUtil::fileExists(medianImagePath)) {
-        std::ifstream ifs(medianImagePath);
-        auto medianImage = std::make_shared<Imageuc>();
-        ifs >> *medianImage;
-        inv->medianImage = medianImage;
+    // Load the signal image
+    std::string signalPath = processed + "/signal.pfm";
+    if(FileUtil::fileExists(signalPath)) {
+        std::ifstream ifs(signalPath);
+        auto signal = std::make_shared<Imaged>();
+        ifs >> *signal;
+        inv->signal = signal;
         ifs.close();
     }
 
     // Load the background image
-    std::string bkgImagePath = processed + "/background.pgm";
-    if(FileUtil::fileExists(bkgImagePath)) {
-        std::ifstream ifs(bkgImagePath);
-        auto bkgImage = std::make_shared<Imageuc>();
-        ifs >> *bkgImage;
-        inv->backgroundImage = bkgImage;
+    std::string backgroundPath = processed + "/background.pfm";
+    if(FileUtil::fileExists(backgroundPath)) {
+        std::ifstream ifs(backgroundPath);
+        auto background = std::make_shared<Imaged>();
+        ifs >> *background;
+        inv->background = background;
         ifs.close();
     }
 
     // Load the noise image
-    std::string noiseImagePath = processed + "/noise.pfm";
-    if(FileUtil::fileExists(noiseImagePath)) {
-        std::ifstream ifs(noiseImagePath);
-        auto noiseImage = std::make_shared<Imaged>();
-        ifs >> *noiseImage;
-        inv->noiseImage = noiseImage;
+    std::string noisePath = processed + "/noise.pfm";
+    if(FileUtil::fileExists(noisePath)) {
+        std::ifstream ifs(noisePath);
+        auto noise = std::make_shared<Imaged>();
+        ifs >> *noise;
+        inv->noise = noise;
         ifs.close();
     }
 
@@ -151,27 +151,48 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
 
     char filename [100];
 
-    // Write out the median image
-    sprintf(filename, "%s/median.pgm", processed.c_str());
+    // Write out the signal image
+    sprintf(filename, "%s/signal.pfm", processed.c_str());
     {
         std::ofstream out(filename);
-        out << *medianImage;
+        out << *signal;
+        out.close();
+    }
+    // Write out pgm version of the signal image for offline inspection
+    sprintf(filename, "%s/signal.pgm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << Imageuc(*signal);
         out.close();
     }
 
     // Write out the background image
+    sprintf(filename, "%s/background.pfm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << *background;
+        out.close();
+    }
+    // Write out pgm version of the background image for offline inspection
     sprintf(filename, "%s/background.pgm", processed.c_str());
     {
         std::ofstream out(filename);
-        out << *backgroundImage;
+        out << Imageuc(*background);
         out.close();
     }
 
-    // Write out the variance image
+    // Write out the noise image
     sprintf(filename, "%s/noise.pfm", processed.c_str());
     {
         std::ofstream out(filename);
-        out << *noiseImage;
+        out << *noise;
+        out.close();
+    }
+    // Write out pgm version of the noise image for offline inspection
+    sprintf(filename, "%s/noise.pgm", processed.c_str());
+    {
+        std::ofstream out(filename);
+        out << Imageuc(*noise);
         out.close();
     }
 
@@ -193,7 +214,7 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     // but are useful for visualisation and debugging.
 
     // Create an RGB image of the extracted sources and save to file
-    std::shared_ptr<Imageui> image = RenderUtil::renderSourcesImage(sources, medianImage->width, medianImage->height);
+    std::shared_ptr<Imageui> image = RenderUtil::renderSourcesImage(sources, signal->width, signal->height);
     sprintf(filename, "%s/sources.ppm", processed.c_str());
     {
         std::ofstream out(filename);
@@ -226,9 +247,9 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     ss << "set output \"" << rnPlotfilename << "\"\n";
     ss << "plot \"-\" w d notitle\n";
 
-    for(unsigned int i=0; i<medianImage->width*medianImage->height; i++) {
+    for(unsigned int i=0; i<signal->width*signal->height; i++) {
         char buffer[200] = "";
-        sprintf(buffer, "%d\t%f\n", medianImage->rawImage[i], noiseImage->rawImage[i]);
+        sprintf(buffer, "%f\t%f\n", signal->rawImage[i], noise->rawImage[i]);
         ss << buffer;
     }
     ss << "e\n";

@@ -23,11 +23,11 @@ public:
         // Nothing to do
     }
 
-    Image(unsigned int &width, unsigned int &height) : width(width), height(height), epochTimeUs(0ll), rawImage(width*height) {
+    Image(const unsigned int &width, const unsigned int &height) : width(width), height(height), epochTimeUs(0ll), rawImage(width*height) {
         // Nothing to do
     }
 
-    Image(unsigned int &width, unsigned int &height, T val) : width(width), height(height), epochTimeUs(0ll), rawImage(width*height, val) {
+    Image(const unsigned int &width, const unsigned int &height, const T val) : width(width), height(height), epochTimeUs(0ll), rawImage(width*height, val) {
         // Nothing to do
     }
 

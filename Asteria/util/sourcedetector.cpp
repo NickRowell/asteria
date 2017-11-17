@@ -14,7 +14,7 @@ SourceDetector::SourceDetector() {
  * of each source is measured by reference to the noise image and the background level. Sources
  * falling below the given significance threshold are culled.
  *
- * @param pixels
+ * @param signal
  *            Vector of all pixel values; this is the measured image from which sources are to be extracted (row-packed) [ADU]
  * @param background
  *            Vector of pixel background values (row-packed) [ADU]
@@ -29,22 +29,22 @@ SourceDetector::SourceDetector() {
  *            that the integrated flux lies above the background level [dimensionless].
  * @return Vector containing the Sources detected in the window
  */
-std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &median, std::vector<unsigned char> &background, std::vector<double> &noise,
+std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std::vector<double> &background, std::vector<double> &noise,
                                                unsigned int &width, unsigned int &height, double &source_detection_threshold_sigmas) {
 
     // Create an array and List of Samples. The array is used to get a sample for a given coordinate, and
     // the list is used so that we can process the samples in intensity order
-    std::vector<Sample *> sortedSamples;
-    std::vector<Sample *> allSamples;
+    std::vector<Sample<double> *> sortedSamples;
+    std::vector<Sample<double> *> allSamples;
 
     for(unsigned int sIdx=0; sIdx<height * width; sIdx++) {
-        Sample * sample = new Sample(sIdx, width, median[sIdx]);
+        Sample<double> * sample = new Sample<double>(sIdx, width, signal[sIdx]);
         allSamples.push_back(sample);
         sortedSamples.push_back(sample);
     }
 
     // Sort the vector into order of decreasing intensity
-    std::sort(sortedSamples.begin(), sortedSamples.end(), Sample::compareSamplePtrDecreasing);
+    std::sort(sortedSamples.begin(), sortedSamples.end(), Sample<double>::compareSamplePtrDecreasing);
 
     // Current source label; incremented each time a new source is found
     unsigned int currentLabel = 1;
@@ -52,7 +52,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
     // Process samples in decreasing order of intensity
     for(unsigned int s=0; s<sortedSamples.size(); s++) {
 
-        Sample * sample = sortedSamples[s];
+        Sample<double> * sample = sortedSamples[s];
 
         // Is this sample
         // a) Isolated? If so, initialise a new source
@@ -80,7 +80,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
     std::vector<Source> sources(currentLabel-1);
 
     // Assign each uniquely-labelled sample to the right source
-    for (Sample * sample : allSamples) {
+    for (Sample<double> * sample : allSamples) {
         // Is Sample labelled?
         if (sample->label != 0) {
             sources[sample->label - 1].pixels.push_back(sample->index);
@@ -103,7 +103,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
         source.y0 = 0.0;
 
         for(unsigned int sIdx : source.pixels) {
-            double adu = (double)median[sIdx] - (double)background[sIdx];
+            double adu = (double)signal[sIdx] - (double)background[sIdx];
             source.adu += adu;
             source.sigma_adu += noise[sIdx] * noise[sIdx];
 
@@ -143,7 +143,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
             unsigned int x = sIdx % width;
             unsigned int y = sIdx / width;
 
-            double weight = ((double)median[sIdx] - (double)background[sIdx]) / source.adu;
+            double weight = ((double)signal[sIdx] - (double)background[sIdx]) / source.adu;
 
             a += (x - source.x0) * (x - source.x0) * weight;
             b += (x - source.x0) * (y - source.y0) * weight;
@@ -228,7 +228,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<unsigned char> &media
  * @return
  *  The set of unique labels found among the neighbouring samples; returned as a vector for ease of access.
  */
-std::vector<unsigned int> SourceDetector::getNeighbourUniqueLabels(Sample * &sample, const std::vector<Sample *> &samples, unsigned int &width, unsigned int &height) {
+std::vector<unsigned int> SourceDetector::getNeighbourUniqueLabels(Sample<double> *&sample, const std::vector<Sample<double> *> &samples, unsigned int &width, unsigned int &height) {
 
     // Set of labels for the neighbouring samples
     std::set<unsigned int> neighbourLabels;

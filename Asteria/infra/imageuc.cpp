@@ -17,6 +17,26 @@ Imageuc::Imageuc(unsigned int &width, unsigned int &height) : Image<unsigned cha
 Imageuc::Imageuc(unsigned int &width, unsigned int &height, unsigned char val) : Image<unsigned char>(width, height, val), field(0u), annotatedImage(width * height, val) {
 }
 
+Imageuc::Imageuc(const Imaged &convertme) : Image<unsigned char>(convertme.width, convertme.height), field(V4L2_FIELD_NONE), annotatedImage(0u) {
+    // Convert the raw data: linearly map the floating-point pixel values to the [0:255] range
+    double min = convertme.rawImage[0];
+    double max = convertme.rawImage[0];
+
+    for(unsigned int p = 0; p < width * height; p++) {
+        min = std::min(min, convertme.rawImage[p]);
+        max = std::max(max, convertme.rawImage[p]);
+    }
+
+    for(unsigned int p = 0; p < width * height; p++) {
+        // Value translated and scaled to [0:255] range
+        double val_d = 255.0 * (convertme.rawImage[p] - min) / (max - min);
+        // Converted to unsigned char
+        unsigned char val_uc = static_cast<unsigned char>(val_d);
+
+        rawImage[p] = val_uc;
+    }
+}
+
 Imageuc::~Imageuc() {
 }
 

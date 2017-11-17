@@ -38,6 +38,16 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     QWidget * backgroundImageWidget = new QWidget(this);
     backgroundImageWidget->setLayout(backgroundImageLayout);
 
+    noiseImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
+    QVBoxLayout *noiseImageLayout = new QVBoxLayout;
+    noiseImageLayout->addWidget(noiseImageViewer);
+    noiseImageLayout->addStretch();
+    QWidget * noiseImageWidget = new QWidget(this);
+    noiseImageWidget->setLayout(noiseImageLayout);
+
+
+
+
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));
 
@@ -47,7 +57,8 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     // Use a tabbed widget to display the video footage and calibration images
     QTabWidget *tabWidget = new QTabWidget;
     tabWidget->addTab(player, QString("Raw frames"));
-    tabWidget->addTab(refStarWidget, QString("Median"));
+    tabWidget->addTab(refStarWidget, QString("Signal"));
+    tabWidget->addTab(noiseImageWidget, QString("Noise"));
     tabWidget->addTab(backgroundImageWidget, QString("Background"));
 
     // Add more tabs for the other calibration
@@ -106,8 +117,14 @@ void CalibrationWidget::loadClip(QString path) {
     }
 
     player->loadClip(inv->calibrationFrames, inv->calibrationFrames.front());
-    refStarWidget->loadImage(inv->medianImage);
-    backgroundImageViewer->newFrame(inv->backgroundImage, false, true, true);
+
+    // Make fixed-point versions of the images for display
+    std::shared_ptr<Imageuc> signal = make_shared<Imageuc>(*(inv->signal));
+    std::shared_ptr<Imageuc> noise = make_shared<Imageuc>(*(inv->noise));
+    std::shared_ptr<Imageuc> background = make_shared<Imageuc>(*(inv->background));
+    refStarWidget->loadImage(signal);
+    noiseImageViewer->newFrame(noise, false, true, true);
+    backgroundImageViewer->newFrame(background, false, true, true);
 }
 
 #ifdef RECALIBRATE

@@ -3,6 +3,7 @@
 
 #include "infra/image.h"
 #include "infra/meteorimagelocationmeasurement.h"
+#include "infra/imaged.h"
 
 #include <iostream>
 #include <linux/videodev2.h>
@@ -21,6 +22,7 @@ public:
     Imageuc(const Imageuc& copyme);
     Imageuc(unsigned int &width, unsigned int &height);
     Imageuc(unsigned int &width, unsigned int &height, unsigned char val);
+    Imageuc(const Imaged& convertme);
     ~Imageuc();
 
     /**

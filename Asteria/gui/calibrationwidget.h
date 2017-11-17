@@ -51,7 +51,7 @@ public:
     VideoPlayerWidget * player;
 
     /**
-     * @brief Image viewer for the median image.
+     * @brief Image viewer for the signal image plus reference star fit.
      */
     ReferenceStarWidget * refStarWidget;
 
@@ -60,6 +60,10 @@ public:
      */
     GLMeteorDrawer * backgroundImageViewer;
 
+    /**
+     * @brief Image viewer for the noise image.
+     */
+    GLMeteorDrawer * noiseImageViewer;
 
 #ifdef RECALIBRATE
     /**

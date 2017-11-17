@@ -21,8 +21,8 @@ QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
  * QOpenGLWidget provides control over the main rendering pipeline.
  *
  * Originally this class additionally inherited from QOpenGLFunctions, but I couldn't get this
- * to work with multiple instances of the GLMeteorDrawer (required to show both the live and replay
- * footage). Removing the extra inheritance seemed to fix that without any further alterations.
+ * to work with multiple instances of the GLMeteorDrawer. Removing the extra inheritance seemed
+ * to fix that without any further alterations.
  */
 class GLMeteorDrawer : public QOpenGLWidget {
 

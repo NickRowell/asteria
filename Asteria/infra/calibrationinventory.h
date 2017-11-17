@@ -36,17 +36,17 @@ public:
     /**
      * @brief The median (noise-reduced) image.
      */
-    std::shared_ptr<Imageuc> medianImage;
+    std::shared_ptr<Imaged> signal;
 
     /**
      * @brief The noise image.
      */
-    std::shared_ptr<Imaged> noiseImage;
+    std::shared_ptr<Imaged> noise;
 
     /**
      * @brief The background image.
      */
-    std::shared_ptr<Imageuc> backgroundImage;
+    std::shared_ptr<Imaged> background;
 
     /**
      * @brief A vector containing the individual frames used in the calibration, stored in ascending time order.
