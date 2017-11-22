@@ -70,9 +70,10 @@ public slots:
     void detect();
 
     /**
-     * @brief toggleOverlay Used to toggle the rendering of the overlay image, in GUI mode. Sometimes it's
+     * @brief Used to toggle the rendering of the overlay image, in GUI mode. Sometimes it's
      * useful to turn it off.
      * @param checkBoxState
+     *  The state of the checkbox presented to the user.
      */
     void toggleOverlay(int checkBoxState);
 

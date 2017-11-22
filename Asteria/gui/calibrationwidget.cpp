@@ -29,7 +29,7 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
 
     player = new VideoPlayerWidget(this, this->state->width, this->state->height, this->state->nominalFramePeriodUs);
 
-    refStarWidget = new ReferenceStarWidget(this, state);
+    refStarWidget = new ReferenceStarWidget(this, this->state);
 
     backgroundImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
     QVBoxLayout *backgroundImageLayout = new QVBoxLayout;
@@ -44,9 +44,6 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     noiseImageLayout->addStretch();
     QWidget * noiseImageWidget = new QWidget(this);
     noiseImageWidget->setLayout(noiseImageLayout);
-
-
-
 
     // Capture right-clicks in the tree view for displaying context menu
     connect(tree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onCustomContextMenu(const QPoint &)));

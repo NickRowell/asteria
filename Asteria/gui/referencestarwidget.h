@@ -35,7 +35,7 @@ public:
     /**
      * @brief Image viewer for the median image.
      */
-    GLMeteorDrawer * medianImageViewer;
+    GLMeteorDrawer * signalImageViewer;
 
     /**
      * @brief Vector of ReferenceStars currently visible.
@@ -87,16 +87,31 @@ public:
      */
     bool rightButtonIsPressed;
 
+    /**
+     * @brief Flag used to toggle visualisation of the reference stars.
+     */
+    bool displayRefStars;
+
+    /**
+     * @brief Flag used to toggle visualisation of the extracted sources.
+     */
+    bool displaySources;
+
+    /**
+     * @brief Flag used to toggle visualisation of the geometric calibration.
+     */
+    bool displayGeoCal;
 
 signals:
 
 public slots:
 
     void slide(double position);
-
     void loadImage(std::shared_ptr<Imageuc> &newImage);
-
     void update();
+    void toggleDisplayRefStars(int checkBoxState);
+    void toggleDisplaySources(int checkBoxState);
+    void toggleDisplayGeoCal(int checkBoxState);
 
 protected:
 

@@ -11,16 +11,16 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QGroupBox>
+#include <QCheckBox>
 
 // TODO: integrate the new camera models.
 // TODO: integrate and display detected Sources; enable creation of cross-matches by user clicks.
 // TODO: remove cross-matches for stars that move out of FOV during user adjustment.
 // TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depicting mouse controls.
 
-
 ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) : QWidget(parent), state(state) {
 
-    medianImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
+    signalImageViewer = new GLMeteorDrawer(this, this->state->width, this->state->height);
 
     selectedRefStar = 0;
 
@@ -30,11 +30,23 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     middleButtonIsPressed = false;
     rightButtonIsPressed = false;
 
+    displayRefStars = false;
+    displaySources = false;
+    displayGeoCal = false;
+
     // TODO: reference star catalogue should know the magnitude range of it's contents
     DoubleSlider * slider = new DoubleSlider(this, -1.0, 6.0, state->ref_star_faint_mag_limit, 100);
 
     // Player response to user moving the slider
     connect(slider, SIGNAL(doubleSliderMoved(double)), this, SLOT(slide(double)));
+
+    QCheckBox * displayRefStarsCheckbox = new QCheckBox("Show &reference stars", this);
+    QCheckBox * displaySourcesCheckbox = new QCheckBox("Show &extracted sources", this);
+    QCheckBox * displayGeoCalCheckbox = new QCheckBox("Show &camera calibration", this);
+
+    connect(displayRefStarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(toggleDisplayRefStars(int)));
+    connect(displaySourcesCheckbox, SIGNAL(stateChanged(int)), this, SLOT(toggleDisplaySources(int)));
+    connect(displayGeoCalCheckbox, SIGNAL(stateChanged(int)), this, SLOT(toggleDisplayGeoCal(int)));
 
     refStarMagSliderGroupBox = new QGroupBox(QString("Reference stars faint magnitude limit [%1]").arg(state->ref_star_faint_mag_limit, 0, 'f', 2));
     QVBoxLayout *sliderVbox = new QVBoxLayout;
@@ -42,9 +54,18 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     sliderVbox->addStretch(1);
     refStarMagSliderGroupBox->setLayout(sliderVbox);
 
+    QHBoxLayout *displayOptsLayout = new QHBoxLayout;
+    displayOptsLayout->addWidget(displayRefStarsCheckbox);
+    displayOptsLayout->addWidget(displaySourcesCheckbox);
+    displayOptsLayout->addWidget(displayGeoCalCheckbox);
+    displayOptsLayout->addStretch();
+    QWidget * displayOptsWidget = new QWidget(this);
+    displayOptsWidget->setLayout(displayOptsLayout);
+
     QVBoxLayout *medianImageLayout = new QVBoxLayout;
-    medianImageLayout->addWidget(medianImageViewer);
+    medianImageLayout->addWidget(signalImageViewer);
     medianImageLayout->addWidget(refStarMagSliderGroupBox);
+    medianImageLayout->addWidget(displayOptsWidget);
     medianImageLayout->addStretch();
     this->setLayout(medianImageLayout);
 }
@@ -54,10 +75,46 @@ void ReferenceStarWidget::loadImage(std::shared_ptr<Imageuc> &newImage) {
     update();
 }
 
+void ReferenceStarWidget::toggleDisplayRefStars(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        displayRefStars = true;
+        break;
+    case Qt::Unchecked:
+        displayRefStars = false;
+        break;
+    }
+    update();
+}
+
+void ReferenceStarWidget::toggleDisplaySources(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        displaySources = true;
+        break;
+    case Qt::Unchecked:
+        displaySources = false;
+        break;
+    }
+    update();
+}
+
+void ReferenceStarWidget::toggleDisplayGeoCal(int checkBoxState) {
+    switch(checkBoxState) {
+    case Qt::Checked:
+        displayGeoCal = true;
+        break;
+    case Qt::Unchecked:
+        displayGeoCal = false;
+        break;
+    }
+    update();
+}
+
 void ReferenceStarWidget::mousePressEvent(QMouseEvent *e) {
 
     // Position within the median image
-    QPoint mouse = medianImageViewer->mapFromGlobal(e->globalPos());
+    QPoint mouse = signalImageViewer->mapFromGlobal(e->globalPos());
     mousePrevI = mouse.x();
     mousePrevJ = mouse.y();
     mouseStartI = mouse.x();
@@ -82,7 +139,7 @@ void ReferenceStarWidget::mousePressEvent(QMouseEvent *e) {
 void ReferenceStarWidget::mouseReleaseEvent(QMouseEvent *e) {
 
     // Position within the median image (mouse.x(), mouse.y())
-    QPoint mouse = medianImageViewer->mapFromGlobal(e->globalPos());
+    QPoint mouse = signalImageViewer->mapFromGlobal(e->globalPos());
 
     switch(e->button()) {
     case Qt::LeftButton:
@@ -140,7 +197,7 @@ void ReferenceStarWidget::mouseReleaseEvent(QMouseEvent *e) {
 void ReferenceStarWidget::mouseDoubleClickEvent(QMouseEvent *e) {
 
     // Position within the median image (mouse.x(), mouse.y())
-    QPoint mouse = medianImageViewer->mapFromGlobal(e->globalPos());
+    QPoint mouse = signalImageViewer->mapFromGlobal(e->globalPos());
 
     switch(e->button()) {
     case Qt::LeftButton:
@@ -161,7 +218,7 @@ void ReferenceStarWidget::mouseDoubleClickEvent(QMouseEvent *e) {
 void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
 
     // Position within the median image
-    QPoint mouse = medianImageViewer->mapFromGlobal(e->globalPos());
+    QPoint mouse = signalImageViewer->mapFromGlobal(e->globalPos());
 
     if(mouse.x() == mousePrevI && mouse.y() == mousePrevJ) {
         // Sanity check: no motion recorded, nothing to do.
@@ -324,10 +381,16 @@ void ReferenceStarWidget::update() {
         if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
             // Star is visible in image!
             visibleReferenceStars.push_back(&star);
+        }
+    }
+
+    if(displayRefStars) {
+
+        for(ReferenceStar * star : visibleReferenceStars) {
 
             // Quantize coordinates for display in image
-            int ii = (int)std::round(star.i);
-            int jj = (int)std::round(star.j);
+            int ii = (int)std::round(star->i);
+            int jj = (int)std::round(star->j);
 
             // Translate magnitude of star to gap size in cross hair
             double m0 = -1.0; // Bright magnitude limit
@@ -336,30 +399,36 @@ void ReferenceStarWidget::update() {
             double g1 = 2.0; // Minimum gap; for stars at the faint magnitude limit
 
             double gap;
-            if(star.mag > m1) {
+            if(star->mag > m1) {
                 gap = g1;
             }
-            else if(star.mag < m0) {
+            else if(star->mag < m0) {
                 gap = g0;
             }
             else {
-                gap = g0 + (star.mag - m0) * ((g1 - g0)/(m1 - m0));
+                gap = g0 + (star->mag - m0) * ((g1 - g0)/(m1 - m0));
             }
 
             unsigned int gap_int = (unsigned int)std::round(gap);
 
             RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 5, gap_int, 0xFFFF00FF);
         }
+
+        if(selectedRefStar) {
+            int ii = (int)std::round(selectedRefStar->i);
+            int jj = (int)std::round(selectedRefStar->j);
+            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0xFF00FFFF);
+        }
     }
 
-    // Draw a crosshair at the image principal point
-    RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, image->width/2, image->height/2, 10, 0, 0x00FFFFFF);
-
-    if(selectedRefStar) {
-        int ii = (int)std::round(selectedRefStar->i);
-        int jj = (int)std::round(selectedRefStar->j);
-        RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0xFF00FFFF);
+    if(displaySources) {
+        // TODO: render extracted sources
     }
 
-    medianImageViewer->newFrame(image, true, true, true);
+    if(displayGeoCal) {
+        // Draw a crosshair at the image principal point
+        RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, image->width/2, image->height/2, 10, 0, 0x00FFFFFF);
+    }
+
+    signalImageViewer->newFrame(image, true, true, true);
 }
