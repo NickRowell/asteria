@@ -20,7 +20,7 @@ public:
 
     /**
      * @brief RenderUtil::drawEllipse
-     * @param annotatedImage
+     * @param pixels
      * @param width
      * @param height
      * @param centre_x
@@ -43,7 +43,7 @@ public:
     static void drawCrossHair(std::vector<unsigned int> &pixels, unsigned int &width, unsigned int &height,
                          int x0, int y0, unsigned int length, unsigned int gap, unsigned int colour);
 
-    static std::shared_ptr<Imageui> renderSourcesImage(std::vector<Source> &sources, unsigned int &width, unsigned int &height);
+    static void drawSources(std::vector<unsigned int> &pixels, std::vector<Source> &sources, unsigned int &width, unsigned int &height, bool fill);
 
     static void encodeRgb(const unsigned char &r, const unsigned char &g, const unsigned char &b, unsigned int &rgb);
 

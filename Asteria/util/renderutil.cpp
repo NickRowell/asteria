@@ -154,40 +154,34 @@ void RenderUtil::drawCrossHair(std::vector<unsigned int> &pixels, unsigned int &
 }
 
 
-std::shared_ptr<Imageui> RenderUtil::renderSourcesImage(std::vector<Source> &sources, unsigned int &width, unsigned int &height) {
+void RenderUtil::drawSources(std::vector<unsigned int> &pixels, std::vector<Source> &sources, unsigned int &width, unsigned int &height, bool fill) {
 
-    unsigned int black = 0x000000FF;
+    for(Source &source : sources) {
 
-    auto image = std::make_shared<Imageui>(width, height, black);
+        if(fill) {
+            // Get a random colour for this source
+            unsigned char red = (unsigned char) rand();
+            unsigned char green = (unsigned char) rand();
+            unsigned char blue = (unsigned char) rand();
 
-    for(unsigned int s=0; s<sources.size(); s++) {
+            unsigned int rgba;
+            RenderUtil::encodeRgba(red, green, blue, 0xFF, rgba);
 
-        Source source = sources[s];
-
-        // Get a random colour for this source
-        unsigned char red = (unsigned char) rand();
-        unsigned char green = (unsigned char) rand();
-        unsigned char blue = (unsigned char) rand();
-
-        unsigned int rgba;
-        RenderUtil::encodeRgba(red, green, blue, 0xFF, rgba);
-
-        // Loop over the pixels assigned to this source
-        for(unsigned int p=0; p<source.pixels.size(); p++) {
-            // Index of the pixel that's part of the current source
-            unsigned int pixel = source.pixels[p];
-            // Insert colour for this pixels
-            image->rawImage[pixel] = rgba;
+            // Loop over the pixels assigned to this source
+            for(unsigned int p=0; p<source.pixels.size(); p++) {
+                // Index of the pixel that's part of the current source
+                unsigned int pixel = source.pixels[p];
+                // Insert colour for this pixels
+                pixels[pixel] = rgba;
+            }
         }
 
         // Colour to draw the ellipse
-        unsigned int negColour = 0xFFFFFFFF;
+        unsigned int ellipseColour = 0xFFFF00FF;
 
         // Now draw an ellipse to represent the dispersion matrix
-        RenderUtil::drawEllipse(image->rawImage, width, height, source.i, source.j, source.c_ii, source.c_ij, source.c_jj, 5.0f, negColour);
+        RenderUtil::drawEllipse(pixels, width, height, source.i, source.j, source.c_ii, source.c_ij, source.c_jj, 5.0f, ellipseColour);
     }
-
-    return image;
 }
 
 

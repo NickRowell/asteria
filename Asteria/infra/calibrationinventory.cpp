@@ -216,11 +216,12 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
     // but are useful for visualisation and debugging.
 
     // Create an RGB image of the extracted sources and save to file
-    std::shared_ptr<Imageui> image = RenderUtil::renderSourcesImage(sources, signal->width, signal->height);
+    Imageui sourcesImage(signal->width, signal->height, 0x000000FF);
+    RenderUtil::drawSources(sourcesImage.rawImage, sources, signal->width, signal->height, true);
     sprintf(filename, "%s/sources.ppm", processed.c_str());
     {
         std::ofstream out(filename);
-        out << *image;
+        out << sourcesImage;
         out.close();
     }
 

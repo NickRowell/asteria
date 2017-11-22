@@ -119,7 +119,8 @@ void CalibrationWidget::loadClip(QString path) {
     std::shared_ptr<Imageuc> signal = make_shared<Imageuc>(*(inv->signal));
     std::shared_ptr<Imageuc> noise = make_shared<Imageuc>(*(inv->noise));
     std::shared_ptr<Imageuc> background = make_shared<Imageuc>(*(inv->background));
-    refStarWidget->loadImage(signal);
+
+    refStarWidget->loadImage(signal, inv->sources);
     noiseImageViewer->newFrame(noise, false, true, true);
     backgroundImageViewer->newFrame(background, false, true, true);
 }

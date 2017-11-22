@@ -2,6 +2,7 @@
 #define REFERENCESTARWIDGET_H
 
 #include "infra/imageuc.h"
+#include "infra/source.h"
 
 #include <QWidget>
 #include <QMouseEvent>
@@ -51,6 +52,11 @@ public:
      * @brief QGroupBox to contain the reference stars faint magnitude limit slider.
      */
     QGroupBox *refStarMagSliderGroupBox;
+
+    /**
+     * @brief Vector of Sources extracted from the calibration image.
+     */
+    std::vector<Source> sources;
 
     /**
      * @brief Previous i coordinate of the mouse pointer, for handling drag events.
@@ -107,7 +113,7 @@ signals:
 public slots:
 
     void slide(double position);
-    void loadImage(std::shared_ptr<Imageuc> &newImage);
+    void loadImage(std::shared_ptr<Imageuc> &newImage, std::vector<Source> &newSources);
     void update();
     void toggleDisplayRefStars(int checkBoxState);
     void toggleDisplaySources(int checkBoxState);

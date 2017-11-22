@@ -70,8 +70,9 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     this->setLayout(medianImageLayout);
 }
 
-void ReferenceStarWidget::loadImage(std::shared_ptr<Imageuc> &newImage) {
+void ReferenceStarWidget::loadImage(std::shared_ptr<Imageuc> &newImage, std::vector<Source> &newSources) {
     image = newImage;
+    sources = newSources;
     update();
 }
 
@@ -411,18 +412,19 @@ void ReferenceStarWidget::update() {
 
             unsigned int gap_int = (unsigned int)std::round(gap);
 
-            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 5, gap_int, 0xFFFF00FF);
+            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 5, gap_int, 0xFF00FFFF);
         }
 
         if(selectedRefStar) {
             int ii = (int)std::round(selectedRefStar->i);
             int jj = (int)std::round(selectedRefStar->j);
-            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0xFF00FFFF);
+            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0x0000FFFF);
         }
     }
 
     if(displaySources) {
         // TODO: render extracted sources
+        RenderUtil::drawSources(image->annotatedImage, sources, image->width, image->height, false);
     }
 
     if(displayGeoCal) {
