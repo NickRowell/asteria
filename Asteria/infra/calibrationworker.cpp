@@ -117,7 +117,6 @@ void CalibrationWorker::process() {
         }
     }
 
-
     calInv.noise = make_shared<Imaged>(state->width, state->height);
     calInv.noise->epochTimeUs = midTimeStamp;
     calInv.noise->rawImage = noise;
@@ -165,11 +164,16 @@ void CalibrationWorker::process() {
     Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(az, el, roll);
     Matrix3d r_cam_im = CoordinateUtil::getCamIntrinsicMatrix(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
 
-    // Full transformation
+    // Full transformation BCRF->CAM
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
 
-    std::vector<ReferenceStar> refStarsVisible;
+    std::vector<ReferenceStar> visibleReferenceStars;
     for(ReferenceStar &star : state->refStarCatalogue) {
+
+        // Reject stars fainter than faint mag limit
+        if(star.mag > state->ref_star_faint_mag_limit) {
+            continue;
+        }
 
         // Unit vector towards star in original frame:
         Vector3d r_bcrf;
@@ -184,13 +188,13 @@ void CalibrationWorker::process() {
 
         // Project into image coordinates
         Vector3d r_im = r_cam_im * r_cam;
+        star.i = r_im[0] / r_im[2];
+        star.j = r_im[1] / r_im[2];
+        star.r = r_cam;
 
-        double i = r_im[0] / r_im[2];
-        double j = r_im[1] / r_im[2];
-
-        if(i>0 && i<state->width && j>0 && j<state->height) {
+        if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
             // Star is visible in image!
-//            fprintf(stderr, "%f\t%f\t%f\n", i, j, star.mag);
+            visibleReferenceStars.push_back(star);
         }
 
     }
@@ -201,7 +205,59 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO: allow these to be specified manually somehow; maybe a field of the constructor?
+    // The cross matching is done purely spatially. The algorithm is as follows:
+    // For each Source find the closest ReferenceStar
+    // If there are no Sources closer to the ReferenceStar than this one, and the
+    // separation is below a threshold, then the Source and ReferenceStar are a match.
+
+    // TODO: make robust to hot pixels. Include a hot pixel determination step that operates
+    //       over multiple executions.
+    // TODO: allow these to be specified manually somehow; maybe a field of the constructor.
+
+    // Minimum separation for acceptable cross match
+    double minSepThreshold = 30.0;
+    // Maximum possible separation of two points in the image (diagonal extent of image); used to initialise separation cache
+    double maxSep = std::sqrt(state->width*state->width + state->height*state->height);
+
+    for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
+
+        Source * source = &(calInv.sources[s1]);
+        ReferenceStar * closestStar;
+        double minSep = maxSep;
+
+        for(unsigned int s2=0; s2<visibleReferenceStars.size(); s2++) {
+            ReferenceStar * testStar = &(visibleReferenceStars[s2]);
+            double separation = std::sqrt((source->i - testStar->i)*(source->i - testStar->i) + (source->j - testStar->j)*(source->j - testStar->j));
+            if(separation < minSep) {
+                minSep = separation;
+                closestStar = testStar;
+            }
+        }
+
+        // If the closest reference star is too far away to be a potential match for this source then skip the source,
+        // we can't find a match for it.
+        if(minSep > minSepThreshold) {
+            continue;
+        }
+
+        // Find the closest source to this reference star
+        minSep = maxSep;
+        Source * closestSource;
+        for(unsigned int s2=0; s2<calInv.sources.size(); s2++) {
+            Source * testSource = &(calInv.sources[s2]);
+            double separation = std::sqrt((testSource->i - closestStar->i)*(testSource->i - closestStar->i) + (testSource->j - closestStar->j)*(testSource->j - closestStar->j));
+            if(separation < minSep) {
+                minSep = separation;
+                closestSource = testSource;
+            }
+        }
+
+        // If the closest source to this reference star is the original source, then we have a match
+        if(closestSource == source) {
+            fprintf(stderr, "Found cross-match between Source at %f,%f and ReferenceStar at %f,%f\n", source->i, source->j, closestStar->i, closestStar->j);
+            calInv.xms.push_back(pair<Source, ReferenceStar>(*source, *closestStar));
+        }
+    }
 
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -210,20 +266,28 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-//    CameraModelBase * cam = new PinholeCamera(state->width, state->height, 300.0, 300.0, 320.0, 240.0);
+    CameraModelBase * cam = new PinholeCamera(state->width, state->height, 300.0, 300.0, 320.0, 240.0);
 
-    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
+//    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
+
+    // TODO: execute the camera calibration algorithm
 
     calInv.cam = cam;
-
-    // TODO: Measure xrange from percentiles of data
-    // TODO: Get readnoise estimate from data
-    calInv.readNoiseAdu = 5.0;
 
     calInv.q_sez_cam.w() = 0.5;
     calInv.q_sez_cam.x() = -0.5;
     calInv.q_sez_cam.y() = 0.5;
     calInv.q_sez_cam.z() = -0.5;
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //             Compute the readout noise                 //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    // TODO: Measure xrange from percentiles of data
+    // TODO: Get readnoise estimate from data
+    calInv.readNoiseAdu = 5.0;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

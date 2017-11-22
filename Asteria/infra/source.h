@@ -29,12 +29,12 @@ public:
     /**
      * @brief Flux-weighted centroid for the source samples [pixels]
      */
-    double x0, y0;
+    double i, j;
 
     /**
      * @brief Flux-weighted dispersion matrix for the source samples [pixels^2]
      */
-    double c_xx, c_xy, c_yy;
+    double c_ii, c_ij, c_jj;
 
     /**
      * @brief Eigenvalues of the flux-weighted sample dispersion matrix [pixels^2]

@@ -61,7 +61,8 @@ SOURCES += \
     infra/imageuc.cpp \
     infra/meteorimagelocationmeasurement.cpp \
     infra/imaged.cpp \
-    infra/imageui.cpp
+    infra/imageui.cpp \
+    math/geocalfitter.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -129,7 +130,8 @@ HEADERS += \
     infra/meteorimagelocationmeasurement.h \
     infra/imaged.h \
     util/serializationutil.h \
-    infra/imageui.h
+    infra/imageui.h \
+    math/geocalfitter.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization

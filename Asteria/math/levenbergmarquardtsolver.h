@@ -68,14 +68,14 @@ public:
     ~LevenbergMarquardtSolver();
 
     /**
-     * Set the Nx1 column vector of observed values
+     * @brief Set the Nx1 column vector of observed values
      * @param data
      * 	Pointer to an N-element array of observed values
      */
     void setData(const double *data);
 
     /**
-     * Set the Mx1 column vector of initial-guess parameters.
+     * @brief Set the Mx1 column vector of initial-guess parameters.
      *
      * @param params
      * 	Pointer to an M-element array of initial-guess parameters.
@@ -83,14 +83,14 @@ public:
     void setParameters(const double * params);
 
     /**
-     * @brief getParametersSolution
+     * @brief Get the Mx1 column vector containing the fitted parameters.
      * @param params
      *  Pointer to an M-element array; on exit this will contain the solution
      */
     void getParameters(double * params);
 
     /**
-     * Set the NxN covariance matrix of the data points.
+     * @brief Set the NxN covariance matrix of the data points.
      *
      * @param covariance
      * 	NxN matrix of covariance of the data points, packed in a one dimensional array in
@@ -99,7 +99,7 @@ public:
     void setCovariance(const double *covariance);
 
     /**
-     * Set the Nx1 variance array of the data points. This is for applications where the covariance
+     * @brief Set the Nx1 variance array of the data points. This is for applications where the covariance
      * matrix is diagonal, i.e. no covariance terms.
      *
      * @param variance
@@ -108,8 +108,7 @@ public:
     void setVariance(const double *variance);
 
     /**
-     * @brief getModel
-     * Get f(X,P): column vector of model values given x points and current
+     * @brief Get f(X,P): column vector of model values given x points and current
      * parameters set.
      *
      * f(X,P) = [f(x_1, P), f(x_2, P), ... , f(x_N, P)]^T
@@ -123,8 +122,7 @@ public:
     virtual void getModel(const double * params, double * model) =0;
 
     /**
-     * @brief getJacobian
-     * Get the Jacobian matrix -> the matrix of partial derivatives of the
+     * @brief Get the Jacobian matrix -> the matrix of partial derivatives of the
      * model values with respect to the parameters, given the current parameter set.
      *
      * J = [ df(x_0, P)/dp_0  df(x_0, P)/dp_1  df(x_0, p)/dp_2  ...  df(x_0, P)/dp_{M-1} ]
@@ -146,8 +144,7 @@ public:
     virtual void getJacobian(const double * params, double * jac);
 
     /**
-     * @brief finiteDifferencesStepSizePerParam
-     * Implementing classes should override this to provide appropriate step sizes per parameter for use
+     * @brief Implementing classes should override this to provide appropriate step sizes per parameter for use
      * in the finite differences Jacobian approximation, if they intend to use that.
      *
      * This function MAY be overridden in the derived class: if an analytic Jacobian is not possible and the
@@ -161,30 +158,29 @@ public:
     virtual void finiteDifferencesStepSizePerParam(double *steps);
 
     /**
-     * @brief fit
-     * Perform LM iteration loop until parameters cannot be improved.
+     * @brief Perform LM iteration loop until parameters cannot be improved.
      * @param maxIterations  Maximum number of allowed iteration before convergence.
      * @param verbose        Enables verbose logging
      */
     void fit(unsigned int maxIterations, bool verbose);
 
     /**
-     * Chi-square statistic, (x - f(x))^T*C^{-1}*(x - f(x))
+     * @brief Chi-square statistic, (x - f(x))^T*C^{-1}*(x - f(x))
      */
     double getChi2();
 
     /**
-     * Reduced Chi-square statistic.
+     * @brief Reduced Chi-square statistic.
      */
     double getReducedChi2();
 
     /**
-     * Degrees of freedom of fit.
+     * @brief Degrees of freedom of fit.
      */
     double getDOF();
 
     /**
-     * Set the absolute step size used in the finite difference Jacobian estimation for the
+     * @brief Set the absolute step size used in the finite difference Jacobian estimation for the
      * calculation of the rate of change of parameters as a function of the data. This step is applied
      * to the data values, so should be of the appropriate order of magnitude.
      * @param H
@@ -193,7 +189,7 @@ public:
     void setH(double h);
 
     /**
-     * Set the exit tolerance - if the (absolute value of the) relative change in the chi-square
+     * @brief Set the exit tolerance - if the (absolute value of the) relative change in the chi-square
      * from one iteration to the next is lower than this, then we're at the minimum and the fit
      * is halted.
      * @param exitTolerance
@@ -202,7 +198,7 @@ public:
     void setExitTolerance(double exitTolerance);
 
     /**
-     * Set the maximum damping factor. If the damping factor becomes larger than this during the fit,
+     * @brief Set the maximum damping factor. If the damping factor becomes larger than this during the fit,
      * then we're stuck and cannot reach a better solution.
      *
      * @param maxDamping
@@ -211,8 +207,7 @@ public:
     void setMaxDamping(double maxDamping);
 
     /**
-     * @brief setBoostShrinkFactor
-     *  Set the factor by which the Levenberg-Marquardt step is inflated or deflated in order
+     * @brief Set the factor by which the Levenberg-Marquardt step is inflated or deflated in order
      * to find a good parameter step.
      * @param boostShrinkFactor
      *  The boost/shrink factor
@@ -220,7 +215,7 @@ public:
     void setBoostShrinkFactor(double boostShrinkFactor);
 
     /**
-     * This method estimates parameter covariance by propagating data
+     * @brief This method estimates parameter covariance by propagating data
      * covariance through the system using the following equation:
      *
      * S_p = (dp/dx)^T S_x (dp/dx)
@@ -234,15 +229,14 @@ public:
     MatrixXd getFourthOrderCovariance();
 
     /**
-     * Get the covariance matrix for parameters. This method has been tested
+     * @brief Get the covariance matrix for parameters. This method has been tested
      * against Gnuplot 'fit' function and provides the same asymptotic
      * standard error and parameter correlation.
      */
     MatrixXd getParameterCovariance();
 
     /**
-     * @brief getAsymptoticStandardError
-     * Get the asymptotic standard error for the parameters
+     * @brief Get the asymptotic standard error for the parameters
      * @param errors
      *  Pointer to an M-element array fo doubles; on exit this will contain the asymptotic
      * standard error for each parameter.
@@ -250,7 +244,7 @@ public:
     void getAsymptoticStandardError(double * errors);
 
     /**
-     * Get the correlation matrix for the parameters
+     * @brief Get the correlation matrix for the parameters.
      */
     MatrixXd getParameterCorrelation();
 
@@ -269,7 +263,7 @@ protected:
 private:
 
     /**
-     * Absolute step size used in finite difference Jacobian approximation,
+     * @brief Absolute step size used in finite difference Jacobian approximation,
      * for Jacobian of parameter solution with respect to data. This step is
      * applied to the data.
      */
@@ -281,21 +275,20 @@ private:
     double exitTolerance = 1E-32;
 
     /**
-     * Max damping scale factor. This is multiplied by automatically selected
+     * @brief Max damping scale factor. This is multiplied by automatically selected
      * starting value of damping parameter, which is 10^{-3}
      * times the average of the diagonal elements of J^T*J
      */
     double maxDamping = 1E32;
 
     /**
-     * @brief boostShrinkFactor
-     * The factor by which the Levenberg-Marquardt step is inflated or deflated in order
+     * @brief The factor by which the Levenberg-Marquardt step is inflated or deflated in order
      * to find a good parameter step.
      */
     double boostShrinkFactor = 10;
 
     /**
-     * Nx1 column vector of observed values
+     * @brief Nx1 column vector of observed values
      *
      * Y = [y_0, y_1, y_2, ..., y_{N-1}]^T
      *
@@ -303,27 +296,25 @@ private:
     double * data;
 
     /**
-     * @brief model
-     * The current model values. After the fit is complete this contains the final fitted model; during the
+     * @brief The current model values. After the fit is complete this contains the final fitted model; during the
      * fit it is used to store temporary values.
      */
     double * model;
 
     /**
-     * Covariance matrix for the observed values. This is either of size NxN if the full covariance matrix
+     * @brief Covariance matrix for the observed values. This is either of size NxN if the full covariance matrix
      * is specified, or Nx1 if only variance terms are given.
      */
     double *  covariance;
 
     /**
-     * @brief covarianceIsDiagonal
-     * Flag that indicates a diagonal covariance matrix, i.e. no covariance terms, only variance. This means we can
+     * @brief Flag that indicates a diagonal covariance matrix, i.e. no covariance terms, only variance. This means we can
      * store the terms in a Nx1 array and do efficient inversion of the covariance in the linear algebra.
      */
     bool covarianceIsDiagonal;
 
     /**
-     * Mx1 column vector of parameters
+     * @brief Mx1 column vector of parameters
      *
      * P = [p_0, p_1, p_2, ..., p_{M-1}]^T
      *
@@ -331,9 +322,9 @@ private:
     double * params;
 
     /**
-     * Each call performs one iteration of parameters.
+     * @brief Each call performs one iteration of parameters.
      *
-     * @param   lambda  Damping parameters: element 0 is the current value of lambda, 1 is the max permitted damping.
+     * @param lambda Damping parameters: element 0 is the current value of lambda, 1 is the max permitted damping.
      *
      * @return bool  States whether another iteration would be appropriate, or
      *                  if change in residuals and/or damping thresholds have
@@ -342,12 +333,12 @@ private:
     bool iteration(double * lambda, bool verbose);
 
     /**
-     * Get the residuals (x - f(x)) for the current model values.
+     * @brief Get the residuals (x - f(x)) for the current model values.
      */
     void getResiduals(double *residuals);
 
     /**
-     * Finite difference Jacobian approximation. This is the derivative of the
+     * @brief Finite difference Jacobian approximation. This is the derivative of the
      * parameters solution with respect to the data, useful in estimating the
      * parameters covariance with respect to the data.
      *
@@ -355,7 +346,6 @@ private:
      *
      * This uses fourth-order central difference approximation for the first
      * derivative.
-     *
      */
     MatrixXd getJacobian_dpdx();
 

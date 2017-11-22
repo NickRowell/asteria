@@ -99,8 +99,8 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
         // Uncertainty on that
         source.sigma_adu = 0.0;
         // Centre-of-flux
-        source.x0 = 0.0;
-        source.y0 = 0.0;
+        source.i = 0.0;
+        source.j = 0.0;
 
         for(unsigned int sIdx : source.pixels) {
             double adu = (double)signal[sIdx] - (double)background[sIdx];
@@ -109,12 +109,12 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
 
             unsigned int x = sIdx % width;
             unsigned int y = sIdx / width;
-            source.x0 += ((double)x) * adu;
-            source.y0 += ((double)y) * adu;
+            source.i += ((double)x) * adu;
+            source.j += ((double)y) * adu;
         }
         source.sigma_adu = std::sqrt(source.sigma_adu);
-        source.x0 /= source.adu;
-        source.y0 /= source.adu;
+        source.i /= source.adu;
+        source.j /= source.adu;
 
         // Detection significance of the source
         double sigmas = source.adu / source.sigma_adu;
@@ -145,14 +145,14 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
 
             double weight = ((double)signal[sIdx] - (double)background[sIdx]) / source.adu;
 
-            a += (x - source.x0) * (x - source.x0) * weight;
-            b += (x - source.x0) * (y - source.y0) * weight;
-            c += (y - source.y0) * (y - source.y0) * weight;
+            a += (x - source.i) * (x - source.i) * weight;
+            b += (x - source.i) * (y - source.j) * weight;
+            c += (y - source.j) * (y - source.j) * weight;
         }
 
-        source.c_xx = a;
-        source.c_xy = b;
-        source.c_yy = c;
+        source.c_ii = a;
+        source.c_ij = b;
+        source.c_jj = c;
 
         // Compute the eigenvalues: direct solution for 2x2 matrix
         double tr = a + c;

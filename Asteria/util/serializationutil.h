@@ -2,6 +2,7 @@
 #define SERIALIZATIONUTIL_H
 
 #include "infra/source.h"
+#include "infra/referencestar.h"
 #include "infra/meteorimagelocationmeasurement.h"
 
 #include <Eigen/Dense>
@@ -9,6 +10,8 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
+// Serialize std::pair etc
+#include <boost/serialization/utility.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/export.hpp>
 
@@ -68,19 +71,65 @@ namespace boost {
         }
 
         template<class Archive>
+        inline void save(Archive & ar, const Eigen::Vector3d & g, const unsigned int version) {
+
+            double x = g(0);
+            double y = g(1);
+            double z = g(2);
+
+            ar & BOOST_SERIALIZATION_NVP(x);
+            ar & BOOST_SERIALIZATION_NVP(y);
+            ar & BOOST_SERIALIZATION_NVP(z);
+        }
+
+        template<class Archive>
+        inline void load(Archive & ar, Eigen::Vector3d & g, const unsigned int version) {
+
+            double x, y, z;
+            ar & BOOST_SERIALIZATION_NVP(x);
+            ar & BOOST_SERIALIZATION_NVP(y);
+            ar & BOOST_SERIALIZATION_NVP(z);
+
+            g(0) = x;
+            g(1) = y;
+            g(2) = z;
+        }
+
+        template<class Archive>
+        inline void serialize(Archive & ar, Eigen::Vector3d & g, const unsigned int version) {
+
+            // This is how we serialize types for which we can only access the internal fields through
+            // getters/setters. For further information specific to the Eigen classes, see:
+            // https://stackoverflow.com/questions/18382457/eigen-and-boostserialize
+
+            split_free(ar, g, version);
+        }
+
+        template<class Archive>
         void serialize(Archive & ar, Source & s, const unsigned int version) {
 
             ar & BOOST_SERIALIZATION_NVP(s.pixels);
             ar & BOOST_SERIALIZATION_NVP(s.adu);
             ar & BOOST_SERIALIZATION_NVP(s.sigma_adu);
-            ar & BOOST_SERIALIZATION_NVP(s.x0);
-            ar & BOOST_SERIALIZATION_NVP(s.y0);
-            ar & BOOST_SERIALIZATION_NVP(s.c_xx);
-            ar & BOOST_SERIALIZATION_NVP(s.c_xy);
-            ar & BOOST_SERIALIZATION_NVP(s.c_yy);
+            ar & BOOST_SERIALIZATION_NVP(s.i);
+            ar & BOOST_SERIALIZATION_NVP(s.j);
+            ar & BOOST_SERIALIZATION_NVP(s.c_ii);
+            ar & BOOST_SERIALIZATION_NVP(s.c_ij);
+            ar & BOOST_SERIALIZATION_NVP(s.c_jj);
             ar & BOOST_SERIALIZATION_NVP(s.l1);
             ar & BOOST_SERIALIZATION_NVP(s.l2);
             ar & BOOST_SERIALIZATION_NVP(s.orientation);
+        }
+
+        template<class Archive>
+        void serialize(Archive & ar, ReferenceStar & s, const unsigned int version) {
+
+            ar & BOOST_SERIALIZATION_NVP(s.ra);
+            ar & BOOST_SERIALIZATION_NVP(s.dec);
+            ar & BOOST_SERIALIZATION_NVP(s.mag);
+            ar & BOOST_SERIALIZATION_NVP(s.i);
+            ar & BOOST_SERIALIZATION_NVP(s.j);
+            ar & BOOST_SERIALIZATION_NVP(s.r);
         }
 
         template<class Archive>

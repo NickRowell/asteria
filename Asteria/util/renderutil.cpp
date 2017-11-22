@@ -184,7 +184,7 @@ std::shared_ptr<Imageui> RenderUtil::renderSourcesImage(std::vector<Source> &sou
         unsigned int negColour = 0xFFFFFFFF;
 
         // Now draw an ellipse to represent the dispersion matrix
-        RenderUtil::drawEllipse(image->rawImage, width, height, source.x0, source.y0, source.c_xx, source.c_xy, source.c_yy, 5.0f, negColour);
+        RenderUtil::drawEllipse(image->rawImage, width, height, source.i, source.j, source.c_ii, source.c_ij, source.c_jj, 5.0f, negColour);
     }
 
     return image;

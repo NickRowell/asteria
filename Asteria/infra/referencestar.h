@@ -14,6 +14,7 @@ public:
     ReferenceStar();
     ReferenceStar(const ReferenceStar& copyme);
     ReferenceStar(const double &ra, const double &dec, const double &mag);
+    ReferenceStar& operator=(const ReferenceStar& copyme);
 
     /**
      * @brief Utility function to load the reference star catalogue file.
@@ -25,19 +26,19 @@ public:
     static std::vector<ReferenceStar> loadCatalogue(std::string &path);
 
     /**
-     * @brief The (fixed) Right Ascension of the reference star [radians]
+     * @brief The Right Ascension of the reference star [radians]
      */
-    const double ra;
+    double ra;
 
     /**
-     * @brief The (fixed) Declination of the reference star [radians]
+     * @brief The Declination of the reference star [radians]
      */
-    const double dec;
+    double dec;
 
     /**
-     * @brief The (fixed) apparent magnitude of the reference star [mag]
+     * @brief The apparent magnitude of the reference star [mag]
      */
-    const double mag;
+    double mag;
 
     /**
      * @brief The current image plane i coordinate of the reference star [pixels]

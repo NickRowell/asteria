@@ -4,6 +4,7 @@
 #include "infra/imageuc.h"
 #include "infra/imaged.h"
 #include "infra/source.h"
+#include "infra/referencestar.h"
 #include "optics/cameramodelbase.h"
 
 #include <memory>
@@ -57,6 +58,12 @@ public:
      * @brief A vector containing sources (i.e. observed stars) identified in the calibration image(s).
      */
     std::vector<Source> sources;
+
+    /**
+     * @brief A vector containing cross-matches between extracted sources (i.e. observed stars) identified in the
+     * calibration image(s) and projected reference stars.
+     */
+    std::vector<std::pair<Source, ReferenceStar>> xms;
 
     /**
      * @brief The readnoise [adu]

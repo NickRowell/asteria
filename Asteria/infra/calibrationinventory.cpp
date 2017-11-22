@@ -100,6 +100,7 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         boost::archive::xml_iarchive ia(ifs, boost::archive::no_header);
         ia & BOOST_SERIALIZATION_NVP(inv->epochTimeUs);
         ia & BOOST_SERIALIZATION_NVP(inv->sources);
+        ia & BOOST_SERIALIZATION_NVP(inv->xms);
         ia & BOOST_SERIALIZATION_NVP(inv->readNoiseAdu);
         ia & BOOST_SERIALIZATION_NVP(inv->q_sez_cam);
         ia & BOOST_SERIALIZATION_NVP(inv->cam);
@@ -204,6 +205,7 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
         boost::archive::xml_oarchive oa(ofs, boost::archive::no_header);
         oa & BOOST_SERIALIZATION_NVP(epochTimeUs);
         oa & BOOST_SERIALIZATION_NVP(sources);
+        oa & BOOST_SERIALIZATION_NVP(xms);
         oa & BOOST_SERIALIZATION_NVP(readNoiseAdu);
         oa & BOOST_SERIALIZATION_NVP(q_sez_cam);
         oa & BOOST_SERIALIZATION_NVP(cam);

@@ -317,9 +317,9 @@ void ReferenceStarWidget::update() {
 
         // Project into image coordinates
         Vector3d r_im = r_cam_im * r_cam;
-
         star.i = r_im[0] / r_im[2];
         star.j = r_im[1] / r_im[2];
+        star.r = r_cam;
 
         if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
             // Star is visible in image!
