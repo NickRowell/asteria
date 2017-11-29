@@ -3,6 +3,7 @@
 
 #include "infra/imageuc.h"
 #include "infra/source.h"
+#include "infra/referencestar.h"
 
 #include <QWidget>
 #include <QMouseEvent>
@@ -11,7 +12,7 @@
 class AsteriaState;
 class GLMeteorDrawer;
 class QGroupBox;
-class ReferenceStar;
+class CalibrationInventory;
 
 /**
  * @brief Provides a QWidget used to display the median image overlaid with the current positions of
@@ -29,9 +30,14 @@ public:
     AsteriaState * state;
 
     /**
-     * @brief The image currently being displayed.
+     * @brief The CalibrationInventory that is currently being displayed by the widget.
      */
-    std::shared_ptr<Imageuc> image;
+    CalibrationInventory * inv;
+
+    /**
+     * @brief The calibration signal image being displayed.
+     */
+    std::shared_ptr<Imageuc> signal;
 
     /**
      * @brief Image viewer for the median image.
@@ -52,11 +58,6 @@ public:
      * @brief QGroupBox to contain the reference stars faint magnitude limit slider.
      */
     QGroupBox *refStarMagSliderGroupBox;
-
-    /**
-     * @brief Vector of Sources extracted from the calibration image.
-     */
-    std::vector<Source> sources;
 
     /**
      * @brief Previous i coordinate of the mouse pointer, for handling drag events.
@@ -113,7 +114,7 @@ signals:
 public slots:
 
     void slide(double position);
-    void loadImage(std::shared_ptr<Imageuc> &newImage, std::vector<Source> &newSources);
+    void loadCalibration(CalibrationInventory * inv);
     void update();
     void toggleDisplayRefStars(int checkBoxState);
     void toggleDisplaySources(int checkBoxState);

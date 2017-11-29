@@ -714,7 +714,7 @@ void AcquisitionThread::run() {
                 if(calibrationFrames.size() >= state->calibration_stack) {
                     // Got enough frames: run calibration algorithm
                     QThread* thread = new QThread;
-                    CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, calibrationFrames);
+                    CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, NULL, calibrationFrames);
                     worker->moveToThread(thread);
                     connect(thread, SIGNAL(started()), worker, SLOT(process()));
                     connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));

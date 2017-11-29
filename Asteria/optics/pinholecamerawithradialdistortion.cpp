@@ -10,6 +10,13 @@ PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion()  :
 PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi,
     const double &fj, const double &pi, const double &pj, const double &k0, const double &k1, const double &k2, const double &k3, const double &k4) :
     PinholeCamera(width, height, fi, fj, pi, pj), K0(k0), K1(k1), K2(k2), K3(k3), K4(k4) {
+    init();
+}
+
+void PinholeCameraWithRadialDistortion::init() {
+
+    // Call init() of superclass
+    PinholeCamera::init();
 
     // RADIAL DISTORTION
 

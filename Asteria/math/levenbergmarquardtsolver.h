@@ -260,8 +260,6 @@ protected:
      */
     unsigned int N;
 
-private:
-
     /**
      * @brief Absolute step size used in finite difference Jacobian approximation,
      * for Jacobian of parameter solution with respect to data. This step is

@@ -89,6 +89,12 @@ public:
 
     void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
 
+    void getPrincipalPoint(double &pi, double &pj) const;
+
+    void zoom(double &factor);
+
+    void init();
+
     std::string getModelName() const;
 
     friend class boost::serialization::access;
@@ -99,6 +105,7 @@ public:
         ar & BOOST_SERIALIZATION_NVP(fj);
         ar & BOOST_SERIALIZATION_NVP(pi);
         ar & BOOST_SERIALIZATION_NVP(pj);
+        this->init();
     }
 
 };

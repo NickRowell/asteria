@@ -12,7 +12,8 @@ class GeoCalFitter : public LevenbergMarquardtSolver
 {
 public:
 
-    GeoCalFitter(CameraModelBase * cam, Eigen::Quaterniond * q_sez_cam, std::vector<std::pair<Source, ReferenceStar>>  * xms);
+    GeoCalFitter(CameraModelBase * cam, Eigen::Quaterniond * q_sez_cam, std::vector<std::pair<Source, ReferenceStar>>  * xms, const double &gmst,
+                 const double &lon, const double &lat);
 
     /**
      * @brief Pointer to the camera model that is being fitted; contains initial guess values
@@ -33,6 +34,24 @@ public:
      */
     std::vector<std::pair<Source, ReferenceStar>>  * xms;
 
+    /**
+     * @brief Greenwich mean sidereal time of the calibration. This is required to complete the transformation of reference
+     * star positions into the camera frame, and is not considered a parameter of the calibration.
+     */
+    const double gmst;
+
+    /**
+     * @brief Longitude of the observing site [radians]. This is required to complete the transformation of reference
+     * star positions into the camera frame, and is not considered a parameter of the calibration.
+     */
+    const double lon;
+
+    /**
+     * @brief Latitude of the observing site [radians]. This is required to complete the transformation of reference
+     * star positions into the camera frame, and is not considered a parameter of the calibration.
+     */
+    const double lat;
+
     void getModel(const double * params, double * model);
 
     // One or the other of these should be implemented:
@@ -46,7 +65,7 @@ public:
      * @param maxIterations  Maximum number of allowed iteration before convergence.
      * @param verbose        Enables verbose logging
      */
-//    void fit(unsigned int maxIterations, bool verbose);
+    void fit(unsigned int maxIterations, bool verbose);
 };
 
 #endif // GEOCALFITTER_H

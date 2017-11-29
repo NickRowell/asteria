@@ -9,16 +9,7 @@ PinholeCamera::PinholeCamera() : CameraModelBase(), fi(0.0), fj(0.0), pi(0.0), p
 
 PinholeCamera::PinholeCamera(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj) :
    CameraModelBase(width, height), fi(fi), fj(fj), pi(pi), pj(pj) {
-
-    // Initialise the camera matrix
-    k <<  fi, 0.0,  pi,
-         0.0,  fj,  pj,
-         0.0, 0.0, 1.0;
-
-    // Initialise the inverse of the camera matrix
-    kInv <<  1.0/fi,     0.0, -pi/fi,
-                0.0,  1.0/fj, -pj/fj,
-                0.0,     0.0,    1.0;
+    init();
 }
 
 PinholeCamera::~PinholeCamera() {
@@ -115,6 +106,29 @@ void PinholeCamera::projectVector(const Eigen::Vector3d & r_cam, double & i, dou
     Eigen::Vector3d r_im = k * r_cam;
     i = r_im[0] / r_im[2];
     j = r_im[1] / r_im[2];
+}
+
+void PinholeCamera::getPrincipalPoint(double &pi, double &pj) const {
+    pi = this->pi;
+    pj = this->pj;
+}
+
+void PinholeCamera::zoom(double &factor) {
+    fi *= factor;
+    fj *= factor;
+}
+
+void PinholeCamera::init() {
+
+    // Initialise the camera matrix
+    k <<  fi, 0.0,  pi,
+         0.0,  fj,  pj,
+         0.0, 0.0, 1.0;
+
+    // Initialise the inverse of the camera matrix
+    kInv <<  1.0/fi,     0.0, -pi/fi,
+                0.0,  1.0/fj, -pj/fj,
+                0.0,     0.0,    1.0;
 }
 
 std::string PinholeCamera::getModelName() const {

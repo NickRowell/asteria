@@ -9,7 +9,27 @@
 class Source
 {
 public:
+
+    /**
+     * @brief Default constructor for the Source.
+     */
     Source();
+
+    /**
+     * @brief Copy constructor for the Source.
+     * @param copyme
+     *  The Source to copy
+     */
+    Source(const Source& copyme);
+
+    /**
+     * @brief Copy-assignment operator for the Source.
+     * @param copyme
+     *  The Source to copy
+     * @return
+     *  A reference to this Source
+     */
+    Source& operator=(const Source& copyme);
 
     /**
      * @brief Contains the indices of the pixels assigned to this source.

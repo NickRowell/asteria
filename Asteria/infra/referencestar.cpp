@@ -26,6 +26,8 @@ ReferenceStar& ReferenceStar::operator=(const ReferenceStar& copyme) {
     i = copyme.i;
     j = copyme.j;
     r = copyme.r;
+
+    return *this;
 }
 
 

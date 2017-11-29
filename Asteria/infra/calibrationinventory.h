@@ -80,6 +80,21 @@ public:
      */
     CameraModelBase * cam;
 
+    /**
+     * @brief Station longitude, positive east [decimal degrees]
+     */
+    double longitude;
+
+    /**
+     * @brief Station latitude [decimal degrees]
+     */
+    double latitude;
+
+    /**
+     * @brief Station altitude [metres]
+     */
+    double altitude;
+
 public slots:
 
     static CalibrationInventory * loadFromDir(std::string path);

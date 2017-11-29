@@ -25,8 +25,8 @@
 #include <QGridLayout>
 #include <QThread>
 
-CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Imageuc>> calibrationFrames)
-    : QObject(parent), state(state), calibrationFrames(calibrationFrames) {
+CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, const CalibrationInventory *initial, std::vector<std::shared_ptr<Imageuc>> calibrationFrames)
+    : QObject(parent), state(state), initial(initial), calibrationFrames(calibrationFrames) {
 
 }
 
@@ -48,6 +48,9 @@ void CalibrationWorker::process() {
     calInv.epochTimeUs = calibrationFrames.front()->epochTimeUs;
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
+    unsigned int width = calibrationFrames.front()->width;
+    unsigned int height = calibrationFrames.front()->height;
+
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -62,11 +65,11 @@ void CalibrationWorker::process() {
     // by using the trimmed mean. The median is quantized and will not be as accurate as the mean given the limited
     // range of values.
 
-    std::vector<double> signal(state->width * state->height);
-    std::vector<double> noise(state->width * state->height);
+    std::vector<double> signal(width * height);
+    std::vector<double> noise(width * height);
 
     // Loop over the pixels
-    for(unsigned int p=0; p<state->width * state->height; p++) {
+    for(unsigned int p=0; p<width * height; p++) {
 
         // Extract the pixel value in each of the calibration frames
         std::vector<double> pixels(calibrationFrames.size());
@@ -85,26 +88,26 @@ void CalibrationWorker::process() {
     }
 
     // Now post-process the signal value to get an estimate of the source-free background level in each pixel
-    std::vector<double> background(state->width * state->height);
+    std::vector<double> background(width * height);
 
     // Algorithm for background calculation: each pixel is the median value of the pixels surrounding it in
     // a window of some particular width.
     // Sliding window extends out to this many pixels on each side of the central pixel
     int hw = (int)state->bkg_median_filter_half_width;
-    for(unsigned int k=0; k<state->height; k++) {
-        for(unsigned int l=0; l<state->width; l++) {
+    for(unsigned int k=0; k<height; k++) {
+        for(unsigned int l=0; l<width; l++) {
 
             // Compute the boundary of the window region
             unsigned int k_min = std::max((int)k - hw, 0);
-            unsigned int k_max = std::min((int)k + hw, (int)state->height);
+            unsigned int k_max = std::min((int)k + hw, (int)height);
             unsigned int l_min = std::max((int)l - hw, 0);
-            unsigned int l_max = std::min((int)l + hw, (int)state->width);
+            unsigned int l_max = std::min((int)l + hw, (int)width);
 
             // Pixels within the window
             std::vector<double> pixels;
             for(unsigned int kp=k_min; kp<k_max; kp++) {
                 for(unsigned int lp=l_min; lp<l_max; lp++) {
-                    unsigned int pixIdx = kp*state->width + lp;
+                    unsigned int pixIdx = kp*width + lp;
                     pixels.push_back(signal[pixIdx]);
                 }
             }
@@ -112,20 +115,20 @@ void CalibrationWorker::process() {
             // Get the median value in the window
             double median = MathUtil::getMedian(pixels);
 
-            unsigned int pixIdx = k*state->width + l;
+            unsigned int pixIdx = k*width + l;
             background[pixIdx] = median;
         }
     }
 
-    calInv.noise = make_shared<Imaged>(state->width, state->height);
+    calInv.noise = make_shared<Imaged>(width, height);
     calInv.noise->epochTimeUs = midTimeStamp;
     calInv.noise->rawImage = noise;
 
-    calInv.signal = make_shared<Imaged>(state->width, state->height);
+    calInv.signal = make_shared<Imaged>(width, height);
     calInv.signal->epochTimeUs = midTimeStamp;
     calInv.signal->rawImage = signal;
 
-    calInv.background = make_shared<Imaged>(state->width, state->height);
+    calInv.background = make_shared<Imaged>(width, height);
     calInv.background->epochTimeUs = midTimeStamp;
     calInv.background->rawImage = background;
 
@@ -136,7 +139,7 @@ void CalibrationWorker::process() {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     calInv.sources = SourceDetector::getSources(calInv.signal->rawImage, calInv.background->rawImage, calInv.noise->rawImage,
-                                                             state->width, state->height, state->source_detection_threshold_sigmas);
+                                                             width, height, state->source_detection_threshold_sigmas);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -144,25 +147,18 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO: need an initial guess of the geometric calibration
-
-
     // Get the transformation from BCRF to IM
 
     // GMST of the calibration frames capture
     double gmst = TimeUtil::epochToGmst(midTimeStamp);
 
-    double lon = MathUtil::toRadians(state->longitude);
-    double lat = MathUtil::toRadians(state->latitude);
-    double az = MathUtil::toRadians(state->azimuth);
-    double el = MathUtil::toRadians(state->elevation);
-    double roll = MathUtil::toRadians(state->roll);
+    double lon = MathUtil::toRadians(initial->longitude);
+    double lat = MathUtil::toRadians(initial->latitude);
 
     // Rotation matrices
     Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
     Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
-    Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(az, el, roll);
-    Matrix3d r_cam_im = CoordinateUtil::getCamIntrinsicMatrix(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
+    Matrix3d r_sez_cam = initial->q_sez_cam.toRotationMatrix();
 
     // Full transformation BCRF->CAM
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
@@ -170,33 +166,22 @@ void CalibrationWorker::process() {
     std::vector<ReferenceStar> visibleReferenceStars;
     for(ReferenceStar &star : state->refStarCatalogue) {
 
+        CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *initial->cam);
+
         // Reject stars fainter than faint mag limit
         if(star.mag > state->ref_star_faint_mag_limit) {
             continue;
         }
 
-        // Unit vector towards star in original frame:
-        Vector3d r_bcrf;
-        CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
-        // Transform to CAM frame:
-        Vector3d r_cam = r_bcrf_cam * r_bcrf;
-
-        if(r_cam[2] < 0) {
+        if(star.r[2] < 0) {
             // Star is behind the camera
             continue;
         }
 
-        // Project into image coordinates
-        Vector3d r_im = r_cam_im * r_cam;
-        star.i = r_im[0] / r_im[2];
-        star.j = r_im[1] / r_im[2];
-        star.r = r_cam;
-
-        if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
+        if(star.i>0 && star.i<width && star.j>0 && star.j<height) {
             // Star is visible in image!
             visibleReferenceStars.push_back(star);
         }
-
     }
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -217,7 +202,7 @@ void CalibrationWorker::process() {
     // Minimum separation for acceptable cross match
     double minSepThreshold = 30.0;
     // Maximum possible separation of two points in the image (diagonal extent of image); used to initialise separation cache
-    double maxSep = std::sqrt(state->width*state->width + state->height*state->height);
+    double maxSep = std::sqrt(width*width + height*height);
 
     for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
 
@@ -259,25 +244,26 @@ void CalibrationWorker::process() {
         }
     }
 
-
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
     //           Compute the geometric calibration           //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    CameraModelBase * cam = new PinholeCamera(state->width, state->height, 300.0, 300.0, 320.0, 240.0);
-
-//    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
 
     // TODO: execute the camera calibration algorithm
 
-    calInv.cam = cam;
+    CameraModelBase * cam = initial->cam;
 
-    calInv.q_sez_cam.w() = 0.5;
-    calInv.q_sez_cam.x() = -0.5;
-    calInv.q_sez_cam.y() = 0.5;
-    calInv.q_sez_cam.z() = -0.5;
+    // TODO: enable switching to a different camera model without having to recalibrate from scratch.
+    // i.e. here we should detect if the input camera model is different to the one that we want to calibrate, and
+    // transform it accordingly.
+
+//    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
+
+    // TODO: read out the results from the geometric calibration
+    calInv.cam = initial->cam;
+    calInv.q_sez_cam = initial->q_sez_cam;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -288,6 +274,16 @@ void CalibrationWorker::process() {
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
     calInv.readNoiseAdu = 5.0;
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
+    //        Copy fixed fields of the calibration           //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    calInv.longitude = initial->longitude;
+    calInv.latitude = initial->latitude;
+    calInv.altitude = initial->altitude;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

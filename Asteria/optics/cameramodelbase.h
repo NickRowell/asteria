@@ -116,6 +116,30 @@ public:
     virtual void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const =0;
 
     /**
+     * @brief Get the principal point of the camera, i.e. the point where the camera boresight intersects
+     * the image, also the projection of the camera centre.
+     * @param pi
+     *  The i coordinate of the principal point [pixels]
+     * @param pj
+     *  The j coordinate of the principal point [pixels]
+     */
+    virtual void getPrincipalPoint(double &pi, double &pj) const =0;
+
+    /**
+     * @brief Apply a scale factor to the focal length etc as appropriate for the camera model in order
+     * to support 'zooming' in and out. This is useful for user interaction with the camera model.
+     * @param
+     *  The zoom factor. This is a positive number; 1.0 is no zoom, values greater than one zoom in.
+     */
+    virtual void zoom(double &factor) =0;
+
+    /**
+     * @brief This function is called after deserializing the class and has the task of initialising any
+     * convenience fields of the class that are not serialized.
+     */
+    virtual void init() =0;
+
+    /**
      * @brief Returns the name of the camera model implemented by the derived class.
      * @return
      *  The name of the camera model implemented by the derived class.

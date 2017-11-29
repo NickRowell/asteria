@@ -246,6 +246,8 @@ public:
      */
     void getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const;
 
+    void init();
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
@@ -254,6 +256,7 @@ public:
         ar & BOOST_SERIALIZATION_NVP(K2);
         ar & BOOST_SERIALIZATION_NVP(K3);
         ar & BOOST_SERIALIZATION_NVP(K4);
+        this->init();
     }
 
 };

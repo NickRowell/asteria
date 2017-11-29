@@ -3,6 +3,7 @@
 
 #include "infra/asteriastate.h"
 #include "infra/imageuc.h"
+#include "infra/calibrationinventory.h"
 
 #include <linux/videodev2.h>
 #include <vector>               // vector
@@ -15,7 +16,7 @@ class CalibrationWorker : public QObject
     Q_OBJECT
 
 public:
-    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
+    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, const CalibrationInventory *initial = 0, std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~CalibrationWorker();
 
 public slots:
@@ -28,7 +29,15 @@ signals:
 
 private:
 
+    /**
+     * @brief Pointer to the state object that contains various parameters of the calibration algorithms.
+     */
     AsteriaState * state;
+
+    /**
+     * @brief Initial guess calibration, used to initialise the fit and propagate certain calibrations in time.
+     */
+    const CalibrationInventory * initial;
 
     std::vector<std::shared_ptr<Imageuc>> calibrationFrames;
 };

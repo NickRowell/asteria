@@ -58,9 +58,6 @@ CalibrationWidget::CalibrationWidget(QWidget *parent, AsteriaState *state) : QWi
     tabWidget->addTab(noiseImageWidget, QString("Noise"));
     tabWidget->addTab(backgroundImageWidget, QString("Background"));
 
-    // Add more tabs for the other calibration
-//    tabWidget->addTab(calWidget, QString("Calibration"));
-
     // Arrange layout
 
     // Right panel containing the player widget and any additional stuff
@@ -115,12 +112,12 @@ void CalibrationWidget::loadClip(QString path) {
 
     player->loadClip(inv->calibrationFrames, inv->calibrationFrames.front());
 
+    refStarWidget->loadCalibration(inv);
+
     // Make fixed-point versions of the images for display
-    std::shared_ptr<Imageuc> signal = make_shared<Imageuc>(*(inv->signal));
     std::shared_ptr<Imageuc> noise = make_shared<Imageuc>(*(inv->noise));
     std::shared_ptr<Imageuc> background = make_shared<Imageuc>(*(inv->background));
 
-    refStarWidget->loadImage(signal, inv->sources);
     noiseImageViewer->newFrame(noise, false, true, true);
     backgroundImageViewer->newFrame(background, false, true, true);
 }
@@ -134,7 +131,7 @@ void CalibrationWidget::loadClip(QString path) {
             return;
         }
         QThread* thread = new QThread;
-        CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, inv->calibrationFrames);
+        CalibrationWorker* worker = new CalibrationWorker(NULL, state, inv, inv->calibrationFrames);
         worker->moveToThread(thread);
         connect(thread, SIGNAL(started()), worker, SLOT(process()));
         connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));

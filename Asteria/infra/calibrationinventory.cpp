@@ -104,6 +104,9 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         ia & BOOST_SERIALIZATION_NVP(inv->readNoiseAdu);
         ia & BOOST_SERIALIZATION_NVP(inv->q_sez_cam);
         ia & BOOST_SERIALIZATION_NVP(inv->cam);
+        ia & BOOST_SERIALIZATION_NVP(inv->longitude);
+        ia & BOOST_SERIALIZATION_NVP(inv->latitude);
+        ia & BOOST_SERIALIZATION_NVP(inv->altitude);
         ifs.close();
     }
 
@@ -209,6 +212,9 @@ void CalibrationInventory::saveToDir(std::string topLevelPath) {
         oa & BOOST_SERIALIZATION_NVP(readNoiseAdu);
         oa & BOOST_SERIALIZATION_NVP(q_sez_cam);
         oa & BOOST_SERIALIZATION_NVP(cam);
+        oa & BOOST_SERIALIZATION_NVP(longitude);
+        oa & BOOST_SERIALIZATION_NVP(latitude);
+        oa & BOOST_SERIALIZATION_NVP(altitude);
         ofs.close();
     }
 

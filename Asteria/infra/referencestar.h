@@ -11,9 +11,37 @@ using namespace Eigen;
 class ReferenceStar
 {
 public:
+
+    /**
+     * @brief Default constructor for the ReferenceStar.
+     */
     ReferenceStar();
+
+    /**
+     * @brief Copy constructor for the ReferenceStar.
+     * @param copyme
+     *  The ReferenceStar to copy
+     */
     ReferenceStar(const ReferenceStar& copyme);
+
+    /**
+     * @brief Main constructor for the ReferenceStar.
+     * @param ra
+     *  The right ascension [radians]
+     * @param dec
+     *  The declination [radians]
+     * @param mag
+     *  The magnitude [mags]
+     */
     ReferenceStar(const double &ra, const double &dec, const double &mag);
+
+    /**
+     * @brief Copy-assignment operator.
+     * @param copyme
+     *  The ReferenceStar to copy
+     * @return
+     *  A reference to this ReferenceStar
+     */
     ReferenceStar& operator=(const ReferenceStar& copyme);
 
     /**

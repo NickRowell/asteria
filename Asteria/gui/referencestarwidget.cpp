@@ -7,6 +7,7 @@
 #include "util/renderutil.h"
 #include "util/ioutil.h"
 #include "gui/doubleslider.h"
+#include "infra/calibrationinventory.h"
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -70,9 +71,9 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     this->setLayout(medianImageLayout);
 }
 
-void ReferenceStarWidget::loadImage(std::shared_ptr<Imageuc> &newImage, std::vector<Source> &newSources) {
-    image = newImage;
-    sources = newSources;
+void ReferenceStarWidget::loadCalibration(CalibrationInventory * inv) {
+    this->inv = inv;
+    this->signal = make_shared<Imageuc>(*(this->inv->signal));
     update();
 }
 
@@ -231,19 +232,11 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
 
     if(leftButtonIsPressed) {
         // Drags with the left button adjust the azimuth & elevation of the camera pointing
+        Vector3d r0 = inv->cam->deprojectPixel(mousePrevI, mousePrevJ);
+        Vector3d r1 = inv->cam->deprojectPixel(mouse.x(), mouse.y());
 
-        // Get the inverse of the camera matrix, for deprojecting pixels
-        Matrix3d r_im_cam = CoordinateUtil::getCamIntrinsicMatrixInverse(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
-
-        // Homogenous vectors of the image plane coordinates
-        Vector3d r0(mousePrevI, mousePrevJ, 1.0);
-        Vector3d r1(mouse.x(), mouse.y(), 1.0);
-
-        // Deproject these to get the unit vectors in the camera 3D frame
-        Vector3d los0 = r_im_cam * r0;
-        Vector3d los1 = r_im_cam * r1;
         // Quaternion that rotates los0 to los1
-        q = Eigen::Quaterniond::FromTwoVectors(los0, los1);
+        q = Eigen::Quaterniond::FromTwoVectors(r0, r1);
     }
     if(middleButtonIsPressed) {
         // Drags with the middle button do nothing
@@ -258,10 +251,10 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
         // Drags with the right button rotate the camera about the boresight
 
         // Vectors in the image plane between the principal point and the previous/current mouse location
-        double px = (double)state->width/2.0;
-        double py = (double)state->height/2.0;
-        Vector3d r0(mousePrevI - px, mousePrevJ - py, 0.0);
-        Vector3d r1(mouse.x() - px, mouse.y() - py, 0.0);
+        double pi, pj;
+        inv->cam->getPrincipalPoint(pi, pj);
+        Vector3d r0(mousePrevI - pi, mousePrevJ - pj, 0.0);
+        Vector3d r1(mouse.x() - pi, mouse.y() - pj, 0.0);
 
         // Quaternion that rotates these
         q = Eigen::Quaterniond::FromTwoVectors(r0, r1);
@@ -270,19 +263,15 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
     // Now rotate the camera extrinsic matrix by this much
     Matrix3d r = q.toRotationMatrix();
 
-    Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(MathUtil::toRadians(state->azimuth), MathUtil::toRadians(state->elevation), MathUtil::toRadians(state->roll));
+    Matrix3d r_sez_cam = inv->q_sez_cam.toRotationMatrix();
 
     // Rotate the camera matrix by this factor
     r_sez_cam = r * r_sez_cam;
 
-    // Get azimuth, altitude, roll from the rotation matrix
-    double az, el, roll;
-    CoordinateUtil::getAzElRoll(r_sez_cam, az, el, roll);
+    // Reset the calibration fields with the new orientation
+    Quaterniond newQ(r_sez_cam);
 
-    // Reset the state fields with the new orientation
-    state->azimuth = MathUtil::toDegrees(az);
-    state->elevation = MathUtil::toDegrees(el);
-    state->roll = MathUtil::toDegrees(roll);
+    inv->q_sez_cam = newQ;
 
     // Cache the new mouse position
     mousePrevI = mouse.x();
@@ -307,7 +296,7 @@ void ReferenceStarWidget::wheelEvent(QWheelEvent *e) {
     //    direction the user pushed the mouse wheel.
     double zoom = 1.0 - 0.01*(wheelDelta/120);
 
-    state->focal_length *= zoom;
+    inv->cam->zoom(zoom);
 
     update();
 }
@@ -320,66 +309,52 @@ void ReferenceStarWidget::slide(double position) {
 
 void ReferenceStarWidget::update() {
 
-    if(!image) {
-        // No image loaded yet
+    if(!inv) {
+        // No calibration loaded yet
         return;
     }
 
     // Clear the annotated image ready to be filled in with reference stars
-    image->annotatedImage.clear();
-    image->annotatedImage.reserve(image->width * image->height);
+    signal->annotatedImage.clear();
+    signal->annotatedImage.reserve(signal->width * signal->height);
 
     // Initialise to full transparency
-    for(unsigned int p = 0; p < image->width * image->height; p++) {
-        image->annotatedImage.push_back(0x00000000);
+    for(unsigned int p = 0; p < signal->width * signal->height; p++) {
+        signal->annotatedImage.push_back(0x00000000);
     }
 
     // Clear the current set of visible reference stars
     visibleReferenceStars.clear();
 
     // Project the reference stars into the image
-    double gmst = TimeUtil::epochToGmst(image->epochTimeUs);
+    double gmst = TimeUtil::epochToGmst(signal->epochTimeUs);
 
-    double lon = MathUtil::toRadians(state->longitude);
-    double lat = MathUtil::toRadians(state->latitude);
-    double az = MathUtil::toRadians(state->azimuth);
-    double el = MathUtil::toRadians(state->elevation);
-    double roll = MathUtil::toRadians(state->roll);
+    double lon = MathUtil::toRadians(inv->longitude);
+    double lat = MathUtil::toRadians(inv->latitude);
 
     // Rotation matrices
     Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
     Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
-    Matrix3d r_sez_cam = CoordinateUtil::getSezToCamRot(az, el, roll);
-    Matrix3d r_cam_im = CoordinateUtil::getCamIntrinsicMatrix(state->focal_length, state->pixel_width, state->pixel_height, state->width, state->height);
+    Matrix3d r_sez_cam = inv->q_sez_cam.toRotationMatrix();
 
     // Full transformation BCRF->CAM
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
 
     for(ReferenceStar &star : state->refStarCatalogue) {
 
-        // Reject stars fainter than faint mag limit
+        // Skip stars fainter than faint mag limit
         if(star.mag > state->ref_star_faint_mag_limit) {
             continue;
         }
 
-        // Unit vector towards star in original frame:
-        Vector3d r_bcrf;
-        CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
-        // Transform to CAM frame:
-        Vector3d r_cam = r_bcrf_cam * r_bcrf;
+        CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *(inv->cam));
 
-        if(r_cam[2] < 0) {
+        if(star.r[2] < 0) {
             // Star is behind the camera
             continue;
         }
 
-        // Project into image coordinates
-        Vector3d r_im = r_cam_im * r_cam;
-        star.i = r_im[0] / r_im[2];
-        star.j = r_im[1] / r_im[2];
-        star.r = r_cam;
-
-        if(star.i>0 && star.i<state->width && star.j>0 && star.j<state->height) {
+        if(star.i>0 && star.i<signal->width && star.j>0 && star.j<signal->height) {
             // Star is visible in image!
             visibleReferenceStars.push_back(&star);
         }
@@ -412,25 +387,32 @@ void ReferenceStarWidget::update() {
 
             unsigned int gap_int = (unsigned int)std::round(gap);
 
-            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 5, gap_int, 0xFF00FFFF);
+            RenderUtil::drawCrossHair(signal->annotatedImage, signal->width, signal->height, ii, jj, 5, gap_int, 0xFF00FFFF);
         }
 
         if(selectedRefStar) {
             int ii = (int)std::round(selectedRefStar->i);
             int jj = (int)std::round(selectedRefStar->j);
-            RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, ii, jj, 10, 0, 0x0000FFFF);
+            RenderUtil::drawCrossHair(signal->annotatedImage, signal->width, signal->height, ii, jj, 10, 0, 0x0000FFFF);
         }
     }
 
     if(displaySources) {
-        // TODO: render extracted sources
-        RenderUtil::drawSources(image->annotatedImage, sources, image->width, image->height, false);
+        // Render extracted sources
+        RenderUtil::drawSources(signal->annotatedImage, inv->sources, signal->width, signal->height, false);
+    }
+
+    if(displaySources && displayRefStars) {
+        // Render the cross-matches
+        for(std::pair<Source, ReferenceStar> &xm : inv->xms) {
+            RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, xm.first.i, xm.second.i, xm.first.j, xm.second.j, 0xFFAAFFFF);
+        }
     }
 
     if(displayGeoCal) {
         // Draw a crosshair at the image principal point
-        RenderUtil::drawCrossHair(image->annotatedImage, image->width, image->height, image->width/2, image->height/2, 10, 0, 0x00FFFFFF);
+        RenderUtil::drawCrossHair(signal->annotatedImage, signal->width, signal->height, signal->width/2, signal->height/2, 10, 0, 0x00FFFFFF);
     }
 
-    signalImageViewer->newFrame(image, true, true, true);
+    signalImageViewer->newFrame(signal, true, true, true);
 }

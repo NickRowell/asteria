@@ -1,7 +1,7 @@
 #include "geocalfitter.h"
 
-GeoCalFitter::GeoCalFitter(CameraModelBase *cam, Eigen::Quaterniond *q_sez_cam, std::vector<std::pair<Source, ReferenceStar> > *xms) :
-     LevenbergMarquardtSolver(cam->getNumParameters(), xms->size()*2), cam(cam), q_sez_cam(q_sez_cam), xms(xms) {
+GeoCalFitter::GeoCalFitter(CameraModelBase *cam, Eigen::Quaterniond *q_sez_cam, std::vector<std::pair<Source, ReferenceStar> > *xms, const double &gmst, const double &lon, const double &lat) :
+     LevenbergMarquardtSolver(cam->getNumParameters(), xms->size()*2), cam(cam), q_sez_cam(q_sez_cam), xms(xms), gmst(gmst), lon(lon), lat(lat) {
 
 }
 
@@ -38,63 +38,63 @@ void GeoCalFitter::finiteDifferencesStepSizePerParam(double * steps) {
     steps[2] = 0.0001;
 }
 
-//void GeoCalFitter::fit(unsigned int maxIterations, bool verbose) {
+void GeoCalFitter::fit(unsigned int maxIterations, bool verbose) {
 
-//    // Compute the initial model
-//    getModel(params, model);
+    // Compute the initial model
+    getModel(params, model);
 
-//    // Covariance weighted chi-square for current parameter set
-//    double chi2_initial = getChi2();
+    // Covariance weighted chi-square for current parameter set
+    double chi2_initial = getChi2();
 
-//    if(verbose) {
-//        fprintf(stderr, "LMA: %d data and %d parameters\n", N, M);
-//        fprintf(stderr, "LMA: Initial chi2 = %3.3f\n", chi2_initial);
-//    }
+    if(verbose) {
+        fprintf(stderr, "LMA: %d data and %d parameters\n", N, M);
+        fprintf(stderr, "LMA: Initial chi2 = %3.3f\n", chi2_initial);
+    }
 
-//    // Get suitable starting value for damping parameter, from 10^{-3}
-//    // times the average of the diagonal elements of JTWJ:
+    // Get suitable starting value for damping parameter, from 10^{-3}
+    // times the average of the diagonal elements of JTWJ:
 
-//    double jac[N*M];
-//    getJacobian(params, jac);
-//    // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
-//    Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
+    double jac[N*M];
+    getJacobian(params, jac);
+    // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
+    Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
 
-//    // Compute W*J, where W is the inverse of the covariance matrix
-//    MatrixXd WJ(N, M);
-//    if(covarianceIsDiagonal) {
-//        // Manually divide each row of J by the inverse of the corresponding variance term
-//        for(unsigned int n=0; n<N; n++) {
-//            WJ.row(n) = J.row(n) / covariance[n];
-//        }
-//    }
-//    else {
-//        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> W(covariance, N, N);
-//        WJ = W.colPivHouseholderQr().solve(J);
-//    }
-//    MatrixXd JTWJ = J.transpose() * WJ;
+    // Compute W*J, where W is the inverse of the covariance matrix
+    MatrixXd WJ(N, M);
+    if(covarianceIsDiagonal) {
+        // Manually divide each row of J by the inverse of the corresponding variance term
+        for(unsigned int n=0; n<N; n++) {
+            WJ.row(n) = J.row(n) / covariance[n];
+        }
+    }
+    else {
+        Map<Matrix<double, Dynamic, Dynamic, RowMajor>> W(covariance, N, N);
+        WJ = W.colPivHouseholderQr().solve(J);
+    }
+    MatrixXd JTWJ = J.transpose() * WJ;
 
-//    double L = JTWJ.trace()/(M*1000.0);
+    double L = JTWJ.trace()/(M*1000.0);
 
-//    double lambda[] = {L, L*maxDamping};
+    double lambda[] = {L, L*maxDamping};
 
-//    unsigned int nIterations = 0;
+    unsigned int nIterations = 0;
 
-//    while(!iteration(lambda, verbose) && nIterations<maxIterations) {
+    while(!iteration(lambda, verbose) && nIterations<maxIterations) {
 
-//        if(verbose) {
-//            fprintf(stderr, "LMA: Iteration %d complete, residual = %3.3f\n", nIterations, getChi2());
-//        }
-//        nIterations++;
-//    }
+        if(verbose) {
+            fprintf(stderr, "LMA: Iteration %d complete, residual = %3.3f\n", nIterations, getChi2());
+        }
+        nIterations++;
+    }
 
-//    if(verbose) {
-//        // Chi-square on exit
-//        double chi2_final = getChi2();
-//        fprintf(stderr, "LMA: Number of iterations = %d\n", nIterations);
-//        fprintf(stderr, "LMA: Final chi2 = %3.3f\n", chi2_final);
-//        fprintf(stderr, "LMA: Reduced chi2 = %3.3f\n", getReducedChi2());
-//        fprintf(stderr, "LMA: Reduction factor = %3.3f\n", chi2_initial/chi2_final);
-//    }
+    if(verbose) {
+        // Chi-square on exit
+        double chi2_final = getChi2();
+        fprintf(stderr, "LMA: Number of iterations = %d\n", nIterations);
+        fprintf(stderr, "LMA: Final chi2 = %3.3f\n", chi2_final);
+        fprintf(stderr, "LMA: Reduced chi2 = %3.3f\n", getReducedChi2());
+        fprintf(stderr, "LMA: Reduction factor = %3.3f\n", chi2_initial/chi2_final);
+    }
 
-//    return;
-//}
+    return;
+}
