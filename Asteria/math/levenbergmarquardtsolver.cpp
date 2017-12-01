@@ -28,6 +28,8 @@ void LevenbergMarquardtSolver::setData(const double * data) {
 
 void LevenbergMarquardtSolver::setCovariance(const double * covariance) {
     covarianceIsDiagonal = false;
+    delete this->covariance;
+    this->covariance = new double[N*N];
     for(unsigned int idx=0; idx<N*N; idx++) {
         this->covariance[idx] = covariance[idx];
     }
@@ -35,6 +37,8 @@ void LevenbergMarquardtSolver::setCovariance(const double * covariance) {
 
 void LevenbergMarquardtSolver::setVariance(const double * variance) {
     covarianceIsDiagonal = true;
+    delete covariance;
+    covariance = new double[N];
     for(unsigned int idx=0; idx<N; idx++) {
         this->covariance[idx] = variance[idx];
     }

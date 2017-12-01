@@ -227,6 +227,8 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
         return;
     }
 
+    fprintf(stderr, "mouseMoveEvent detected\n");
+
     // Drags with the left & right mouse buttons rotate the camera frame in different ways
     Eigen::Quaterniond q;
 
@@ -260,18 +262,9 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
         q = Eigen::Quaterniond::FromTwoVectors(r0, r1);
     }
 
-    // Now rotate the camera extrinsic matrix by this much
-    Matrix3d r = q.toRotationMatrix();
-
-    Matrix3d r_sez_cam = inv->q_sez_cam.toRotationMatrix();
-
-    // Rotate the camera matrix by this factor
-    r_sez_cam = r * r_sez_cam;
-
-    // Reset the calibration fields with the new orientation
-    Quaterniond newQ(r_sez_cam);
-
-    inv->q_sez_cam = newQ;
+    // Apply the rotation to the camera orientation
+    inv->q_sez_cam = q * inv->q_sez_cam;
+    inv->q_sez_cam.normalize();
 
     // Cache the new mouse position
     mousePrevI = mouse.x();

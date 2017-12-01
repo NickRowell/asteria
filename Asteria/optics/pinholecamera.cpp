@@ -32,6 +32,7 @@ void PinholeCamera::setParameters(const double *params) {
     fj = params[1];
     pi = params[2];
     pj = params[3];
+    init();
 }
 
 void PinholeCamera::getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
@@ -116,6 +117,7 @@ void PinholeCamera::getPrincipalPoint(double &pi, double &pj) const {
 void PinholeCamera::zoom(double &factor) {
     fi *= factor;
     fj *= factor;
+    init();
 }
 
 void PinholeCamera::init() {

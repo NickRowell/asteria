@@ -8,6 +8,7 @@
 #include "util/mathutil.h"
 #include "infra/calibrationinventory.h"
 #include "optics/pinholecamerawithradialdistortion.h"
+#include "math/geocalfitter.h"
 
 #include "infra/image.h"
 
@@ -166,12 +167,12 @@ void CalibrationWorker::process() {
     std::vector<ReferenceStar> visibleReferenceStars;
     for(ReferenceStar &star : state->refStarCatalogue) {
 
-        CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *initial->cam);
-
         // Reject stars fainter than faint mag limit
         if(star.mag > state->ref_star_faint_mag_limit) {
             continue;
         }
+
+        CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *initial->cam);
 
         if(star.r[2] < 0) {
             // Star is behind the camera
@@ -250,10 +251,11 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
+    // Copy the initial guess camera calibration and pointing to the new calibration invectory
+    calInv.cam = initial->cam;
+    calInv.q_sez_cam = initial->q_sez_cam;
 
     // TODO: execute the camera calibration algorithm
-
-    CameraModelBase * cam = initial->cam;
 
     // TODO: enable switching to a different camera model without having to recalibrate from scratch.
     // i.e. here we should detect if the input camera model is different to the one that we want to calibrate, and
@@ -261,9 +263,9 @@ void CalibrationWorker::process() {
 
 //    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
 
-    // TODO: read out the results from the geometric calibration
-    calInv.cam = initial->cam;
-    calInv.q_sez_cam = initial->q_sez_cam;
+    GeoCalFitter fitter(calInv.cam, &(calInv.q_sez_cam), &(calInv.xms), gmst, lon, lat);
+
+
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

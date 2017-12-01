@@ -309,6 +309,7 @@ void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
     K2 = params[6];
     K3 = params[7];
     K4 = params[8];
+    init();
 }
 
 Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & i, const double & j) const {

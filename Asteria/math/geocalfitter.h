@@ -5,9 +5,6 @@
 #include "math/levenbergmarquardtsolver.h"
 #include "optics/cameramodelbase.h"
 
-// Get this from cameramodelbase.h
-//#include <Eigen/Dense>
-
 class GeoCalFitter : public LevenbergMarquardtSolver
 {
 public:

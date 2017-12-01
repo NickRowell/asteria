@@ -64,7 +64,7 @@ public:
      * derivatives of the (i,j) coordinates with respect to the intrinsic parameters of the geometric
      * optics model. The number of elements can be found from 2*getNumParameters().
      * @param r_cam
-     *  Camera frame position vector of the point being projected into the image.
+     *  Position vector of the point in the CAM frame.
      */
     virtual void getIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const =0;
 
@@ -78,9 +78,9 @@ public:
      * eight elements, being the derivatives of the (i,j) coordinates with respect to the four
      * quaternion elements.
      * @param r_sez
-     *  External frame position vector of the point.
+     *  Position vector of the point in the SEZ frame.
      * @param r_sez_cam
-     *  The orthonormal matrix that rotates vectors from the external frame to the camera frame.
+     *  The orthonormal matrix that rotates vectors from the SEZ frame to the CAM frame.
      */
     virtual void getExtrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_sez, const Eigen::Matrix3d & r_sez_cam) const =0;
 
@@ -134,8 +134,10 @@ public:
     virtual void zoom(double &factor) =0;
 
     /**
-     * @brief This function is called after deserializing the class and has the task of initialising any
-     * convenience fields of the class that are not serialized.
+     * @brief This function must be called whenever the parameters of the camera model are changed,
+     * for example during iterative fitting. It has the task of initialising any other members
+     * or convenience fields that are used by the class but which are not formally included in the
+     * parameters of the camera model.
      */
     virtual void init() =0;
 
