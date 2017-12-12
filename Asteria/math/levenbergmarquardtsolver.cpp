@@ -174,13 +174,12 @@ void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
     }
     MatrixXd JTWJ = J.transpose() * WJ;
 
-    double L = JTWJ.trace()/(M*1000.0);
-
-    double lambda[] = {L, L*maxDamping};
+    double lambda = JTWJ.trace()/(M*1000.0);
+    double maxLambda = lambda*maxDamping;
 
     unsigned int nIterations = 0;
 
-    while(!iteration(lambda, verbose) && nIterations<maxIterations) {
+    while(!iteration(lambda, maxLambda, verbose) && nIterations<maxIterations) {
 
         if(verbose) {
             fprintf(stderr, "LMA: Iteration %d complete, residual = %3.3f\n", nIterations, getChi2());
@@ -200,7 +199,7 @@ void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
     return;
 }
 
-bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
+bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda, bool verbose) {
 
     // chi-square prior to parameter update
     double chi2prev = getChi2();
@@ -244,7 +243,6 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
     // Get J^T*W*J
     MatrixXd JTWJ = J.transpose() * WJ;
 
-
     // Change in chi-square from one iteration to the next
     double rrise = 0;
 
@@ -252,16 +250,32 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
     bool done = true;
 
     // Search for a good step:
-    unsigned int stepCount = 0;
     do {
         // Make damping matrix
-        MatrixXd L = MatrixXd::Identity(M, M) * lambda[0];
+        MatrixXd L(M, M);
+        // Insert diagonal elements of JTWJ multiplied by damping factor
+        for(unsigned int m1=0; m1<M; m1++) {
+            for(unsigned int m2=0; m2<M; m2++) {
+                if(m1 == m2) {
+                    // Diagonal element
+                    L(m1, m2) = JTWJ(m1, m2) * lambda;
+                }
+                else {
+                    // Off-diagonal element
+                    L(m1, m2) = 0.0;
+                }
+            }
+        }
 
         // Add this to Grammian
         MatrixXd LHS = JTWJ + L;
 
         // Compute parameter adjustment vector
         MatrixXd delta = LHS.colPivHouseholderQr().solve(RHS);
+
+        // Copy initial parameters so we can restore them if necessary
+        double initParam[M];
+        std::copy(params, params + M, initParam);
 
         // Adjust parameters...
         for(unsigned int m=0; m<M; m++) {
@@ -283,7 +297,7 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
         if (rrise < -exitTolerance) {
             // Good step! Want more iterations.
             done = false;
-            lambda[0] /= boostShrinkFactor;
+            lambda /= boostShrinkFactor;
             break;
         }
 
@@ -292,13 +306,11 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
         // parameters and quit loop. Algorithm cannot find a better value.
         else if (fabs(rrise) < exitTolerance) {
 
-            for(unsigned int m=0; m<M; m++) {
-                params[m] -= delta(m, 0);
-            }
+            std::copy(initParam, initParam + M, params);
 
             // Cannot improve parameters - no further iterations
             if(verbose) {
-                fprintf(stderr, "LMA: Residual threshold exceeded.");
+                fprintf(stderr, "LMA: Residual threshold exceeded\n");
             }
             break;
         }
@@ -306,20 +318,18 @@ bool LevenbergMarquardtSolver::iteration(double * lambda, bool verbose) {
 
             // Bad step (residuals increased)! Try again with larger damping.
             // Reset parameters to values before previous nudge.
-            for(unsigned int m=0; m<M; m++) {
-                params[m] -= delta(m, 0);
-            }
+            std::copy(initParam, initParam + M, params);
 
             // Boost damping parameter and try another step.
-            lambda[0] *= boostShrinkFactor;
+            lambda *= boostShrinkFactor;
         }
 
     }
     // Check damping parameter remains within allowed range
-    while (lambda[0]<=lambda[1]);
+    while (lambda<=maxLambda);
 
-    if(lambda[0]>lambda[1] && verbose) {
-        fprintf(stderr, "LMA: Damping threshold exceeded\n");
+    if(lambda>maxLambda && verbose) {
+        fprintf(stderr, "LMA: Damping threshold exceeded (%f > %f)\n", lambda, maxLambda);
     }
 
     return done;
@@ -344,7 +354,8 @@ double LevenbergMarquardtSolver::getChi2() {
         Map<Matrix<double, Dynamic, Dynamic, RowMajor>> R(residuals, N, 1);
         // Load covariance array into a Matrix
         Map<Matrix<double, Dynamic, Dynamic, RowMajor>> C(covariance, N, N);
-        chi2 += (R.transpose() * C.colPivHouseholderQr().solve(R))(0, 0);
+
+        chi2 = (R.transpose() * C.jacobiSvd(ComputeThinU | ComputeThinV).solve(R))(0, 0);
     }
     return chi2;
 }

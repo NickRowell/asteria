@@ -30,7 +30,7 @@ public:
 
     /**
      * @brief Records the epoch time in microseconds, i.e. the time elapsed since 1970-01-01T00:00:00Z,
-     * of the time that the first byte of image data of the first calibration frame was captured.
+     * of the average frame capture time of the images used to generate the calibration.
      */
     long long epochTimeUs;
 

@@ -175,13 +175,13 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
         source.l2 = l2;
 
         // Both eigenvalues should be positive, as we're working with intensity maxima. Usually if
-        // either is negative then the source is a perfect straight line.
-        if (l1 < 0.0 || l2 < 0.0) {
+        // either is negative or zero then the source is a perfect straight line.
+        if (l1 <= 0.0 || l2 <= 0.0) {
             continue;
         }
 
         if (b == 0.0) {
-            // Special case: principal axes align with X or Y directions. Likely that one eigenvalue
+            // Special case: principal axes align with X/Y directions
             // is zero.
             if (a > c) {
                 source.orientation = M_PI / 2.0;
@@ -189,7 +189,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
                 source.orientation = 0.0;
             }
         } else {
-            // General case: principal axis does not align with either X or Y direction
+            // General case: principal axes do not align with X/Y directions
             double lmax = std::max(l1, l2);
 
             // X and Y components of (normalised) eigenvector corresponding to largest eigenvalue.
@@ -199,7 +199,7 @@ std::vector<Source> SourceDetector::getSources(std::vector<double> &signal, std:
             double v_x = std::abs(1.0 / std::sqrt(b * b / ((a - lmax) * (a - lmax)) + 1.0));
             double v_y = std::abs(std::sqrt(1 - v_x));
 
-            // Get the angle between the spike and the X direction
+            // Get the angle between the source and the X direction
             source.orientation = std::atan(v_y / v_x);
         }
 

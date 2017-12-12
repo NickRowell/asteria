@@ -18,6 +18,9 @@ Imageuc::Imageuc(unsigned int &width, unsigned int &height, unsigned char val) :
 }
 
 Imageuc::Imageuc(const Imaged &convertme) : Image<unsigned char>(convertme.width, convertme.height), field(V4L2_FIELD_NONE), annotatedImage(0u) {
+
+    epochTimeUs = convertme.epochTimeUs;
+
     // Convert the raw data: linearly map the floating-point pixel values to the [0:255] range
     double min = convertme.rawImage[0];
     double max = convertme.rawImage[0];

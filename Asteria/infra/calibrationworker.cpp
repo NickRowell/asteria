@@ -46,12 +46,12 @@ void CalibrationWorker::process() {
 
     // The calibration data is assigned to fields of the CalibrationInventory for storage
     CalibrationInventory calInv(calibrationFrames);
-    calInv.epochTimeUs = calibrationFrames.front()->epochTimeUs;
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
     unsigned int width = calibrationFrames.front()->width;
     unsigned int height = calibrationFrames.front()->height;
 
+    calInv.epochTimeUs = midTimeStamp;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -165,6 +165,7 @@ void CalibrationWorker::process() {
     Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
 
     std::vector<ReferenceStar> visibleReferenceStars;
+
     for(ReferenceStar &star : state->refStarCatalogue) {
 
         // Reject stars fainter than faint mag limit
@@ -200,48 +201,57 @@ void CalibrationWorker::process() {
     //       over multiple executions.
     // TODO: allow these to be specified manually somehow; maybe a field of the constructor.
 
-    // Minimum separation for acceptable cross match
-    double minSepThreshold = 30.0;
-    // Maximum possible separation of two points in the image (diagonal extent of image); used to initialise separation cache
-    double maxSep = std::sqrt(width*width + height*height);
+    // Minimum separation for acceptable cross match in sigmas
+    double minSepThreshold = 20.0;
 
+    // Compute the covariance-weighted separations of all pairs of sources and reference stars
+    double covWeightedSep[calInv.sources.size()][visibleReferenceStars.size()];
     for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
 
         Source * source = &(calInv.sources[s1]);
-        ReferenceStar * closestStar;
-        double minSep = maxSep;
+        Matrix2d s;
+        s << source->c_ii, source->c_ij, source->c_ij, source->c_jj;
 
         for(unsigned int s2=0; s2<visibleReferenceStars.size(); s2++) {
+
             ReferenceStar * testStar = &(visibleReferenceStars[s2]);
-            double separation = std::sqrt((source->i - testStar->i)*(source->i - testStar->i) + (source->j - testStar->j)*(source->j - testStar->j));
-            if(separation < minSep) {
-                minSep = separation;
-                closestStar = testStar;
+            MatrixXd r(2,1);
+            r << source->i - testStar->i, source->j - testStar->j;
+
+            covWeightedSep[s1][s2] = std::sqrt((r.transpose() * s.colPivHouseholderQr().solve(r))(0,0));
+        }
+    }
+
+    for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
+
+        // Locate the closest reference star to source s1
+        unsigned int closestStarIdx;
+        double minSep = 2.0 * minSepThreshold;
+        for(unsigned int s2=0; s2<visibleReferenceStars.size(); s2++) {
+            if(covWeightedSep[s1][s2] < minSep) {
+                minSep = covWeightedSep[s1][s2];
+                closestStarIdx = s2;
             }
         }
 
-        // If the closest reference star is too far away to be a potential match for this source then skip the source,
-        // we can't find a match for it.
         if(minSep > minSepThreshold) {
+            // The closest reference star is too far away to be a positive match
             continue;
         }
 
         // Find the closest source to this reference star
-        minSep = maxSep;
-        Source * closestSource;
+        minSep = 2.0 * minSepThreshold;
+        unsigned int closestSourceIdx;
         for(unsigned int s2=0; s2<calInv.sources.size(); s2++) {
-            Source * testSource = &(calInv.sources[s2]);
-            double separation = std::sqrt((testSource->i - closestStar->i)*(testSource->i - closestStar->i) + (testSource->j - closestStar->j)*(testSource->j - closestStar->j));
-            if(separation < minSep) {
-                minSep = separation;
-                closestSource = testSource;
+            if(covWeightedSep[s2][closestStarIdx] < minSep) {
+                minSep = covWeightedSep[s2][closestStarIdx];
+                closestSourceIdx = s2;
             }
         }
 
         // If the closest source to this reference star is the original source, then we have a match
-        if(closestSource == source) {
-            fprintf(stderr, "Found cross-match between Source at %f,%f and ReferenceStar at %f,%f\n", source->i, source->j, closestStar->i, closestStar->j);
-            calInv.xms.push_back(pair<Source, ReferenceStar>(*source, *closestStar));
+        if(closestSourceIdx == s1) {
+            calInv.xms.push_back(pair<Source, ReferenceStar>(calInv.sources[closestSourceIdx], visibleReferenceStars[closestStarIdx]));
         }
     }
 
@@ -251,21 +261,41 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // Copy the initial guess camera calibration and pointing to the new calibration invectory
-    calInv.cam = initial->cam;
-    calInv.q_sez_cam = initial->q_sez_cam;
-
-    // TODO: execute the camera calibration algorithm
-
     // TODO: enable switching to a different camera model without having to recalibrate from scratch.
     // i.e. here we should detect if the input camera model is different to the one that we want to calibrate, and
     // transform it accordingly.
 
 //    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
 
+    // Copy the initial guess camera calibration and pointing to the new calibration inventory
+    calInv.cam = initial->cam;
+    calInv.q_sez_cam = initial->q_sez_cam;
+
+    fprintf(stderr, "Initial parameters = \nIntrinsic = ");
+    double camPar[calInv.cam->getNumParameters()];
+    calInv.cam->getParameters(camPar);
+    for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
+        fprintf(stderr, "%f\t", camPar[n]);
+    }
+    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv.q_sez_cam.w(), calInv.q_sez_cam.x(), calInv.q_sez_cam.y(), calInv.q_sez_cam.z());
+
     GeoCalFitter fitter(calInv.cam, &(calInv.q_sez_cam), &(calInv.xms), gmst, lon, lat);
+    fitter.fit(500, true);
 
+    fprintf(stderr, "Fitted parameters = \nIntrinsic = ");
+    calInv.cam->getParameters(camPar);
+    for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
+        fprintf(stderr, "%f\t", camPar[n]);
+    }
+    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv.q_sez_cam.w(), calInv.q_sez_cam.x(), calInv.q_sez_cam.y(), calInv.q_sez_cam.z());
 
+    // Override the fitted parameters with sensible defaults
+//    double params[4] {500.0, 500.0, 320.0, 240.0};
+//    calInv.cam->setParameters(params);
+//    calInv.q_sez_cam.w() = 0.392214;
+//    calInv.q_sez_cam.x() = 0.145397;
+//    calInv.q_sez_cam.y() = 0.345576;
+//    calInv.q_sez_cam.z() = -0.840003;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

@@ -322,13 +322,14 @@ protected:
     /**
      * @brief Each call performs one iteration of parameters.
      *
-     * @param lambda Damping parameters: element 0 is the current value of lambda, 1 is the max permitted damping.
+     * @param lambda Current value of the damping parameter
+     * @param maxLambda Maximum allowed value of the dampling parameter
      *
      * @return bool  States whether another iteration would be appropriate, or
      *                  if change in residuals and/or damping thresholds have
      *                  been reached
      */
-    bool iteration(double * lambda, bool verbose);
+    bool iteration(double &lambda, const double &maxLambda, bool verbose);
 
     /**
      * @brief Get the residuals (x - f(x)) for the current model values.

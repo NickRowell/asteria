@@ -227,8 +227,6 @@ void ReferenceStarWidget::mouseMoveEvent(QMouseEvent *e) {
         return;
     }
 
-    fprintf(stderr, "mouseMoveEvent detected\n");
-
     // Drags with the left & right mouse buttons rotate the camera frame in different ways
     Eigen::Quaterniond q;
 
@@ -320,7 +318,7 @@ void ReferenceStarWidget::update() {
     visibleReferenceStars.clear();
 
     // Project the reference stars into the image
-    double gmst = TimeUtil::epochToGmst(signal->epochTimeUs);
+    double gmst = TimeUtil::epochToGmst(inv->epochTimeUs);
 
     double lon = MathUtil::toRadians(inv->longitude);
     double lat = MathUtil::toRadians(inv->latitude);
