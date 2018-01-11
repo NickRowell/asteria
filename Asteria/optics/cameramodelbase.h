@@ -1,9 +1,12 @@
 #ifndef CAMERAMODEL_H
 #define CAMERAMODEL_H
 
+#include "util/serializationutil.h"
+
 #include <Eigen/Dense>
 
-#include "util/serializationutil.h"
+class PinholeCamera;
+class PinholeCameraWithRadialDistortion;
 
 /**
  * @brief The CameraModelBase class provides a base for all models of the camera
@@ -40,6 +43,22 @@ public:
      * Height of the detector [pixels]
      */
     unsigned int height;
+
+    /**
+     * @brief Converts the camera model to the equivalent PinholeCamera type, or as close as possible
+     * given the limitations of the model.
+     * @return
+     *  A pointer to an equivalent PinholeCamera type.
+     */
+    virtual PinholeCamera * convertToPinholeCamera() const =0;
+
+    /**
+     * @brief Converts the camera model to the equivalent PinholeCameraWithRadialDistortion type, or as close as possible
+     * given the limitations of the model.
+     * @return
+     *  A pointer to an equivalent PinholeCameraWithRadialDistortion type.
+     */
+    virtual PinholeCameraWithRadialDistortion * convertToPinholeCameraWithRadialDistortion() const =0;
 
     /**
      * @brief Get the number of free parameters of the camera geometric optics model.
@@ -112,8 +131,18 @@ public:
      *  On exit, contains the i image coordinates [pixels]
      * @param j
      *  On exit, contains the j image coordinates [pixels]
+     * @return
+     *  A boolean value stating whether the projected point is within the visible image area or not. It is important
+     * to check this value in order to determine if a projected point is visible or not, and not to simply rely on
+     * the pixel coordinates of the projected point. There are a couple of situations where the returned
+     * coordinates are inside the image area but the point is not visible:
+     * -# The vector originates behind the camera, and within the (reflected) field of view. In this case the projection
+     *    equation gives coordinates within the image area but the point is not visible.
+     * -# The camera includes distortion terms which are valid only within the image area. In this case, rays
+     * originating far outside the field of view can be subject to extreme (and invalid) distortion which incorrectly
+     * warps them to coordinates within the image area. This can be detected during the projection.
 	 */
-    virtual void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const =0;
+    virtual bool projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const =0;
 
     /**
      * @brief Get the principal point of the camera, i.e. the point where the camera boresight intersects

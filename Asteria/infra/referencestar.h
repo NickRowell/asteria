@@ -84,6 +84,11 @@ public:
      */
     Vector3d r;
 
+    /**
+     * @brief Boolean flag indicating if the star is visible in the current image.
+     */
+    bool visible;
+
 };
 
 #endif // REFERENCESTAR_H

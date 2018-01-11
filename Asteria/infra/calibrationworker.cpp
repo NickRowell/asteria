@@ -175,12 +175,7 @@ void CalibrationWorker::process() {
 
         CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *initial->cam);
 
-        if(star.r[2] < 0) {
-            // Star is behind the camera
-            continue;
-        }
-
-        if(star.i>0 && star.i<width && star.j>0 && star.j<height) {
+        if(star.visible) {
             // Star is visible in image!
             visibleReferenceStars.push_back(star);
         }
@@ -199,7 +194,7 @@ void CalibrationWorker::process() {
 
     // TODO: make robust to hot pixels. Include a hot pixel determination step that operates
     //       over multiple executions.
-    // TODO: allow these to be specified manually somehow; maybe a field of the constructor.
+    // TODO: allow cross-matches to be specified manually somehow; maybe a field of the constructor.
 
     // Minimum separation for acceptable cross match in sigmas
     double minSepThreshold = 20.0;
@@ -261,18 +256,25 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    // TODO: enable switching to a different camera model without having to recalibrate from scratch.
-    // i.e. here we should detect if the input camera model is different to the one that we want to calibrate, and
-    // transform it accordingly.
 
-//    CameraModelBase * cam = new PinholeCameraWithRadialDistortion(state->width, state->height, 300.0, 300.0, 320.0, 240.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005);
+    fprintf(stderr, "Initial camera parameters = \n");
+    double camPar[initial->cam->getNumParameters()];
+    initial->cam->getParameters(camPar);
+    for(unsigned int n=0; n<initial->cam->getNumParameters(); n++) {
+        fprintf(stderr, "%.10f\t", camPar[n]);
+    }
 
-    // Copy the initial guess camera calibration and pointing to the new calibration inventory
-    calInv.cam = initial->cam;
+//    calInv.cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
+    calInv.cam = initial->cam->convertToPinholeCamera();
+//    calInv.cam = initial->cam;
+
     calInv.q_sez_cam = initial->q_sez_cam;
 
+    fprintf(stderr, "Initial quaternion normalisation = %f\n", calInv.q_sez_cam.norm());
+    calInv.q_sez_cam.normalize();
+
     fprintf(stderr, "Initial parameters = \nIntrinsic = ");
-    double camPar[calInv.cam->getNumParameters()];
+    camPar[calInv.cam->getNumParameters()];
     calInv.cam->getParameters(camPar);
     for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
         fprintf(stderr, "%f\t", camPar[n]);
@@ -282,6 +284,8 @@ void CalibrationWorker::process() {
     GeoCalFitter fitter(calInv.cam, &(calInv.q_sez_cam), &(calInv.xms), gmst, lon, lat);
     fitter.fit(500, true);
 
+    fprintf(stderr, "Final quaternion normalisation = %f\n", calInv.q_sez_cam.norm());
+
     fprintf(stderr, "Fitted parameters = \nIntrinsic = ");
     calInv.cam->getParameters(camPar);
     for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
@@ -289,13 +293,6 @@ void CalibrationWorker::process() {
     }
     fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv.q_sez_cam.w(), calInv.q_sez_cam.x(), calInv.q_sez_cam.y(), calInv.q_sez_cam.z());
 
-    // Override the fitted parameters with sensible defaults
-//    double params[4] {500.0, 500.0, 320.0, 240.0};
-//    calInv.cam->setParameters(params);
-//    calInv.q_sez_cam.w() = 0.392214;
-//    calInv.q_sez_cam.x() = 0.145397;
-//    calInv.q_sez_cam.y() = 0.345576;
-//    calInv.q_sez_cam.z() = -0.840003;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //

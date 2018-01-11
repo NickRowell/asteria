@@ -12,7 +12,7 @@ PolynomialFitter::PolynomialFitter(std::vector<double> &xs, std::vector<double> 
 }
 
 
-void PolynomialFitter::getModel(const double * params, double * model) {
+void PolynomialFitter::getModel(double * model) {
     for(unsigned int n=0; n<N; n++) {
         double x = xs[n];
         double tmp = 1.0;
@@ -24,7 +24,7 @@ void PolynomialFitter::getModel(const double * params, double * model) {
     }
 }
 
-void PolynomialFitter::getJacobian(const double * params, double * jac) {
+void PolynomialFitter::getJacobian(double * jac) {
     fprintf(stderr, "Using PolyomialFitter getJacobian method\n");
     for(unsigned int n=0; n<N; n++) {
         double x = xs[n];

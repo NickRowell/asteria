@@ -3,6 +3,10 @@
 
 #include "optics/pinholecamera.h"
 
+/**
+ * @brief The PinholeCameraWithRadialDistortion class provides an implementation of the
+ * CameraModelBase for modelling pinhole cameras with low order radial distortion.
+ */
 class PinholeCameraWithRadialDistortion : public PinholeCamera {
 
 public:
@@ -27,53 +31,39 @@ public:
      *  Coordinate of the principal point in the i (horizontal) direction [pixels]
      * @param pj
      *  Coordinate of the principal point in the j (vertical) direction [pixels]
-     * @param k0
-     *  Zeroth-order coefficient of the radial distortion polynomal [-]
-     * @param k1
-     *  First-order coefficient of the radial distortion polynomal [pixels\f$^{-1}\f$]
      * @param k2
      *  Second-order coefficient of the radial distortion polynomal [pixels\f$^{-2}\f$]
-     * @param k3
-     *  Third-order coefficient of the radial distortion polynomal [pixels\f$^{-3}\f$]
-     * @param k4
-     *  Fourth-order coefficient of the radial distortion polynomal [pixels\f$^{-4}\f$]
      */
     PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
-                                      const double &k0, const double &k1, const double &k2, const double &k3, const double &k4);
+                                      const double &k2);
 
     ~PinholeCameraWithRadialDistortion();
 
     /**
-     * @brief Zeroth-order coefficient of the forward radial distortion polynomial [-].
+     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
      *
      * The forward radial distortion factor is computed according to:
      *
-     * \f$C(R) = 1 + K0 + K1*R + K2*R^2 + K3*R^3 + K4*R^4\f$
+     * \f$C(R) = 1 + K2*R^2 + ... \f$
      *
      * where \f$R\f$ is measured from the distortion centre, which coincides with the principal point.
-     * Note that the distortion factor is dimensionless.
-     */
-    double K0;
-    /**
-     * @brief First-order coefficient of the forward radial distortion polynomial [pixels\f$^{-1}\f$].
-     * See documentation for #K0 for a full definition.
-     */
-    double K1;
-    /**
-     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
-     * See documentation for #K0 for a full definition.
+     * Note that the distortion factor is dimensionless. The distortion polynomial can be extended with
+     * higher order terms with a bit of ajustment to the partial derivatives. It is unwise to add a
+     * constant (K0) term because this is degenerate with the focal length. Higher order terms can be
+     * difficult to constrain and lead to quite unphysical distortion functions. In general the function
+     * should be monotonic, which is difficult (read: impossible) to apply rigorously in the fitting but
+     * which seems to emerge naturally when fitting polynomials with few terms.
      */
     double K2;
+
     /**
-     * @brief Third-order coefficient of the forward radial distortion polynomial [pixels\f$^{-3}\f$].
-     * See documentation for #K0 for a full definition.
+     * @brief Threshold on the radial distance of (undistorted) points from the distortion centre [pixels].
+     * Projected undistorted points that lie at radial distances above this threshold are determined to be not
+     * visible in the image even if the distorted point lies within the image area. It is necessary to perform
+     * this check because rays far outside the field-of-view can formally project into the image area due to
+     * extreme radial distortion corrections way off the optical axis, which should not be applied.
      */
-    double K3;
-    /**
-     * @brief Fourth-order coefficient of the forward radial distortion polynomial [pixels\f$^{-4}\f$].
-     * See documentation for #K0 for a full definition.
-     */
-    double K4;
+    double r_max;
 
     /**
      * @brief Enumerates the possible signs of the radial distortion.
@@ -92,6 +82,10 @@ public:
      */
     RADIAL_DISTORTION CURRENT_RADIAL_DISTORTION;
 
+    PinholeCamera * convertToPinholeCamera() const;
+
+    PinholeCameraWithRadialDistortion * convertToPinholeCameraWithRadialDistortion() const;
+
     unsigned int getNumParameters() const;
 
     void getParameters(double *params) const;
@@ -104,7 +98,7 @@ public:
 
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 
-    void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
+    bool projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
 
     std::string getModelName() const;
 
@@ -123,10 +117,9 @@ public:
      * in order to bring both their values closer to one, thus reducing
      * floating point errors.
      *
-     *
      * @param R
      *  Radial distance from the principal point of the pixel in the undistorted
-     * image, i.e. the scene radiance.
+     * image.
      * @return
      *  The forward radial distortion factor C(R)
      */
@@ -251,11 +244,7 @@ public:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
-        ar & BOOST_SERIALIZATION_NVP(K0);
-        ar & BOOST_SERIALIZATION_NVP(K1);
         ar & BOOST_SERIALIZATION_NVP(K2);
-        ar & BOOST_SERIALIZATION_NVP(K3);
-        ar & BOOST_SERIALIZATION_NVP(K4);
         this->init();
     }
 

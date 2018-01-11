@@ -96,9 +96,11 @@ void TestUtil::testLevenbergMarquardtFitter() {
 
     // Print the data and model
     double model[xs.size()];
-    polyFit.getModel(solution, model);
+    polyFit.setParameters(solution);
+    polyFit.getModel(model);
     double initialModel[xs.size()];
-    polyFit.getModel(initialGuessParams, initialModel);
+    polyFit.setParameters(initialGuessParams);
+    polyFit.getModel(initialModel);
     for(unsigned int i=0; i<xs.size(); i++) {
         fprintf(stderr, "%f\t%f\t%f\t%f\n", xs[i], ys[i], model[i], initialModel[i]);
     }

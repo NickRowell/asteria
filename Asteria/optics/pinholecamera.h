@@ -75,6 +75,10 @@ public:
      */
     Eigen::Matrix3d kInv;
 
+    PinholeCamera * convertToPinholeCamera() const;
+
+    PinholeCameraWithRadialDistortion * convertToPinholeCameraWithRadialDistortion() const;
+
     unsigned int getNumParameters() const;
 
     void getParameters(double * params) const;
@@ -87,7 +91,7 @@ public:
 
     Eigen::Vector3d deprojectPixel(const double & i, const double & j) const;
 
-    void projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
+    bool projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const;
 
     void getPrincipalPoint(double &pi, double &pj) const;
 

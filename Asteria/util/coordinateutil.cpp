@@ -253,6 +253,7 @@ void CoordinateUtil::projectReferenceStar(ReferenceStar &star, const Eigen::Quat
 }
 
 void CoordinateUtil::projectReferenceStar(ReferenceStar &star, const Eigen::Matrix3d &r_bcrf_cam, const CameraModelBase &cam) {
+
     // Unit vector towards star in BCRF frame:
     Vector3d r_bcrf;
     CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
@@ -261,5 +262,5 @@ void CoordinateUtil::projectReferenceStar(ReferenceStar &star, const Eigen::Matr
     star.r = r_bcrf_cam * r_bcrf;
 
     // Project into image coordinates
-    cam.projectVector(star.r, star.i, star.j);
+    star.visible = cam.projectVector(star.r, star.i, star.j);
 }

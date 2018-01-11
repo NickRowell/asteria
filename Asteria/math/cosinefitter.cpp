@@ -12,7 +12,7 @@ CosineFitter::CosineFitter(std::vector<double> &xs, std::vector<double> &ys) : L
 }
 
 
-void CosineFitter::getModel(const double * params, double * model) {
+void CosineFitter::getModel(double * model) {
 
     double amp = params[0];
     double freq = params[1];
@@ -24,7 +24,7 @@ void CosineFitter::getModel(const double * params, double * model) {
     }
 }
 
-void CosineFitter::getJacobian(const double * params, double * jac) {
+void CosineFitter::getJacobian(double * jac) {
 
     double amp = params[0];
     double freq = params[1];

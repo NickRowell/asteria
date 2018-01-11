@@ -340,12 +340,7 @@ void ReferenceStarWidget::update() {
 
         CoordinateUtil::projectReferenceStar(star, r_bcrf_cam, *(inv->cam));
 
-        if(star.r[2] < 0) {
-            // Star is behind the camera
-            continue;
-        }
-
-        if(star.i>0 && star.i<signal->width && star.j>0 && star.j<signal->height) {
+        if(star.visible) {
             // Star is visible in image!
             visibleReferenceStars.push_back(&star);
         }

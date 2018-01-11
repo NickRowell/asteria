@@ -492,7 +492,7 @@ void AcquisitionThread::run() {
         bufferinfo->memory = V4L2_MEMORY_MMAP;
 
         // Wait for this buffer to be dequeued then retrieve the image
-        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_DQBUF, bufferinfo) < 0){
+        if(IoUtil::xioctl(*(this->state->fd), VIDIOC_DQBUF, bufferinfo) < 0) {
             perror("VIDIOC_DQBUF");
             exit(1);
         }

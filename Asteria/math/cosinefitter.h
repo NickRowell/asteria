@@ -14,10 +14,10 @@ public:
     std::vector<double> xs;
     std::vector<double> ys;
 
-    void getModel(const double * params, double * model);
+    void getModel(double * model);
 
     // One or the other of these should be implemented:
-    void getJacobian(const double * params, double * jac);
+    void getJacobian(double * jac);
     void finiteDifferencesStepSizePerParam(double *steps);
 };
 

@@ -114,12 +114,11 @@ public:
      * f(X,P) = [f(x_1, P), f(x_2, P), ... , f(x_N, P)]^T
      *
      * This method MUST be overridden in the derived class.
-     * @param params
-     *  Pointer to an M-element array containing the parameters of the model
+     *
      * @param model
      *  Pointer to an N-element array that on exit will contain the model values
      */
-    virtual void getModel(const double * params, double * model) =0;
+    virtual void getModel(double * model) =0;
 
     /**
      * @brief Get the Jacobian matrix -> the matrix of partial derivatives of the
@@ -135,13 +134,11 @@ public:
      * This function MAY be overridden in the derived class if an analytic Jacobian is possible.
      * A default implementation based on finite differences is provided.
      *
-     * @param params
-     *  Pointer to an M-element array containing the current parameters of the model
      * @param jac
      *  NxM element array that on exit will contain the Jacobian values, packed in a one
      * dimensional array in row-major order.
      */
-    virtual void getJacobian(const double * params, double * jac);
+    virtual void getJacobian(double * jac);
 
     /**
      * @brief Implementing classes should override this to provide appropriate step sizes per parameter for use
@@ -156,6 +153,14 @@ public:
      * parameter.
      */
     virtual void finiteDifferencesStepSizePerParam(double *steps);
+
+    /**
+     * @brief Method called whenever the algorithm updates the parameters (such as during regular iterations, and
+     * during estimation of the Jacobian using finite differences). The default implementation does nothing, however
+     * the user can override this in their derived class in case they need to perform any post-processing on the
+     * adjusted parameters for example to enforce normalisation on unit vector or quaternion elements.
+     */
+    virtual void postParameterUpdateCallback();
 
     /**
      * @brief Perform LM iteration loop until parameters cannot be improved.

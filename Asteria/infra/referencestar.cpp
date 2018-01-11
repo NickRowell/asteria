@@ -11,7 +11,7 @@ ReferenceStar::ReferenceStar() : ra(0.0), dec(0.0), mag(0.0) {
 
 }
 
-ReferenceStar::ReferenceStar(const ReferenceStar& copyme) : ra(copyme.ra), dec(copyme.dec), mag(copyme.mag), i(copyme.i), j(copyme.j), r(copyme.r) {
+ReferenceStar::ReferenceStar(const ReferenceStar& copyme) : ra(copyme.ra), dec(copyme.dec), mag(copyme.mag), i(copyme.i), j(copyme.j), r(copyme.r), visible(copyme.visible) {
 
 }
 
@@ -26,6 +26,7 @@ ReferenceStar& ReferenceStar::operator=(const ReferenceStar& copyme) {
     i = copyme.i;
     j = copyme.j;
     r = copyme.r;
+    visible = copyme.visible;
 
     return *this;
 }

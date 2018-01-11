@@ -1,4 +1,5 @@
 #include "optics/pinholecamera.h"
+#include "optics/pinholecamerawithradialdistortion.h"
 #include "util/coordinateutil.h"
 
 BOOST_CLASS_EXPORT(PinholeCamera)
@@ -14,6 +15,26 @@ PinholeCamera::PinholeCamera(const unsigned int &width, const unsigned int &heig
 
 PinholeCamera::~PinholeCamera() {
 
+}
+
+PinholeCamera * PinholeCamera::convertToPinholeCamera() const {
+
+    fprintf(stderr, "Converting a PinholeCamera to a PinholeCamera\n");
+
+    PinholeCamera * cam = new PinholeCamera(this->width, this->height, this->fi, this->fj, this->pi, this->pj);
+
+    return cam;
+}
+
+PinholeCameraWithRadialDistortion * PinholeCamera::convertToPinholeCameraWithRadialDistortion() const {
+
+    fprintf(stderr, "Converting a PinholeCamera to a PinholeCameraWithRadialDistortion\n");
+
+    // Set all distortion coefficients to zero
+    PinholeCameraWithRadialDistortion * cam = new PinholeCameraWithRadialDistortion(
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0);
+
+    return cam;
 }
 
 unsigned int PinholeCamera::getNumParameters() const {
@@ -102,11 +123,27 @@ Eigen::Vector3d PinholeCamera::deprojectPixel(const double & i, const double & j
     return r_cam;
 }
 
-void PinholeCamera::projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const {
+bool PinholeCamera::projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const {
     // Project into image coordinates
     Eigen::Vector3d r_im = k * r_cam;
     i = r_im[0] / r_im[2];
     j = r_im[1] / r_im[2];
+
+
+    // Determine visibility
+
+    if(r_cam[2] < 0.0) {
+        // Ray is behind the camera
+        return false;
+    }
+
+    if(i<0 || i>width || j<0 || j>height) {
+        // Projected point is outside the image area
+        return false;
+    }
+
+    // Visibility checks passed
+    return true;
 }
 
 void PinholeCamera::getPrincipalPoint(double &pi, double &pj) const {

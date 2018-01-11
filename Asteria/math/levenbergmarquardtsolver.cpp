@@ -73,7 +73,7 @@ void LevenbergMarquardtSolver::finiteDifferencesStepSizePerParam(double * steps)
     for (unsigned int m=0; m<M; m++) {
         steps[m] = 1.0;
     }
-    fprintf(stderr, "If getJacobian(const double *params, double * jac) is not overridden then "
+    fprintf(stderr, "If getJacobian(double * jac) is not overridden then "
                     "the finiteDifferencesStepSizePerParam() should be overridden!");
 }
 
@@ -87,26 +87,27 @@ void LevenbergMarquardtSolver::finiteDifferencesStepSizePerParam(double * steps)
  *  Pointer to the start of an array of doubles with NxM elements; on exit this will be filled
  * with the Jacobian values, packed in row-major order.
  */
-void LevenbergMarquardtSolver::getJacobian(const double *params, double * jac) {
+void LevenbergMarquardtSolver::getJacobian(double * jac) {
+
+    fprintf(stderr, "Using finite difference Jacobian\n");
 
     // Get finite step sizes to use for each parameter
     double steps[M];
     finiteDifferencesStepSizePerParam(steps);
 
-    // Make a copy of the params so we can adjust them
-    double paramsCpy[M];
-    for(unsigned int m=0; m<M; m++) {
-        paramsCpy[m] = params[m];
-    }
+    // Cache initial parameters so we can restore them
+    double initParam[M];
+    std::copy(&params[0], &params[M], initParam);
 
     // Iterate over each parameter...
     for (unsigned int m=0; m<M; m++) {
 
         // First advance the parameter
-        paramsCpy[m] += steps[m];
+        params[m] += steps[m];
+        postParameterUpdateCallback();
 
         // Get model values for advanced parameter set: f(x+h)
-        getModel(paramsCpy, model);
+        getModel(model);
 
         // Store f(x+h) in the Jacobian
         for (unsigned int n = 0; n < N; n++) {
@@ -116,10 +117,12 @@ void LevenbergMarquardtSolver::getJacobian(const double *params, double * jac) {
         }
 
         // Now retard the parameter...
-        paramsCpy[m] -= 2.0*steps[m];
+        std::copy(&initParam[0], &initParam[M], params);
+        params[m] -= steps[m];
+        postParameterUpdateCallback();
 
         // Get model values for retarded parameter set: f(x-h)
-        getModel(paramsCpy, model);
+        getModel(model);
 
         // Build Jacobian by finite difference
         for (unsigned int n = 0; n < N; n++) {
@@ -135,14 +138,21 @@ void LevenbergMarquardtSolver::getJacobian(const double *params, double * jac) {
         }
 
         // Return the parameter to original value
-        paramsCpy[m] += steps[m];
+        std::copy(&initParam[0], &initParam[M], params);
+
+        // Reset the model
+        getModel(model);
     }
+}
+
+void LevenbergMarquardtSolver::postParameterUpdateCallback() {
+    // Default implementation does nothing.
 }
 
 void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
 
     // Compute the initial model
-    getModel(params, model);
+    getModel(model);
 
     // Covariance weighted chi-square for current parameter set
     double chi2_initial = getChi2();
@@ -152,11 +162,36 @@ void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
         fprintf(stderr, "LMA: Initial chi2 = %3.3f\n", chi2_initial);
     }
 
+
     // Get suitable starting value for damping parameter, from 10^{-3}
     // times the average of the diagonal elements of JTWJ:
 
     double jac[N*M];
-    getJacobian(params, jac);
+    getJacobian(jac);
+
+    // XXX: temporary addition to debug analytic/numeric jacobian
+//    double analJac[N*M];
+//    getAnalyticJacobian(analJac);
+
+//    fprintf(stderr, "Numerical Jacobian:\n");
+//    for(unsigned int n=0; n<N; n++) {
+//        for(unsigned int m=0; m<M; m++) {
+//            fprintf(stderr, "%.5f\t", jac[n*M + m]);
+//        }
+//        fprintf(stderr, "\n");
+//    }
+
+//    fprintf(stderr, "Analytic Jacobian (the quaternion derivatives are different!):\n");
+//    for(unsigned int n=0; n<N; n++) {
+//        for(unsigned int m=0; m<M; m++) {
+//            fprintf(stderr, "%.5f\t", analJac[n*M + m]);
+//        }
+//        fprintf(stderr, "\n");
+//    }
+
+
+
+
     // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
     Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
 
@@ -201,12 +236,15 @@ void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
 
 bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda, bool verbose) {
 
-    // chi-square prior to parameter update
+    // Compute model
+    getModel(model);
+
+    // Compute chi-square prior to parameter update
     double chi2prev = getChi2();
 
     // Now get Jacobian matrix for current parameters
     double jac[N*M];
-    getJacobian(this->params, jac);
+    getJacobian(jac);
     // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
     Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
 
@@ -246,25 +284,21 @@ bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda
     // Change in chi-square from one iteration to the next
     double rrise = 0;
 
+    // Copy initial parameters so we can restore them if necessary
+    double initParam[M];
+    std::copy(&params[0], &params[M], initParam);
+
     // Exit status
     bool done = true;
 
     // Search for a good step:
     do {
         // Make damping matrix
-        MatrixXd L(M, M);
+        MatrixXd L = MatrixXd::Constant(M, M, 0.0);
         // Insert diagonal elements of JTWJ multiplied by damping factor
-        for(unsigned int m1=0; m1<M; m1++) {
-            for(unsigned int m2=0; m2<M; m2++) {
-                if(m1 == m2) {
-                    // Diagonal element
-                    L(m1, m2) = JTWJ(m1, m2) * lambda;
-                }
-                else {
-                    // Off-diagonal element
-                    L(m1, m2) = 0.0;
-                }
-            }
+        for(unsigned int m=0; m<M; m++) {
+            // Diagonal element
+            L(m, m) = JTWJ(m, m) * lambda;
         }
 
         // Add this to Grammian
@@ -273,17 +307,15 @@ bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda
         // Compute parameter adjustment vector
         MatrixXd delta = LHS.colPivHouseholderQr().solve(RHS);
 
-        // Copy initial parameters so we can restore them if necessary
-        double initParam[M];
-        std::copy(params, params + M, initParam);
-
         // Adjust parameters...
         for(unsigned int m=0; m<M; m++) {
             params[m] += delta(m, 0);
         }
 
+        postParameterUpdateCallback();
+
         // Recompute model
-        getModel(params, model);
+        getModel(model);
 
         // Get new chi-square statistic
         double chi2 = getChi2();
@@ -306,7 +338,10 @@ bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda
         // parameters and quit loop. Algorithm cannot find a better value.
         else if (fabs(rrise) < exitTolerance) {
 
-            std::copy(initParam, initParam + M, params);
+            std::copy(&initParam[0], &initParam[M], params);
+
+            // Reset the model
+            getModel(model);
 
             // Cannot improve parameters - no further iterations
             if(verbose) {
@@ -318,7 +353,10 @@ bool LevenbergMarquardtSolver::iteration(double &lambda, const double &maxLambda
 
             // Bad step (residuals increased)! Try again with larger damping.
             // Reset parameters to values before previous nudge.
-            std::copy(initParam, initParam + M, params);
+            std::copy(&initParam[0], &initParam[M], params);
+
+            // Reset the model
+            getModel(model);
 
             // Boost damping parameter and try another step.
             lambda *= boostShrinkFactor;
@@ -379,7 +417,7 @@ MatrixXd LevenbergMarquardtSolver::getParameterCovariance() {
 
     // Get Jacobian matrix for current parameter set
     double jac[N*M];
-    getJacobian(params, jac);
+    getJacobian(jac);
     // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
     Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
 
@@ -474,7 +512,7 @@ MatrixXd LevenbergMarquardtSolver::getJacobian_dpdx() {
         data[n] += 2*h;
 
         // Solve for updated parameters
-        fit(500,false);
+        fit(500, false);
 
         // -f(x+2h)
         for (unsigned int m = 0; m < M; m++) {
@@ -484,7 +522,8 @@ MatrixXd LevenbergMarquardtSolver::getJacobian_dpdx() {
         // Get f(x+h)
         // Nudge data point j: d(j) + 2h -> d(j) + h
         data[n] -= h;
-        fit(500,false);
+        fit(500, false);
+
         // +8f(x+h)
         for (unsigned int m = 0; m < M; m++) {
             jac(n, m) += 8.0 * params[m];
@@ -493,7 +532,8 @@ MatrixXd LevenbergMarquardtSolver::getJacobian_dpdx() {
         // Get f(x-h)
         // Nudge data point j: d(j) + h -> d(j) - h
         data[n] -= 2*h;
-        fit(500,false);
+        fit(500, false);
+
         // -8f(x-h)
         for (unsigned int m = 0; m < M; m++) {
             jac(n, m) -= 8.0 * params[m];
@@ -502,7 +542,8 @@ MatrixXd LevenbergMarquardtSolver::getJacobian_dpdx() {
         // Get f(x-2h)
         // Nudge data point j: d(j) - h -> d(j) - 2*h
         data[n] -= h;
-        fit(500,false);
+        fit(500, false);
+
         // +f(x-2h)
         for (unsigned int m = 0; m < M; m++) {
             jac(n, m) += params[m];

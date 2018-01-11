@@ -49,20 +49,14 @@ public:
      */
     const double lat;
 
-    void getModel(const double * params, double * model);
+    void getModel(double * model);
+
+    void postParameterUpdateCallback();
 
     // One or the other of these should be implemented:
-    void getJacobian(const double * params, double * jac);
+//    void getJacobian(double * jac);
     void finiteDifferencesStepSizePerParam(double *steps);
 
-    /**
-     * @brief Perform LM iteration loop until parameters cannot be improved. This overrides the
-     * implementation in the base class because we need to renormalise the quaternion elements
-     * after each iteration.
-     * @param maxIterations  Maximum number of allowed iteration before convergence.
-     * @param verbose        Enables verbose logging
-     */
-    void fit(unsigned int maxIterations, bool verbose);
 };
 
 #endif // GEOCALFITTER_H
