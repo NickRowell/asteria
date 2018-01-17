@@ -54,8 +54,8 @@ public:
     void postParameterUpdateCallback();
 
     // One or the other of these should be implemented:
-//    void getJacobian(double * jac);
-    void finiteDifferencesStepSizePerParam(double *steps);
+    void getJacobian(double * jac);
+//    void finiteDifferencesStepSizePerParam(double *steps);
 
 };
 

@@ -263,9 +263,10 @@ void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *d
 //    derivs[15] = (y_cam/z_cam) * fj * dcr_dK4;
 }
 
-void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam) const {
+void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam) const {
 
     // Get the position vector in the camera frame
+    Matrix3d r_sez_cam = q_sez_cam.toRotationMatrix();
     Eigen::Vector3d r_cam = r_sez_cam * r_sez;
     double x_cam = r_cam[0];
     double y_cam = r_cam[1];
@@ -289,7 +290,7 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
     Eigen::Vector3d dr_cam_dq2;
     Eigen::Vector3d dr_cam_dq3;
 
-    CoordinateUtil::getSezToCamPartials(r_sez, r_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
+    CoordinateUtil::getSezToCamPartials(r_sez, q_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
 
     // Some convenience terms:
 

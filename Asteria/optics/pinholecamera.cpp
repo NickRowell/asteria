@@ -75,9 +75,10 @@ void PinholeCamera::getIntrinsicPartialDerivatives(double * derivs, const Eigen:
     derivs[7] = 1.0;
 }
 
-void PinholeCamera::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam) const {
+void PinholeCamera::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam) const {
 
     // Get the position vector in the camera frame
+    Matrix3d r_sez_cam = q_sez_cam.toRotationMatrix();
     Eigen::Vector3d r_cam = r_sez_cam * r_sez;
     double x_cam = r_cam[0];
     double y_cam = r_cam[1];
@@ -89,7 +90,7 @@ void PinholeCamera::getExtrinsicPartialDerivatives(double *derivs, const Eigen::
     Eigen::Vector3d dr_cam_dq2;
     Eigen::Vector3d dr_cam_dq3;
 
-    CoordinateUtil::getSezToCamPartials(r_sez, r_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
+    CoordinateUtil::getSezToCamPartials(r_sez, q_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
 
     double z_cam2 = z_cam * z_cam;
 

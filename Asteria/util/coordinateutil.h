@@ -203,8 +203,8 @@ public:
      *
      * @param r_sez
      *  The SEZ-frame position vector of the point.
-     * @param r_sez_cam
-     *  The orthonormal matrix that rotates vectors from the SEZ to the CAM frame.
+     * @param q_sez_cam
+     *  The unit quaternion that rotates vectors from the SEZ to the CAM frame.
      * @param dr_cam_dq0
      *  On exit, contains the partial derivatives of the camera-frame position vector elements with respect to
      * the q0 parameter of the camera orientation.
@@ -218,7 +218,7 @@ public:
      *  On exit, contains the partial derivatives of the camera-frame position vector elements with respect to
      * the q3 parameter of the camera orientation.
      */
-    static void getSezToCamPartials(const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam, Eigen::Vector3d &dr_cam_dq0,
+    static void getSezToCamPartials(const Eigen::Vector3d &r_sez, const Eigen::Quaterniond &q_sez_cam, Eigen::Vector3d &dr_cam_dq0,
                                     Eigen::Vector3d &dr_cam_dq1, Eigen::Vector3d &dr_cam_dq2, Eigen::Vector3d &dr_cam_dq3);
 
     /**

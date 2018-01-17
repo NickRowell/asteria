@@ -85,7 +85,7 @@ public:
 
     void getIntrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_cam) const;
 
-    void getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Matrix3d & r_sez_cam) const;
+    void getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond & q_sez_cam) const;
 
     void setParameters(const double *);
 

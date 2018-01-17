@@ -204,21 +204,17 @@ void CoordinateUtil::eastOfNorthToEastOfSouth(double &angle) {
     CoordinateUtil::translateToRangeZeroToTwoPi(angle);
 }
 
-void CoordinateUtil::getSezToCamPartials(const Eigen::Vector3d &r_sez, const Eigen::Matrix3d &r_sez_cam, Eigen::Vector3d &dr_cam_dq0,
+void CoordinateUtil::getSezToCamPartials(const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam, Eigen::Vector3d &dr_cam_dq0,
                                     Eigen::Vector3d &dr_cam_dq1, Eigen::Vector3d &dr_cam_dq2, Eigen::Vector3d &dr_cam_dq3) {
 
     double x_sez = r_sez[0];
     double y_sez = r_sez[1];
     double z_sez = r_sez[2];
 
-    Eigen::Quaterniond q(r_sez_cam);
-    // Ensure the quaternion is normalised
-    q.normalize();
-
-    double q0 = q.w();
-    double q1 = q.x();
-    double q2 = q.y();
-    double q3 = q.z();
+    double q0 = q_sez_cam.w();
+    double q1 = q_sez_cam.x();
+    double q2 = q_sez_cam.y();
+    double q3 = q_sez_cam.z();
 
     dr_cam_dq0[0] =   2.0 * q0 * x_sez - 2.0 * q3 * y_sez + 2.0 * q2 * z_sez;
     dr_cam_dq0[1] =   2.0 * q3 * x_sez + 2.0 * q0 * y_sez - 2.0 * q1 * z_sez;

@@ -264,8 +264,8 @@ void CalibrationWorker::process() {
         fprintf(stderr, "%.10f\t", camPar[n]);
     }
 
-//    calInv.cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
-    calInv.cam = initial->cam->convertToPinholeCamera();
+    calInv.cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
+//    calInv.cam = initial->cam->convertToPinholeCamera();
 //    calInv.cam = initial->cam;
 
     calInv.q_sez_cam = initial->q_sez_cam;

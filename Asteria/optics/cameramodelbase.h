@@ -98,10 +98,10 @@ public:
      * quaternion elements.
      * @param r_sez
      *  Position vector of the point in the SEZ frame.
-     * @param r_sez_cam
-     *  The orthonormal matrix that rotates vectors from the SEZ frame to the CAM frame.
+     * @param q_sez_cam
+     *  The unit quaternion that rotates vectors from the SEZ frame to the CAM frame.
      */
-    virtual void getExtrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_sez, const Eigen::Matrix3d & r_sez_cam) const =0;
+    virtual void getExtrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond & q_sez_cam) const =0;
 
     /**
      * @brief Set the parameters of the geometric optics model.

@@ -83,99 +83,99 @@ void GeoCalFitter::postParameterUpdateCallback() {
     params[3] /= norm;
 }
 
-//void GeoCalFitter::getJacobian(double * jac) {
+void GeoCalFitter::getJacobian(double * jac) {
 
-//    // Read out the current quaternion elements from the parameters
-//    q_sez_cam->w() = params[0];
-//    q_sez_cam->x() = params[1];
-//    q_sez_cam->y() = params[2];
-//    q_sez_cam->z() = params[3];
+    // Read out the current quaternion elements from the parameters
+    q_sez_cam->w() = params[0];
+    q_sez_cam->x() = params[1];
+    q_sez_cam->y() = params[2];
+    q_sez_cam->z() = params[3];
 
-//    // Set the parameters of the camera (advance pointer past the first four elements, which
-//    // contain the elements of the orientation quaternion)
-//    cam->setParameters(&params[4]);
+    // Set the parameters of the camera (advance pointer past the first four elements, which
+    // contain the elements of the orientation quaternion)
+    cam->setParameters(&params[4]);
 
-//    // Rotation matrices
-//    Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
-//    Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
-//    Matrix3d r_sez_cam = q_sez_cam->toRotationMatrix();
+    // Rotation matrices
+    Matrix3d r_bcrf_ecef = CoordinateUtil::getBcrfToEcefRot(gmst);
+    Matrix3d r_ecef_sez  = CoordinateUtil::getEcefToSezRot(lon, lat);
+    Matrix3d r_sez_cam = q_sez_cam->toRotationMatrix();
 
-//    // Full transformation BCRF->SEZ
-//    Matrix3d r_bcrf_sez = r_ecef_sez * r_bcrf_ecef;
-//    // Full transformation BCRF->CAM
-//    Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
+    // Full transformation BCRF->SEZ
+    Matrix3d r_bcrf_sez = r_ecef_sez * r_bcrf_ecef;
+    // Full transformation BCRF->CAM
+    Matrix3d r_bcrf_cam = r_sez_cam * r_ecef_sez * r_bcrf_ecef;
 
-//    // Array jac has size [N * M]; there are two rows for every cross-match and one
-//    // column for each of the quaternion elements and intrinsic camera parameters.
+    // Array jac has size [N * M]; there are two rows for every cross-match and one
+    // column for each of the quaternion elements and intrinsic camera parameters.
 
-//    long idx = 0l;
-//    for(std::pair<Source, ReferenceStar> &xm : *xms) {
-//        ReferenceStar &star = xm.second;
+    long idx = 0l;
+    for(std::pair<Source, ReferenceStar> &xm : *xms) {
+        ReferenceStar &star = xm.second;
 
-//        // Unit vector towards star in BCRF frame:
-//        Vector3d r_bcrf;
-//        CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
+        // Unit vector towards star in BCRF frame:
+        Vector3d r_bcrf;
+        CoordinateUtil::sphericalToCartesian(r_bcrf, 1.0, star.ra, star.dec);
 
-//        // Transform to SEZ frame:
-//        Eigen::Vector3d r_sez = r_bcrf_sez * r_bcrf;
+        // Transform to SEZ frame:
+        Eigen::Vector3d r_sez = r_bcrf_sez * r_bcrf;
 
-//        // Transform to CAM frame:
-//        Eigen::Vector3d r_cam = r_bcrf_cam * r_bcrf;
+        // Transform to CAM frame:
+        Eigen::Vector3d r_cam = r_bcrf_cam * r_bcrf;
 
-//        // Fill row idx of the jacobian: partial derivatives of the i coordinate of reference star idx
-//        // with respect to the extrinsic and intrinsic parameters of the camera.
+        // Fill row idx of the jacobian: partial derivatives of the i coordinate of reference star idx
+        // with respect to the extrinsic and intrinsic parameters of the camera.
 
-//        // Get the partial derivatives of the reference star (i,j) coordinates with respect to the
-//        // four components of the orientation quaternion.
-//        double extrinsic[8];
-//        cam->getExtrinsicPartialDerivatives(extrinsic, r_sez, r_sez_cam);
+        // Get the partial derivatives of the reference star (i,j) coordinates with respect to the
+        // four components of the orientation quaternion.
+        double extrinsic[8];
+        cam->getExtrinsicPartialDerivatives(extrinsic, r_sez, *q_sez_cam);
 
-//        // Get the partial derivatives of the reference star (i,j) coordinates with respect to the
-//        // parameters of the camera projective optics.
-//        double intrinsic[2*cam->getNumParameters()];
-//        cam->getIntrinsicPartialDerivatives(intrinsic, r_cam);
+        // Get the partial derivatives of the reference star (i,j) coordinates with respect to the
+        // parameters of the camera projective optics.
+        double intrinsic[2*cam->getNumParameters()];
+        cam->getIntrinsicPartialDerivatives(intrinsic, r_cam);
 
-//        // Load these into the jacobian array
+        // Load these into the jacobian array
 
-//        // di/dq[0,1,2,3]
-//        jac[2*idx*M + 0] = extrinsic[0];
-//        jac[2*idx*M + 1] = extrinsic[2];
-//        jac[2*idx*M + 2] = extrinsic[4];
-//        jac[2*idx*M + 3] = extrinsic[6];
+        // di/dq[0,1,2,3]
+        jac[2*idx*M + 0] = extrinsic[0];
+        jac[2*idx*M + 1] = extrinsic[2];
+        jac[2*idx*M + 2] = extrinsic[4];
+        jac[2*idx*M + 3] = extrinsic[6];
 
-//        // di/dcam[0,1,2, ...]
-//        for(unsigned int i=0; i<cam->getNumParameters(); i++) {
-//            jac[2*idx*M + 4 + i] = intrinsic[2*i];
-//        }
+        // di/dcam[0,1,2, ...]
+        for(unsigned int i=0; i<cam->getNumParameters(); i++) {
+            jac[2*idx*M + 4 + i] = intrinsic[2*i];
+        }
 
-//        // dj/dq[0,1,2,3]
-//        jac[(2*idx + 1)*M + 0] = extrinsic[1];
-//        jac[(2*idx + 1)*M + 1] = extrinsic[3];
-//        jac[(2*idx + 1)*M + 2] = extrinsic[5];
-//        jac[(2*idx + 1)*M + 3] = extrinsic[7];
+        // dj/dq[0,1,2,3]
+        jac[(2*idx + 1)*M + 0] = extrinsic[1];
+        jac[(2*idx + 1)*M + 1] = extrinsic[3];
+        jac[(2*idx + 1)*M + 2] = extrinsic[5];
+        jac[(2*idx + 1)*M + 3] = extrinsic[7];
 
-//        // dj/dcam[0,1,2, ...]
-//        for(unsigned int i=0; i<cam->getNumParameters(); i++) {
-//            jac[(2*idx + 1)*M + 4 + i] = intrinsic[2*i + 1];
-//        }
+        // dj/dcam[0,1,2, ...]
+        for(unsigned int i=0; i<cam->getNumParameters(); i++) {
+            jac[(2*idx + 1)*M + 4 + i] = intrinsic[2*i + 1];
+        }
 
-//        idx++;
-//    }
+        idx++;
+    }
 
-//}
-
-void GeoCalFitter::finiteDifferencesStepSizePerParam(double * steps) {
-    // Don't implement this: the camera model provides the jacobian, plus we don't know what
-    // type of camera model we're dealing with so don't know the appropriate step sizes to choose.
-
-    // Quaternion elements
-    steps[0] = 0.000001;
-    steps[1] = 0.000001;
-    steps[2] = 0.000001;
-    steps[3] = 0.000001;
-    // Camera intrinsics
-    steps[4] = 1.0;
-    steps[5] = 1.0;
-    steps[6] = 0.1;
-    steps[7] = 0.1;
 }
+
+//void GeoCalFitter::finiteDifferencesStepSizePerParam(double * steps) {
+//    // Don't implement this: the camera model provides the jacobian, plus we don't know what
+//    // type of camera model we're dealing with so don't know the appropriate step sizes to choose.
+
+//    // Quaternion elements
+//    steps[0] = 0.000001;
+//    steps[1] = 0.000001;
+//    steps[2] = 0.000001;
+//    steps[3] = 0.000001;
+//    // Camera intrinsics
+//    steps[4] = 1.0;
+//    steps[5] = 1.0;
+//    steps[6] = 0.1;
+//    steps[7] = 0.1;
+//}

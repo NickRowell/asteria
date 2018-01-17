@@ -162,35 +162,10 @@ void LevenbergMarquardtSolver::fit(unsigned int maxIterations, bool verbose) {
         fprintf(stderr, "LMA: Initial chi2 = %3.3f\n", chi2_initial);
     }
 
-
     // Get suitable starting value for damping parameter, from 10^{-3}
     // times the average of the diagonal elements of JTWJ:
-
     double jac[N*M];
     getJacobian(jac);
-
-    // XXX: temporary addition to debug analytic/numeric jacobian
-//    double analJac[N*M];
-//    getAnalyticJacobian(analJac);
-
-//    fprintf(stderr, "Numerical Jacobian:\n");
-//    for(unsigned int n=0; n<N; n++) {
-//        for(unsigned int m=0; m<M; m++) {
-//            fprintf(stderr, "%.5f\t", jac[n*M + m]);
-//        }
-//        fprintf(stderr, "\n");
-//    }
-
-//    fprintf(stderr, "Analytic Jacobian (the quaternion derivatives are different!):\n");
-//    for(unsigned int n=0; n<N; n++) {
-//        for(unsigned int m=0; m<M; m++) {
-//            fprintf(stderr, "%.5f\t", analJac[n*M + m]);
-//        }
-//        fprintf(stderr, "\n");
-//    }
-
-
-
 
     // Load the Jacobian elements into an Eigen Matrix for linear algebra operations
     Map<Matrix<double, Dynamic, Dynamic, RowMajor>> J(jac, N, M);
