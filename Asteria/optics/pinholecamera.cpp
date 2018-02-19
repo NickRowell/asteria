@@ -1,5 +1,6 @@
 #include "optics/pinholecamera.h"
 #include "optics/pinholecamerawithradialdistortion.h"
+#include "optics/pinholecamerawithradialandtangentialdistortion.h"
 #include "util/coordinateutil.h"
 
 BOOST_CLASS_EXPORT(PinholeCamera)
@@ -33,6 +34,17 @@ PinholeCameraWithRadialDistortion * PinholeCamera::convertToPinholeCameraWithRad
     // Set all distortion coefficients to zero
     PinholeCameraWithRadialDistortion * cam = new PinholeCameraWithRadialDistortion(
                 this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0);
+
+    return cam;
+}
+
+PinholeCameraWithRadialAndTangentialDistortion * PinholeCamera::convertToPinholeCameraWithRadialAndTangentialDistortion() const {
+
+    fprintf(stderr, "Converting a PinholeCamera to a PinholeCameraWithRadialAndTangentialDistortion\n");
+
+    // Set all distortion coefficients to zero
+    PinholeCameraWithRadialAndTangentialDistortion * cam = new PinholeCameraWithRadialAndTangentialDistortion(
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0, 0.0, 0.0);
 
     return cam;
 }

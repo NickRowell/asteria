@@ -7,6 +7,7 @@
 
 class PinholeCamera;
 class PinholeCameraWithRadialDistortion;
+class PinholeCameraWithRadialAndTangentialDistortion;
 
 /**
  * @brief The CameraModelBase class provides a base for all models of the camera
@@ -59,6 +60,14 @@ public:
      *  A pointer to an equivalent PinholeCameraWithRadialDistortion type.
      */
     virtual PinholeCameraWithRadialDistortion * convertToPinholeCameraWithRadialDistortion() const =0;
+
+    /**
+     * @brief Converts the camera model to the equivalent PinholeCameraWithRadialAndTangentialDistortion type, or as close as possible
+     * given the limitations of the model.
+     * @return
+     *  A pointer to an equivalent PinholeCameraWithRadialAndTangentialDistortion type.
+     */
+    virtual PinholeCameraWithRadialAndTangentialDistortion * convertToPinholeCameraWithRadialAndTangentialDistortion() const =0;
 
     /**
      * @brief Get the number of free parameters of the camera geometric optics model.

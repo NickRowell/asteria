@@ -12,6 +12,212 @@
 
 using namespace Eigen;
 
+
+void TestUtil::testRandomVector() {
+
+    // Draw covariance matrix for data points
+    unsigned int N = 11;
+    double covar[N*N];
+    for(unsigned int n1=0; n1<N; n1++) {
+        for(unsigned int n2=n1; n2<N; n2++) {
+
+            if(n1==n2) {
+                // Variance of parameter n1
+
+                // Index into 1D row-major array
+                unsigned int idx = n1 * N + n2;
+                covar[idx] = 1.0;
+            }
+            else {
+                // Covariance of parameters n1 & n2
+
+                // Index into 1D row-major array
+                unsigned int idxN1 = n1 * N + n2;
+                unsigned int idxN2 = n2 * N + n1;
+
+                covar[idxN1] = 0.1;
+                covar[idxN2] = 0.1;
+            }
+        }
+    }
+
+    fprintf(stderr, "True covariance matrix:\n");
+    for(unsigned int n1=0; n1<N; n1++) {
+        for(unsigned int n2=0; n2<N; n2++) {
+            unsigned int idx = n1*N + n2;
+            fprintf(stderr, "%.5f\t", covar[idx]);
+        }
+        fprintf(stderr, "\n");
+    }
+
+    double y_true[N] = {0.0};
+
+    unsigned int trials = 100000;
+
+    // Draw many random realizations of the data; sum them to form the sample covariance matrix
+    double sCov[N*N] = {0.0};
+    for(unsigned int i=0; i<trials; i++) {
+        double y_noisy[N];
+        MathUtil::drawRandomVector(covar, y_true, y_noisy, N);
+
+        for(unsigned int n1=0; n1<N; n1++) {
+            for(unsigned int n2=0; n2<N; n2++) {
+                unsigned int idx = n1*N + n2;
+                sCov[idx] += y_noisy[n1]*y_noisy[n2];
+            }
+        }
+    }
+
+    // Normalise the sample covariance (we know the mean, so 1/N)
+    for(unsigned int n=0; n<N*N; n++) {
+        sCov[n] /= (double)trials;
+    }
+
+    fprintf(stderr, "Sample covariance matrix:\n");
+    for(unsigned int n1=0; n1<N; n1++) {
+        for(unsigned int n2=0; n2<N; n2++) {
+            unsigned int idx = n1*N + n2;
+            fprintf(stderr, "%.5f\t", sCov[idx]);
+        }
+        fprintf(stderr, "\n");
+    }
+}
+
+
+void TestUtil::testLevenbergMarquardtFitterCovariance() {
+
+    // This function tests the LMA fitter and additionally performs numerical simulation to check that
+    // the estimated parameter covariance matrix is accurate, by performing many fits over different
+    // realisations of the same noisy data.
+
+    // Configurable parts of the algorithm:
+    // 1) Number & value of true parameters, a (model is a0 + a1*x + a2*x*x + ...)
+    // 2) Number & value of points at which observations are made, x
+    // 3) Number of realizations of the observed data to make
+
+    // True polynomial coefficients
+    unsigned int M = 3;
+    double a [M] = {2.35, -15.3, 6.367};
+
+    // Points at which to draw observed data
+    unsigned int N = 21;
+    std::vector<double> xs;
+    for(unsigned int n=0; n<N; n++) {
+        double x = -1.0 + n*0.1;
+        xs.push_back(x);
+    }
+
+    // Number of trials, i.e. random realisations of the data
+    unsigned int trials = 5000;
+
+    // Fixed parts
+
+    // Draw covariance matrix for data points
+    double covar[N*N];
+    for(unsigned int n1=0; n1<N; n1++) {
+        for(unsigned int n2=n1; n2<N; n2++) {
+
+            if(n1==n2) {
+                // Variance of parameter n1
+
+                // Index into 1D row-major array
+                unsigned int idx = n1 * N + n2;
+                covar[idx] = 1.0;
+            }
+            else {
+                // Covariance of parameters n1 & n2
+
+                // Index into 1D row-major array
+                unsigned int idxN1 = n1 * N + n2;
+                unsigned int idxN2 = n2 * N + n1;
+
+                covar[idxN1] = 0.0;
+                covar[idxN2] = 0.0;
+            }
+        }
+    }
+
+    // Compute true noise-free observations
+    double y_true[N] = {0.0};
+    for(unsigned int n=0; n<N; n++) {
+        double x = xs[n];
+        double tmp = 1.0;
+        for(unsigned int m=0; m<M; m++) {
+            y_true[n] += tmp * a[m];
+            tmp *= x;
+        }
+    }
+
+
+    // Sum up the sample covariance matrix for the parameters solution
+    double param_cov [M*M] = {0.0};
+
+    for(unsigned int trial = 0; trial < trials; trial++) {
+
+        fprintf(stderr,  "trial %d:\n", trial);
+
+        // 1) Draw error vector from the covariance matrix
+        double y_noisy[N] = {0.0};
+        MathUtil::drawRandomVector(covar, y_true, y_noisy, N);
+
+        // 2) Load into a vector
+        std::vector<double> ys;
+        for(unsigned int n=0; n<N; n++) {
+            ys.push_back(y_noisy[n]);
+        }
+
+        // 3) Perform fit
+        PolynomialFitter polyFit(xs, ys, M);
+        double initialGuessParams[M] = {1.0, 1.0, 1.0};
+        polyFit.setParameters(initialGuessParams);
+        polyFit.setCovariance(covar);
+        polyFit.fit(500, false);
+        double solution[M];
+        polyFit.getParameters(solution);
+
+        // 4) Add the parameters solution to the sample covariance matrix
+        for(unsigned int m1=0; m1<M; m1++) {
+            for(unsigned int m2=0; m2<M; m2++) {
+                unsigned int idx = m1*M + m2;
+                // Subtract the true mean (remember not to include -1 when normalising the results)
+                param_cov[idx] += (solution[m1] - a[m1])*(solution[m2] - a[m2]);
+            }
+        }
+
+        // 5) Print the estimated covariance matrix from this trial
+//        MatrixXd cov = polyFit.getParameterCovariance();
+//        fprintf(stderr, "Estimated parameter covariance:\n");
+//        for(unsigned int m1=0; m1<M; m1++) {
+//            for(unsigned int m2=0; m2<M; m2++) {
+//                fprintf(stderr, "%.7f\t", cov(m1, m2));
+//            }
+//            fprintf(stderr, "\n");
+//        }
+    }
+
+    // Normalise the components of the sample covariance matrix
+    for(unsigned int m1=0; m1<M; m1++) {
+        for(unsigned int m2=0; m2<M; m2++) {
+            unsigned int idx = m1*M + m2;
+            param_cov[idx] /= (double)(trials);
+        }
+    }
+
+    // Print the sample covariance matrix
+    fprintf(stderr, "Parameter sample covariance:\n");
+    for(unsigned int m1=0; m1<M; m1++) {
+        for(unsigned int m2=0; m2<M; m2++) {
+            unsigned int idx = m1*M + m2;
+            fprintf(stderr, "%.7f\t", param_cov[idx]);
+        }
+        fprintf(stderr, "\n");
+    }
+
+
+
+
+}
+
 void TestUtil::testLevenbergMarquardtFitter() {
 
     // This can be compared to the results of Gnuplot using the script:
@@ -82,17 +288,32 @@ void TestUtil::testLevenbergMarquardtFitter() {
     polyFit.fit(500, true);
     double solution[3];
     polyFit.getParameters(solution);
+
     double errors[3];
     polyFit.getAsymptoticStandardError(errors);
     fprintf(stderr, "A = %f +/- %f\n", solution[2], errors[2]);
     fprintf(stderr, "B = %f +/- %f\n", solution[1], errors[1]);
     fprintf(stderr, "C = %f +/- %f\n", solution[0], errors[0]);
+
     MatrixXd corr = polyFit.getParameterCorrelation();
     fprintf(stderr, "Parameter correlation:\n");
     fprintf(stderr, "%f\t%f\t%f\n", corr(0,0), corr(0,1), corr(0,2));
     fprintf(stderr, "%f\t%f\t%f\n", corr(1,0), corr(1,1), corr(1,2));
     fprintf(stderr, "%f\t%f\t%f\n", corr(2,0), corr(2,1), corr(2,2));
 
+    // Get parameter covariance matrix
+    MatrixXd cov = polyFit.getParameterCovariance();
+    fprintf(stderr, "Parameter covariance:\n");
+    fprintf(stderr, "%f\t%f\t%f\n", cov(0,0), cov(0,1), cov(0,2));
+    fprintf(stderr, "%f\t%f\t%f\n", cov(1,0), cov(1,1), cov(1,2));
+    fprintf(stderr, "%f\t%f\t%f\n", cov(2,0), cov(2,1), cov(2,2));
+
+    // Get fourth order parameter covariance matrix
+    MatrixXd cov4 = polyFit.getFourthOrderCovariance();
+    fprintf(stderr, "Fourth order parameter covariance:\n");
+    fprintf(stderr, "%f\t%f\t%f\n", cov4(0,0), cov4(0,1), cov4(0,2));
+    fprintf(stderr, "%f\t%f\t%f\n", cov4(1,0), cov4(1,1), cov4(1,2));
+    fprintf(stderr, "%f\t%f\t%f\n", cov4(2,0), cov4(2,1), cov4(2,2));
 
     // Print the data and model
     double model[xs.size()];
@@ -106,6 +327,8 @@ void TestUtil::testLevenbergMarquardtFitter() {
     }
 
 }
+
+
 
 /**
  * @brief Tests the transformation of right ascension and declination to azimuth and elevation.

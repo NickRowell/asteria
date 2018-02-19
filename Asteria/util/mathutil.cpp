@@ -92,6 +92,46 @@ void MathUtil::getTrimmedMeanStd(std::vector<double> values, double &mean, doubl
     std = std::sqrt(mean_of_square - mean*mean);
 }
 
+void MathUtil::drawRandomVector(double * cov, const double * mean, double * draw, unsigned int N) {
+
+    static std::random_device rd;
+    static std::mt19937 e2(rd());
+    static std::normal_distribution<double> distribution(0.0, 1.0);
+
+    // Load covariance matrix into an Eigen object
+    Map<Matrix<double, Dynamic, Dynamic, RowMajor>> covar(cov, N, N);
+
+    // Perform eigenvalue decomposition of covariance matrix. Can use the SelfAdjointSolver as the
+    // covariance matrix is symmetric and hence self-adjoint
+    SelfAdjointEigenSolver<MatrixXd> eigensolver(covar);
+
+    // Get the eigenvalues
+    MatrixXd evals = eigensolver.eigenvalues();
+    MatrixXd evecs = eigensolver.eigenvectors();
+
+//    for(unsigned int n=0; n<N; n++) {
+//        fprintf(stderr, "Eigenvalue %d = %f\n", n, evals.coeff(n));
+//    }
+//    std::cerr << "Eigenvectors = \n" << evecs << std::endl;
+
+    // Draw random vector in principal axes frame
+    double rand[N] = {0.0};
+    for(unsigned int n=0; n<N; n++) {
+        double number = distribution(e2);
+        rand[n] = sqrt(evals.coeff(n)) * number;
+    }
+
+    Map<Matrix<double, Dynamic, Dynamic, RowMajor>> randVec(rand, N, 1);
+
+    // Rotate the vector to the original frame
+    MatrixXd randVec2 = evecs * randVec;
+
+    // Add the errors to the mean
+    for(unsigned int n=0; n<N; n++) {
+        draw[n] = mean[n] + randVec2.coeff(n);
+    }
+
+}
 
 double MathUtil::toDegrees(const double &rad) {
     return rad * (180.0 / M_PI);
@@ -100,3 +140,5 @@ double MathUtil::toDegrees(const double &rad) {
 double MathUtil::toRadians(const double &deg) {
     return deg * (M_PI / 180.0);
 }
+
+

@@ -33,11 +33,12 @@ int main(int argc, char **argv)
 {
     QApplication app (argc, argv);
 
-
-    // Test the Levenberg-Marquardt fitter
 //    TestUtil::testLevenbergMarquardtFitter();
+//    TestUtil::testLevenbergMarquardtFitterCovariance();
+//    TestUtil::testRandomVector();
 //    TestUtil::testRaDecAzElConversion();
 //    TestUtil::testImagedReadWrite();
+//    exit(0);
 
     catchUnixSignals();
 

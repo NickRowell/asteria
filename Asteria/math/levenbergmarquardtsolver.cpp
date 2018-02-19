@@ -1,5 +1,7 @@
 #include "levenbergmarquardtsolver.h"
 
+#include <iostream>
+
 LevenbergMarquardtSolver::LevenbergMarquardtSolver(unsigned int M, unsigned int N) : M(M), N(N) {
     data = new double[N];
     model = new double[N];
@@ -410,7 +412,8 @@ MatrixXd LevenbergMarquardtSolver::getParameterCovariance() {
     }
     MatrixXd JTWJ = J.transpose() * WJ;
 
-    // This step is thrown in to make results match Gnuplot
+    // This step is thrown in to make results match Gnuplot. Without this scaling, the function
+    // gives the same results as the getFourthOrderCovariance() function.
     JTWJ /= getReducedChi2();
 
     // Invert...

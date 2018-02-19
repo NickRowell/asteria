@@ -25,7 +25,6 @@ void PolynomialFitter::getModel(double * model) {
 }
 
 void PolynomialFitter::getJacobian(double * jac) {
-    fprintf(stderr, "Using PolyomialFitter getJacobian method\n");
     for(unsigned int n=0; n<N; n++) {
         double x = xs[n];
         double tmp = 1.0;

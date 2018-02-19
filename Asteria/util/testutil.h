@@ -6,7 +6,11 @@ class TestUtil
 public:
     TestUtil();
 
+    static void testRandomVector();
+
     static void testLevenbergMarquardtFitter();
+
+    static void testLevenbergMarquardtFitterCovariance();
 
     static void testRaDecAzElConversion();
 

@@ -20,26 +20,34 @@
  *
  * Normal usage:
  *
+ * TODO: improve this example usage! This is Java.
+ *
  *	LevenbergMarquardt lma = new LevenbergMarquardt() {
  *
  *		@Override
- *		public double[] getModel(double[] params) {
+ *		public void getModel(double * model) {
  *
- *			double[] model = new double[N];
+ *          // Array 'model' has length N and we write the model values to this
+ *          // Array 'params' has length M and contains the current values of the parameters
  *
  *			// Implement the parameters -> model function
+ *          model[0] = f(params, x[0]);
+ *          model[1] = f(params, x[1]);
  *
- *			return model;
+ *          // ....etc
+ *
+ *			return;
  *		}
  *
  *		@Override
- * 		public double[][] getJacobian(double[] params) {
+ * 		public void getJacobian(double * jac) {
  *
- * 			double[][] jac = new double[N][M];
+ *          // Array 'jac' has length N*M and we write the Jacobian values to this
+ *          // Array 'params' has length M and contains the current values of the parameters
  *
  *			// Compute the Jacobian elements
  *
- *			return jac;
+ *			return;
  *		}
  *	}
  *
@@ -51,6 +59,8 @@
  *
  *	// Extract the solution
  *	double[] solution = lma.getParametersSolution();
+ *
+ * // Get the covariance matrix of the parameters:
  *
  *
  */
@@ -228,8 +238,12 @@ public:
      * It uses a fourth order central difference approximation for the
      * parameter/data Jacobian.
      *
-     * Note that this method fails for functions that are significantly
+     * Notes:
+     * 1) This method fails for functions that are significantly
      * non-linear within a STDDEV or two of current solution.
+     * 2) This method gives results that are basically identical to the
+     * getParameterCovariance() function, scaled by the inverse of the
+     * reduced chi-square.
      */
     MatrixXd getFourthOrderCovariance();
 
