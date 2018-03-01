@@ -80,14 +80,14 @@ sudo timedatectl set-ntp on
 # produces the executable that can then be launched from the command line.
 
 # To execute the application from the command line:
-./MeteorCaptureQt
+./Asteria
 
 # Attempts at building directly from the command line (couldn't get it to work):
-#git clone https://github.com/NickRowell/meteorcapture
-#cd meteorcapture
+#git clone https://github.com/NickRowell/asteria
+#cd asteria
 #mkdir build
 #cd build
-#qmake MeteorCaptureQt.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
+#qmake Asteria.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
 #make
 #make clean
 
