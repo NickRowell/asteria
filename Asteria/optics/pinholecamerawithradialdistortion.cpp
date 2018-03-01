@@ -200,12 +200,7 @@ void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *d
 
     // Distance of the undistorted point from the distortion (projection) centre;
     // determines the magnitude of the radial distortion
-//    double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
     double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
-
-    // NOTE that dR/dpi = 0.0 and dR/dpj = 0.0 due to dependence of i/j on pi/pj which cancel out
-//    double dR_dfi = fi * (x_cam/z_cam) * (x_cam/z_cam) / R;
-//    double dR_dfj = fj * (y_cam/z_cam) * (y_cam/z_cam) / R;
 
     // Magnitude of the radial distortion
     double CR = getForwardRadialDistortionFactor(R);
@@ -260,9 +255,9 @@ void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *d
 //    derivs[9] = (y_cam/z_cam) * fj * dcr_dK1;
 
     // di'/dK2 = [x_cam / z_cam] * fi * dC(R)/dK2
-    derivs[8] = (x_cam/z_cam) * fi * dcr_dK2;
+    derivs[8] = fi * (x_cam/z_cam) * dcr_dK2;
     // dj'/dK2 = [y_cam / z_cam] * fj * dC(R)/dK2
-    derivs[9] = (y_cam/z_cam) * fj * dcr_dK2;
+    derivs[9] = fj * (y_cam/z_cam) * dcr_dK2;
 
     // di'/dK3 = [x_cam / z_cam] * fi * dC(R)/dK3
 //    derivs[12] = (x_cam/z_cam) * fi * dcr_dK3;
@@ -290,7 +285,6 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
 
     // Distance of the undistorted point from the distortion (projection) centre;
     // determines the magnitude of the radial distortion
-//    double R = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
     double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
 
     // Magnitude of the radial distortion
@@ -328,12 +322,9 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
     double z_cam2 = z_cam * z_cam;
 
     // ... normalisation constant ...
-//    double a = std::sqrt(fi*fi*x_cam*x_cam + fj*fj*y_cam*y_cam);
     double a = std::sqrt(x_cam*x_cam + y_cam*y_cam);
 
     // ... modified i,j ...
-//    double i_mod = fi*fi*x_cam / z_cam2;
-//    double j_mod = fj*fj*y_cam / z_cam2;
     double i_mod = x_cam / z_cam2;
     double j_mod = y_cam / z_cam2;
 
@@ -376,34 +367,39 @@ void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
     init();
 }
 
-Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & i, const double & j) const {
+Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & ip, const double & jp) const {
 
-    // Remove the radial distortion to get the undistorted pixel coordinates
-    double i_ideal, j_ideal;
-    getUndistortedPixel(i, j, i_ideal, j_ideal);
+    // Remove the distortion to get the undistorted pixel coordinates
+    double dip, djp;
+    getInverseDistortionOffset(ip, jp, dip, djp, 0.0001);
+
+    double i = ip + dip;
+    double j = jp + djp;
 
     // Use function in superclass to deproject undistorted pixel coordinates
-    return PinholeCamera::deprojectPixel(i_ideal, j_ideal);
+    return PinholeCamera::deprojectPixel(i, j);
 }
 
-bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_cam, double & i, double & j) const {
+bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_cam, double & ip, double & jp) const {
 
     // Use function in superclass to project vector to undistorted pixel coordinates
-    double i_ideal, j_ideal;
-    PinholeCamera::projectVector(r_cam, i_ideal, j_ideal);
+    double i, j, di, dj;
+    PinholeCamera::projectVector(r_cam, i, j);
 
-    // Apply radial distortion
-    getDistortedPixel(i_ideal, j_ideal, i, j);
+    // Apply distortion
+    getForwardDistortionOffset(i, j, di, dj);
+
+    ip = i + di;
+    jp = j + dj;
 
     // Determine visibility
-
     if(r_cam[2] < 0.0) {
         // Ray is behind the camera
         return false;
     }
 
     // Radial distance of undistorted point from distortion centre
-    double r = std::sqrt((i_ideal-pi)*(i_ideal-pi) + (j_ideal-pj)*(j_ideal-pj));
+    double r = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
 
     if(r > r_max) {
         // Ray is outside the valid range for the radial distortion model, so the distorted
@@ -411,7 +407,7 @@ bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_
         return false;
     }
 
-    if(i<0 || i>width || j<0 || j>height) {
+    if(ip<0 || ip>width || jp<0 || jp>height) {
         // Distorted point is outside the image area
         return false;
     }
@@ -468,23 +464,57 @@ double PinholeCameraWithRadialDistortion::getBackwardRadialDistortionFactor(cons
     return -1.0;
 }
 
+void PinholeCameraWithRadialDistortion::getForwardDistortionOffset(const double &i, const double &j, double &di, double &dj) const {
 
-void PinholeCameraWithRadialDistortion::getDistortedPixel(const double &i, const double &j, double &ip, double &jp) const {
+    double r = std::sqrt(((i-pi)/fi)*((i-pi)/fi) + ((j-pj)/fj)*((j-pj)/fj));
 
-    double R = std::sqrt(((i-pi)/fi)*((i-pi)/fi) + ((j-pj)/fj)*((j-pj)/fj));
-
-    // Computes 1 + K2*R^2 + ...
-    double CR = getForwardRadialDistortionFactor(R);
-
-    ip = (i - pi)*CR + pi;
-    jp = (j - pj)*CR + pj;
+    di = K2 * r * r * (i - pi);
+    dj = K2 * r * r * (j - pj);
 }
 
-void PinholeCameraWithRadialDistortion::getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const {
-    double rp = std::sqrt(((ip-pi)/fi)*((ip-pi)/fi) + ((jp-pj)/fj)*((jp-pj)/fj));
+void PinholeCameraWithRadialDistortion::getInverseDistortionOffset(const double &ip, const double &jp, double &dip, double &djp, const double tol) const {
 
-    double Drp = getBackwardRadialDistortionFactor(rp, 0.01);
+    // Current guess for the undistorted pixel coordinates, initialised to the distorted pixel coordinates
+    // according to the iterative inversion algorithm
+    double i_k = ip;
+    double j_k = jp;
 
-    i = (ip - pi)*Drp + pi;
-    j = (jp - pj)*Drp + pj;
+    // Updated guess for the undistorted pixel coordinates
+    double i_kp1;
+    double j_kp1;
+
+    // Iterations limit
+    unsigned int MAX_ITERATIONS=1000;
+
+    // Loop until converged
+    while(MAX_ITERATIONS-- > 0) {
+
+        // Get the forward distortion offset at the current estimate for the undistorted pixel coordinates (i, j)
+        double di_k, dj_k;
+        getForwardDistortionOffset(i_k, j_k, di_k, dj_k);
+
+        // Check for convergence: difference between observed point and the distorted ideal point
+        double ip_k = i_k + di_k;
+        double jp_k = j_k + dj_k;
+        double r = std::sqrt((ip_k - ip)*(ip_k - ip) + (jp_k - jp)*(jp_k - jp));
+        if(r < tol) {
+            // Converged
+            break;
+        }
+
+        // Update is equal to the difference between the estimated distorted point and the observed distorted point
+        i_kp1 = i_k + (ip - ip_k);
+        j_kp1 = j_k + (jp - jp_k);
+
+        // If problems with converge emerge in pathological cases, try taking average of i_k and the default update
+//        i_kp1 = 0.5 * (i_k + (ip - di_k));
+//        j_kp1 = 0.5 * (j_k + (jp - dj_k));
+
+        // Apply iteration
+        i_k = i_kp1;
+        j_k = j_kp1;
+    }
+
+    dip = i_k - ip;
+    djp = j_k - jp;
 }

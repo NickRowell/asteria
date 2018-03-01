@@ -4,10 +4,10 @@
 doxygen doxygen.config
 
 # Compile latex source
-cd doc/latex/
+cd doc/doxy/latex/
 lualatex refman.tex
 lualatex refman.tex
 mv refman.pdf ../
-cd ../../
+cd ../../../
 
 

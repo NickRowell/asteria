@@ -1,4 +1,4 @@
-#ifndef PINHOLECAMERAWITHRADIALDISTORTION_H
+﻿#ifndef PINHOLECAMERAWITHRADIALDISTORTION_H
 #define PINHOLECAMERAWITHRADIALDISTORTION_H
 
 #include "optics/pinholecamera.h"
@@ -212,34 +212,36 @@ public:
     double getBackwardRadialDistortionFactor(const double &R_prime, const double &tol) const;
 
     /**
-     * @brief Computes the radially-distorted coordinates of a pixel from the undistorted coordinates.
-     * Note that the distortion centre is located at the principal point.
+     * @brief This function returns the displacement from the ideal (undistorted) pixel coordinate (i, j)
+     * of the observed (distorted) pixel coordinate (ip, jp) given the distortion model for the camera.
      *
      * @param i
-     *  i coordinate of undistorted pixel [pixels]
+     *  The ideal (undistorted) pixel coordinate i
      * @param j
-     *  j coordinate of undistorted pixel [pixels]
-     * @param ip
-     *  On exit, contains i coordinate of distorted pixel [pixels]
-     * @param jp
-     *  On exit, contains j coordinate of distorted pixel [pixels]
+     *  The ideal (undistorted) pixel coordinate j
+     * @param di
+     *  On exit, contains the displacement between the ideal (undistorted) pixel coordinate i and the observed (distorted) pixel coordinate i^prime
+     * @param dj
+     *  On exit, contains the displacement between the ideal (undistorted) pixel coordinate j and the observed (distorted) pixel coordinate j^prime
      */
-    void getDistortedPixel(const double &i, const double &j, double &ip, double &jp) const;
+    void getForwardDistortionOffset(const double &i, const double &j, double &di, double &dj) const;
 
     /**
-     * @brief Computes the undistorted coordinates of a pixel from the radially-distorted coordinates.
-     * Note that the distortion centre is located at the principal point.
+     * @brief This function returns the displacement from the observed (distorted) pixel coordinate (ip, jp)
+     * of the ideal (undistorted) pixel coordinate (i, j) given the distortion model for the camera.
      *
      * @param ip
-     *  i coordinate of distorted pixel [pixels]
+     *  The observed (distorted) pixel coordinate i^prime
      * @param jp
-     *  j coordinate of distorted pixel [pixels]
-     * @param i
-     *  On exit, contains i coordinate of undistorted pixel [pixels]
-     * @param j
-     *  On exit, contains j coordinate of undistorted pixel [pixels]
+     *  The observed (distorted) pixel coordinate j^prime
+     * @param dip
+     *  On exit, contains the displacement between the observed (distorted) pixel coordinate i^prime and the ideal (undistorted) pixel coordinate i
+     * @param djp
+     *  On exit, contains the displacement between the observed (distorted) pixel coordinate j^prime and the ideal (undistorted) pixel coordinate j
+     * @param tol
+     *  Inversion is iterated until this tolerance is reached, i.e. undistorted location is accurate to within this number of pixels.
      */
-    void getUndistortedPixel(const double &ip, const double &jp, double &i, double &j) const;
+    void getInverseDistortionOffset(const double &ip, const double &jp, double &dip, double &djp, const double tol) const;
 
     void init();
 
