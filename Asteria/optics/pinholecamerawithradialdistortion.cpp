@@ -55,125 +55,75 @@ void PinholeCameraWithRadialDistortion::init() {
     // Call init() of superclass
     PinholeCamera::init();
 
-    // RADIAL DISTORTION
-    if((K2<0.0)) {
-        CURRENT_RADIAL_DISTORTION = NEGATIVE;
-    }
-    else if((K2>0.0)) {
-        CURRENT_RADIAL_DISTORTION = POSITIVE;
-    }
-    else {
-        CURRENT_RADIAL_DISTORTION = ZERO;
-    }
+    // Compute the maximum distance that an undistorted point can lie from the projection centre
+    // and still be visible in the image, given the distortion. This is done by looping around the
+    // border of the image and computing the distorted location of each edge pixel, and looking
+    // for the point furthest from the principal point.
 
-    // Compute the threshold on (undistorted) radial distance for a point to be visible
 
-    // Radial distance of extreme corners of (undistorted) image from distortion centre.
-    double rp_tl = std::sqrt((pi)*(pi) + (pj)*(pj));                             // Top left
-    double rp_tr = std::sqrt((width-pi)*(width-pi) + (pj)*(pj));                 // Top right
-    double rp_bl = std::sqrt((pi)*(pi) + (height-pj)*(height-pj));               // Bottom left
-    double rp_br = std::sqrt((width-pi)*(width-pi) + (height-pj)*(height-pj));   // Bottom right
+    r_max = 0.0;
 
-    // Maximum (undistorted) radial distance of any pixel from distortion centre.
-    double rp_max = std::max(std::max(rp_tl,rp_bl) , std::max(rp_tr,rp_br));
+    double r, i, j, dip, djp;
 
-    // Check the validity of the radial distortion coefficients, now that we know where
-    // the largest distortion will occur. Note that:
-    // 1) we know the range in radial distance in the distorted image,
-    //    because this is just the maximum distance of any point in the
-    //    detector pixel array from the distortion centre
-    // 2) we find the range in radial distance in the undistorted image
-    //    by measuring the corresponding backwards radial distortion factor
-    // 3) In the case of negative distortion, we must check that the forwards
-    //    distortion factor remains positive at the extremes of the undistorted
-    //    image.
-    // 4) In the case of positive distortion, we must check that the backwards
-    //    distortion factor remains positive at the extremes of the distorted
-    //    image.
-    //
-    switch(CURRENT_RADIAL_DISTORTION) {
+    // Loop along top and bottom edges
+    for(double ip=0; ip<=(double)width; ip+=1.0) {
 
-        case ZERO: {
-            break;
+        // Remove distortion from point at top
+        double jp = 0;
+        getInverseDistortionOffset(ip, jp, dip, djp, 0.0001);
+
+        i = ip + dip;
+        j = jp + djp;
+
+        r = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
+
+        if(r > r_max) {
+            r_max = r;
         }
-        // This checks the validity of the (positive) radial distortion
-        // coefficients, which amounts to ensuring that the backwards
-        // radial distortion factor is positive over the full extent of
-        // the distorted image.
-        case POSITIVE: {
-            // We already know what the maximum radial distance in the
-            // distorted image is, so we only need to check that the
-            // backwards radial distortion is computable at this point.
-            if(getBackwardRadialDistortionFactor(rp_max, 0.01) < 0) {
-                // Encountered failure condition
-                fprintf(stderr, "Positive radial distortion is too strong! Reduce coefficients.\n");
-                return;
-            }
-            break;
-        }
-        // This checks the validity of the (negative) radial distortion
-        // coefficients, and calculates the limits on the radial distance
-        // in the distorted and undistorted images. These are used to
-        // configure the scene radiance image camera.
-        // The test here is that the forwards radial distortion factor
-        // is positive over the full range of the undistorted image.
-        case NEGATIVE: {
-            // Loop over radial distance in undistorted image
-            for(float r=0, rp, cr; ; r++) {
-                // Find forwards distortion factor (u->d) at radial distance
-                // r in undistorted image.
-                cr = getForwardRadialDistortionFactor(r);
 
-                // If distortion factor becomes negative or zero before loop
-                // is exited, then distortion is too large.
-                if(cr<=0.0) {
-                    // Encountered failure condition
-                    fprintf(stderr, "Negative radial distortion is too strong! Reduce coefficients.\n");
-                    return;
-                }
+        // Remove distortion from point at bottom
+        jp = height;
+        getInverseDistortionOffset(ip, jp, dip, djp, 0.0001);
 
-                // Calculate corresponding distorted radial distance
-                rp = cr*r;
+        i = ip + dip;
+        j = jp + djp;
 
-                // If this is larger than the largest radial distance observed in
-                // the detector image, then we have verified that distortion is
-                // within allowed range.
-                if(rp > rp_max) {
-                    break;
-                }
-            }
+        r = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
 
-            break;
+        if(r > r_max) {
+            r_max = r;
         }
     }
 
-    // Compute r_max
-    switch(CURRENT_RADIAL_DISTORTION) {
+    // Loop along left and right edges
+    for(double jp=0; jp<=(double)height; jp+=1.0) {
 
-        case ZERO: {
-            // No radial distortion, so distorted and undistorted points are the same.
-            r_max = rp_max;
-            break;
+        // Remove distortion from point at top
+        double ip = 0;
+        getInverseDistortionOffset(ip, jp, dip, djp, 0.0001);
+
+        i = ip + dip;
+        j = jp + djp;
+
+        r = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
+
+        if(r > r_max) {
+            r_max = r;
         }
-        case POSITIVE: {
-            // Positive radial distortion moves points away from the distortion centre, so
-            // points slightly inside the FOV will be moved outside of it. That means that in
-            // practise the maximum (undistorted) radial distance is slightly smaller than rp_max,
-            // but we neglect that as only a rough check is required. This means that points
-            // slightly outside the (distorted) FOV will pass the initial visibility check but
-            // will fail the second check of the image coordinates.
-            r_max = rp_max;
-            break;
-        }
-        case NEGATIVE: {
-            // Negative radial distortion moves points towards the distortion centre, so points
-            // slightly outside of the FOV are moved inside it. This means that the maximum (undistorted)
-            // radial distance is slightly larger than rp_max, and we need to adjust accordingly
-            // otherwise we'll incorrectly flag points at the images edges/corners as not visible.
-            r_max = rp_max * getBackwardRadialDistortionFactor(rp_max, 0.01);
+
+        // Remove distortion from point at bottom
+        ip = width;
+        getInverseDistortionOffset(ip, jp, dip, djp, 0.0001);
+
+        i = ip + dip;
+        j = jp + djp;
+
+        r = std::sqrt((i-pi)*(i-pi) + (j-pj)*(j-pj));
+
+        if(r > r_max) {
+            r_max = r;
         }
     }
-
 }
 
 unsigned int PinholeCameraWithRadialDistortion::getNumParameters() const {
@@ -198,76 +148,38 @@ void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *d
     double i, j;
     PinholeCamera::projectVector(r_cam, i, j);
 
-    // Distance of the undistorted point from the distortion (projection) centre;
-    // determines the magnitude of the radial distortion
-    double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
+    // The contribution to the partial derivatives from the pinhole camera part of the model
 
-    // Magnitude of the radial distortion
-    double CR = getForwardRadialDistortionFactor(R);
-
-    // Partial derivatives of radial distortion factor
-    // CR = 1 + K1*R + K2*R^2 + K3*R^3 + K4*R^4
-    // Derivatives wrt fi,fj
-//    double dcr_dfi = K1*dR_dfi + 2*K2*R*dR_dfi* + 3*K3*R*R*dR_dfi + 4*K4*R*R*R*dR_dfi;
-//    double dcr_dfj = K1*dR_dfj + 2*K2*R*dR_dfj* + 3*K3*R*R*dR_dfj + 4*K4*R*R*R*dR_dfj;
-    // Derivatives wrt pi,pj are zero due to dR/dpi and dR/dpj = 0.0
-    // Derivatives wrt K1->K4
-//    double dcr_dK1 = R;
-    double dcr_dK2 = R*R;
-//    double dcr_dK3 = R*R*R;
-//    double dcr_dK4 = R*R*R*R;
-
-    // i = fi * (x_cam/z_cam) + pi
-    // i' = (i - pi) * C(R) + pi = fi * (x_cam/z_cam) * C(R) + pi
-    // j = fj * (y_cam/z_cam) + pj
-    // j' = (j - pj) * C(R) + pj = fj * (y_cam/z_cam) * C(R) + pj
-    // with R = sqrt((i-pi)^2 + (j-pj)^2)
-
-    // di'/dfi = [x_cam / z_cam] * C(R) + fi * [x_cam / z_cam] * dCR/dfi
-//    derivs[0] = (x_cam/z_cam) * CR + fi * (x_cam/z_cam) * dcr_dfi;
-    derivs[0] = (x_cam/z_cam) * CR;
-
-    // dj'/dfi = fj * [y_cam / z_cam] * dCR/dfi
-//    derivs[1] = fj * (y_cam/z_cam) * dcr_dfi;
+    // di/dfi
+    derivs[0] = x_cam/z_cam;
+    // dj/dfi
     derivs[1] = 0.0;
-
-    // di'/dfj = fi * [x_cam / z_cam] * dCR/dfj
-//    derivs[2] = fi * (x_cam/z_cam) * dcr_dfj;
+    // di/dfj
     derivs[2] = 0.0;
-
-    // dj'/dfj = [y_cam / z_cam] * C(R) + fj * [y_cam / z_cam] * dCR/dfj
-//    derivs[3] = (y_cam/z_cam) * CR + fj * (y_cam/z_cam) * dcr_dfj;
-    derivs[3] = (y_cam/z_cam) * CR;
-
-    // di'/dpi = 1.0 (note that dC(R)/dpi = 0.0)
+    // dj/dfj
+    derivs[3] = y_cam/z_cam;
+    // di/dpi
     derivs[4] = 1.0;
-    // dj'/dpi = 0.0 (note that dC(R)/dpi = 0.0)
+    // dj/dpi
     derivs[5] = 0.0;
-
-    // di'/dpj = 0.0 (note that dC(R)/dpj = 0.0)
+    // di/dpj
     derivs[6] = 0.0;
-    // dj'/dpj = 1.0 (note that dC(R)/dpj = 0.0)
+    // dj/dpj
     derivs[7] = 1.0;
 
-    // di'/dK1 = [x_cam / z_cam] * fi * dC(R)/dK1
-//    derivs[8] = (x_cam/z_cam) * fi * dcr_dK1;
-    // dj'/dK1 = [y_cam / z_cam] * fj * dC(R)/dK1
-//    derivs[9] = (y_cam/z_cam) * fj * dcr_dK1;
+    // Initialise remaining partial derivatives (those wrt the parameters of the distortion model) to zero
+    for(unsigned int k=8; k<2*getNumParameters(); k++) {
+        derivs[k] = 0.0;
+    }
 
-    // di'/dK2 = [x_cam / z_cam] * fi * dC(R)/dK2
-    derivs[8] = fi * (x_cam/z_cam) * dcr_dK2;
-    // dj'/dK2 = [y_cam / z_cam] * fj * dC(R)/dK2
-    derivs[9] = fj * (y_cam/z_cam) * dcr_dK2;
+    // Compute the (additive) contribution from the distortion model
+    double dist_partials[2*getNumParameters()];
+    getForwardDistortionIntrinsicPartialDerivatives(dist_partials, r_cam);
 
-    // di'/dK3 = [x_cam / z_cam] * fi * dC(R)/dK3
-//    derivs[12] = (x_cam/z_cam) * fi * dcr_dK3;
-    // dj'/dK3 = [y_cam / z_cam] * fj * dC(R)/dK3
-//    derivs[13] = (y_cam/z_cam) * fj * dcr_dK3;
-
-    // di'/dK4 = [x_cam / z_cam] * fi * dC(R)/dK4
-//    derivs[14] = (x_cam/z_cam) * fi * dcr_dK4;
-    // dj'/dK4 = [y_cam / z_cam] * fj * dC(R)/dK4
-//    derivs[15] = (y_cam/z_cam) * fj * dcr_dK4;
+    // Add the contribution to the partial derivatives from the distortion model
+    for(unsigned int k=0; k<2*getNumParameters(); k++) {
+        derivs[k] += dist_partials[k];
+    }
 }
 
 void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam) const {
@@ -282,13 +194,6 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
     // Get the ideal (undistorted) image coordinates
     double i, j;
     PinholeCamera::projectVector(r_cam, i, j);
-
-    // Distance of the undistorted point from the distortion (projection) centre;
-    // determines the magnitude of the radial distortion
-    double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
-
-    // Magnitude of the radial distortion
-    double CR = getForwardRadialDistortionFactor(R);
 
     // Get the partial derivatives of the position vector elements with respect to the quaternion elements
     Eigen::Vector3d dr_cam_dq0;
@@ -321,41 +226,33 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
 
     double z_cam2 = z_cam * z_cam;
 
-    // ... normalisation constant ...
-    double a = std::sqrt(x_cam*x_cam + y_cam*y_cam);
+    // Contribution to the partial derivatives from the pinhole camera part of the model
 
-    // ... modified i,j ...
-    double i_mod = x_cam / z_cam2;
-    double j_mod = y_cam / z_cam2;
+    // di/dq0
+    derivs[0] = (fi / z_cam2) * x_q0;
+    // dj/dq0
+    derivs[1] = (fj / z_cam2) * y_q0;
+    // di/dq1
+    derivs[2] = (fi / z_cam2) * x_q1;
+    // dj/dq1
+    derivs[3] = (fj / z_cam2) * y_q1;
+    // di/dq2
+    derivs[4] = (fi / z_cam2) * x_q2;
+    // dj/dq2
+    derivs[5] = (fj / z_cam2) * y_q2;
+    // di/dq3
+    derivs[6] = (fi / z_cam2) * x_q3;
+    // dj/dq3
+    derivs[7] = (fj / z_cam2) * y_q3;
 
-    // ... derivative of the radial distance from distortion centre wrt the orientation parameters ...
-    double dR_dq0 = (1.0/a) * (i_mod * x_q0 + j_mod * y_q0);
-    double dR_dq1 = (1.0/a) * (i_mod * x_q1 + j_mod * y_q1);
-    double dR_dq2 = (1.0/a) * (i_mod * x_q2 + j_mod * y_q2);
-    double dR_dq3 = (1.0/a) * (i_mod * x_q3 + j_mod * y_q3);
+    // Contribution to the partial derivatives from the distortion component of the model
+    double dist_partials[8];
+    getForwardDistortionExtrinsicPartialDerivatives(dist_partials, r_sez, q_sez_cam);
 
-    // ... derivative of distortion coefficient ...
-//    double dC_dR = K1 + 2*K2*R + 3*K3*R*R + 4*K4*R*R*R;
-    double dC_dR = 2*K2*R;
-
-    // Putting it all together:
-
-    // di'/dq0
-    derivs[0] = fi * ( (x_cam/z_cam) * dC_dR * dR_dq0 + (CR/z_cam2) * x_q0 );
-    // dj'/dq0
-    derivs[1] = fj * ( (y_cam/z_cam) * dC_dR * dR_dq0 + (CR/z_cam2) * y_q0 );
-    // di'/dq1
-    derivs[2] = fi * ( (x_cam/z_cam) * dC_dR * dR_dq1 + (CR/z_cam2) * x_q1 );
-    // dj'/dq1
-    derivs[3] = fj * ( (y_cam/z_cam) * dC_dR * dR_dq1 + (CR/z_cam2) * y_q1 );
-    // di'/dq2
-    derivs[4] = fi * ( (x_cam/z_cam) * dC_dR * dR_dq2 + (CR/z_cam2) * x_q2 );
-    // dj'/dq2
-    derivs[5] = fj * ( (y_cam/z_cam) * dC_dR * dR_dq2 + (CR/z_cam2) * y_q2 );
-    // di'/dq3
-    derivs[6] = fi * ( (x_cam/z_cam) * dC_dR * dR_dq3 + (CR/z_cam2) * x_q3 );
-    // dj'/dq3
-    derivs[7] = fj * ( (y_cam/z_cam) * dC_dR * dR_dq3 + (CR/z_cam2) * y_q3 );
+    // Add the contribution to the partial derivatives from the distortion model
+    for(unsigned int k=0; k<8; k++) {
+        derivs[k] += dist_partials[k];
+    }
 }
 
 void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
@@ -420,50 +317,6 @@ std::string PinholeCameraWithRadialDistortion::getModelName() const {
     return "PinholeCameraWithRadialDistortion";
 }
 
-double PinholeCameraWithRadialDistortion::getForwardRadialDistortionFactor(const double &R) const {
-    return 1 + K2*R*R;
-}
-
-double PinholeCameraWithRadialDistortion::getBackwardRadialDistortionFactor(const double &R_prime, const double &tol) const {
-
-    // Check for no distortion
-    if(R_prime==0.0) {
-        return 1.0;
-    }
-    // Initial guess R_0
-    double R_i = R_prime;
-    // Intermediate variables
-    double R_ip1, CR_i;
-    // Iterations limit
-    unsigned int MAX_ITERATIONS=1000;
-
-    // Loop until converged
-    while(MAX_ITERATIONS-- > 0) {
-
-        // Computes 1 + K2*R^2 + ...
-        CR_i = getForwardRadialDistortionFactor(R_i);
-        // Update step
-        R_ip1 = 0.5*(R_i + R_prime/CR_i);
-
-        if(fabs(R_ip1 - R_i) < tol) {
-            // Converged
-            return R_ip1/R_prime;
-        }
-        else {
-            // Not converged
-            R_i = R_ip1;
-        }
-    }
-
-    // If we have not converged to a solution within the allocated
-    // number of iterations, then this indicates that the backwards
-    // radial distortion factor is negative at this value of R_prime.
-    // This occurs for positive radial distortion, when the coefficients
-    // are too large. We return a negative value to indicate that
-    // this is the case.
-    return -1.0;
-}
-
 void PinholeCameraWithRadialDistortion::getForwardDistortionOffset(const double &i, const double &j, double &di, double &dj) const {
 
     double r = std::sqrt(((i-pi)/fi)*((i-pi)/fi) + ((j-pj)/fj)*((j-pj)/fj));
@@ -517,4 +370,115 @@ void PinholeCameraWithRadialDistortion::getInverseDistortionOffset(const double 
 
     dip = i_k - ip;
     djp = j_k - jp;
+}
+
+void PinholeCameraWithRadialDistortion::getForwardDistortionIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
+
+    double x_cam = r_cam[0];
+    double y_cam = r_cam[1];
+    double z_cam = r_cam[2];
+
+    double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
+    double R2 = R*R;
+
+    // dD/dfi
+    derivs[0] = K2 * R2 * (x_cam/z_cam);
+    // dE/dfi
+    derivs[1] = 0.0;
+    // dD/dfj
+    derivs[2] = 0.0;
+    // dE/dfj
+    derivs[3] = K2 * R2 * (y_cam/z_cam);
+    // dD/dpi
+    derivs[4] = 0.0;
+    // dE/dpi
+    derivs[5] = 0.0;
+    // dD/dpj
+    derivs[6] = 0.0;
+    // dE/dpj
+    derivs[7] = 0.0;
+    // dD/dK2
+    derivs[8] = R2 * fi * (x_cam/z_cam);
+    // dE/dK2
+    derivs[9] = R2 * fj * (y_cam/z_cam);
+}
+
+void PinholeCameraWithRadialDistortion::getForwardDistortionExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond &q_sez_cam) const {
+
+    // Compute some convenience terms
+
+    // Get the position vector in the camera frame
+    Matrix3d r_sez_cam = q_sez_cam.toRotationMatrix();
+    Eigen::Vector3d r_cam = r_sez_cam * r_sez;
+    double x_cam = r_cam[0];
+    double y_cam = r_cam[1];
+    double z_cam = r_cam[2];
+
+    // Get the ideal (undistorted) image coordinates
+    double i, j;
+    PinholeCamera::projectVector(r_cam, i, j);
+
+    // Get the partial derivatives of the position vector elements with respect to the quaternion elements
+    Eigen::Vector3d dr_cam_dq0;
+    Eigen::Vector3d dr_cam_dq1;
+    Eigen::Vector3d dr_cam_dq2;
+    Eigen::Vector3d dr_cam_dq3;
+
+    CoordinateUtil::getSezToCamPartials(r_sez, q_sez_cam, dr_cam_dq0, dr_cam_dq1, dr_cam_dq2, dr_cam_dq3);
+
+    // Some convenience terms:
+
+    // ... radial distance of the undistorted point from the distortion (projection) centre ...
+    double r = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
+
+    double x_zz = x_cam / (z_cam * z_cam);
+    double y_zz = y_cam / (z_cam * z_cam);
+
+    // ... derivative factors ...
+
+    // d/dq0 (x_cam/z_cam)
+    double x_q0 = (dr_cam_dq0[0] / z_cam) - x_zz * dr_cam_dq0[2];
+    // d/dq0 (y_cam/z_cam)
+    double y_q0 = (dr_cam_dq0[1] / z_cam) - y_zz * dr_cam_dq0[2];
+    // d/dq1 (x_cam/z_cam)
+    double x_q1 = (dr_cam_dq1[0] / z_cam) - x_zz * dr_cam_dq1[2];
+    // d/dq1 (y_cam/z_cam)
+    double y_q1 = (dr_cam_dq1[1] / z_cam) - y_zz * dr_cam_dq1[2];
+    // d/dq2 (x_cam/z_cam)
+    double x_q2 = (dr_cam_dq2[0] / z_cam) - x_zz * dr_cam_dq2[2];
+    // d/dq2 (y_cam/z_cam)
+    double y_q2 = (dr_cam_dq2[1] / z_cam) - y_zz * dr_cam_dq2[2];
+    // d/dq3 (x_cam/z_cam)
+    double x_q3 = (dr_cam_dq3[0] / z_cam) - x_zz * dr_cam_dq3[2];
+    // d/dq3 (y_cam/z_cam)
+    double y_q3 = (dr_cam_dq3[1] / z_cam) - y_zz * dr_cam_dq3[2];
+
+    // ... normalisation constant ...
+    double a = std::sqrt(x_cam*x_cam + y_cam*y_cam);
+
+    // ... derivative of the radial distance from distortion centre wrt the orientation parameters ...
+    double dR_dq0 = (1.0/a) * (x_cam * x_q0 + y_cam * y_q0);
+    double dR_dq1 = (1.0/a) * (x_cam * x_q1 + y_cam * y_q1);
+    double dR_dq2 = (1.0/a) * (x_cam * x_q2 + y_cam * y_q2);
+    double dR_dq3 = (1.0/a) * (x_cam * x_q3 + y_cam * y_q3);
+
+    // Put it all together:
+
+    // dD/dq0
+    derivs[0] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq0 + r * r * x_q0);
+    // dE/dq0
+    derivs[1] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq0 + r * r * y_q0);
+    // dD/dq1
+    derivs[2] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq1 + r * r * x_q1);
+    // dE/dq1
+    derivs[3] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq1 + r * r * y_q1);
+    // dD/dq2
+    derivs[4] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq2 + r * r * x_q2);
+    // dE/dq2
+    derivs[5] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq2 + r * r * y_q2);
+    // dD/dq3
+    derivs[6] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq3 + r * r * x_q3);
+    // dE/dq3
+    derivs[7] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq3 + r * r * y_q3);
+
 }

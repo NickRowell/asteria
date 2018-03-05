@@ -396,8 +396,221 @@ void ReferenceStarWidget::update() {
     }
 
     if(displayGeoCal) {
+
+        const CameraModelBase& cam = *(inv->cam);
+
+        double pi, pj;
+        cam.getPrincipalPoint(pi, pj);
+
+        // Draw a rectilinear grid centred on the principal point and distorted according to the camera projection model
+
+        // Grid spacing in camera-frame (x,y) coordinates
+        double dxy = 0.1;
+        // Spacing between points on grid lines
+        double ddxy = 0.01;
+
+        // The edges of the image (coordinates of projected rays that are valid) are hard to determine in advance.
+        // Need to draw outwards from the centre and stop when things go unphysical or outside of the image.
+
+        // Cache the i,j coordinate of the previous grid line starting point; used to determine if the projection has become unphysical
+        double i_tmp = pi;
+        double j_tmp = pj;
+
+        // Draw vertical grid lines on right half of image
+        for(double x=0; ; x += dxy) {
+
+            // New line:
+            double i_start, j_start, i0, j0, i1, j1;
+            Eigen::Vector3d r_cam(x,0,1);
+            cam.projectVector(r_cam, i_start, j_start);
+
+            // Stop drawing grid if we've moved outside of the image area
+            if(i_start > signal->width) {
+                break;
+            }
+            // Stop drawing grid if the projection has become unphysical
+            if(i_start < i_tmp) {
+                break;
+            }
+
+            i_tmp = i_start;
+
+            // Draw vertical lines in lower right quater of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double y=ddxy; ; y+= ddxy) {
+
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+
+                // Stop drawing line if we've moved outside of the image area
+                if(j1 > signal->height) {
+                    break;
+                }
+
+                // Stop drawing line if the projection has become unphysical
+                if(j1 < j0) {
+                    break;
+                }
+
+                // Draw line
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+
+                // Cache point for next iteration
+                i0 = i1;
+                j0 = j1;
+            }
+
+            // Draw vertical lines in upper right quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double y=-ddxy; ; y-= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(j1 < 0 || j1 > j0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+        }
+
+        // Draw vertical grid lines on left half of image
+        i_tmp = pi;
+        for(double x=0; ; x -= dxy) {
+
+            // New line:
+            double i_start, j_start, i0, j0, i1, j1;
+            Eigen::Vector3d r_cam(x,0,1);
+            cam.projectVector(r_cam, i_start, j_start);
+
+            if(i_start < 0 || i_start > i_tmp) {
+                break;
+            }
+
+            i_tmp = i_start;
+
+            // Draw vertical lines in lower left quater of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double y=ddxy; ; y+= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(j1 > signal->height || j1 < j0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+
+            // Draw vertical lines in upper left quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double y=-ddxy; ; y-= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(j1 < 0 || j1 > j0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+        }
+
+        // Draw horizontal grid lines on lower half of image
+        j_tmp = pj;
+        for(double y=0; ; y += dxy) {
+
+            // New line:
+            double i_start, j_start, i0, j0, i1, j1;
+            Eigen::Vector3d r_cam(0,y,1);
+            cam.projectVector(r_cam, i_start, j_start);
+
+            if(j_start > signal->height || j_start < j_tmp) {
+                break;
+            }
+
+            j_tmp = j_start;
+
+            // Draw horizontal lines in lower right quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double x=ddxy; ; x+= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(i1 > signal->width || i1 < i0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+
+            // Draw horizontal lines in lower left quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double x=-ddxy; ; x-= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(i1 < 0 || i1 > i0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+        }
+
+        // Draw horizontal grid lines on upper half of image
+        j_tmp = pj;
+        for(double y=0; ; y -= dxy) {
+
+            // New line:
+            double i_start, j_start, i0, j0, i1, j1;
+            Eigen::Vector3d r_cam(0,y,1);
+            cam.projectVector(r_cam, i_start, j_start);
+
+            if(j_start < 0 || j_start > j_tmp) {
+                break;
+            }
+
+            j_tmp = j_start;
+
+            // Draw horizontal lines in upper right quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double x=ddxy; ; x+= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(i1 > signal->width || i1 < i0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+
+            // Draw horizontal lines in upper left quarter of image
+            i0 = i_start;
+            j0 = j_start;
+            for(double x=-ddxy; ; x-= ddxy) {
+                r_cam = Eigen::Vector3d(x,y,1);
+                cam.projectVector(r_cam, i1, j1);
+                if(i1 < 0 || i1 > i0) {
+                    break;
+                }
+                RenderUtil::drawLine(signal->annotatedImage, signal->width, signal->height, i0, i1, j0, j1, 0x00FFFFFF);
+                i0 = i1;
+                j0 = j1;
+            }
+        }
+
         // Draw a crosshair at the image principal point
-        RenderUtil::drawCrossHair(signal->annotatedImage, signal->width, signal->height, signal->width/2, signal->height/2, 10, 0, 0x00FFFFFF);
+        RenderUtil::drawCrossHair(signal->annotatedImage, signal->width, signal->height, pi, pj, 10, 5, 0xFF0000FF);
+
     }
 
     signalImageViewer->newFrame(signal, true, true, true);
