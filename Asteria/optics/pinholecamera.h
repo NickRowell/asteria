@@ -79,7 +79,7 @@ public:
 
     PinholeCameraWithRadialDistortion * convertToPinholeCameraWithRadialDistortion() const;
 
-    PinholeCameraWithRadialAndTangentialDistortion * convertToPinholeCameraWithRadialAndTangentialDistortion() const;
+    PinholeCameraWithSipDistortion * convertToPinholeCameraWithSipDistortion() const;
 
     unsigned int getNumParameters() const;
 

@@ -1,23 +1,28 @@
-﻿#ifndef PINHOLECAMERAWITHRADIALDISTORTION_H
-#define PINHOLECAMERAWITHRADIALDISTORTION_H
+#ifndef PINHOLECAMERAWITHRADIALANDTANGENTIALDISTORTION_H
+#define PINHOLECAMERAWITHRADIALANDTANGENTIALDISTORTION_H
 
 #include "optics/pinholecamera.h"
 
 /**
- * @brief The PinholeCameraWithRadialDistortion class provides an implementation of the
- * CameraModelBase for modelling pinhole cameras with low order radial distortion.
+ * @brief The PinholeCameraWithSipDistortion class provides an implementation of the
+ * CameraModelBase for modelling pinhole cameras with general polynomial distortion.
+ * This is an implementation of the model described in
+ *
+ * "The SIP Convention for Representing Distortion in FITS Image Headers"
+ *
+ * that is a standard adopted by the World Coordinate System.
  */
-class PinholeCameraWithRadialDistortion : public PinholeCamera {
+class PinholeCameraWithSipDistortion : public PinholeCamera {
 
 public:
 
     /**
-     * @brief Default constructor for the PinholeCameraWithRadialDistortion.
+     * @brief Default constructor for the PinholeCameraWithSipDistortion.
      */
-    PinholeCameraWithRadialDistortion();
+    PinholeCameraWithSipDistortion();
 
     /**
-     * @brief Main constructor for the PinholeCameraWithRadialDistortion.
+     * @brief Main constructor for the PinholeCameraWithSipDistortion.
      *
      * @param width
      *  Width of the detector [pixels]
@@ -33,11 +38,15 @@ public:
      *  Coordinate of the principal point in the j (vertical) direction [pixels]
      * @param k2
      *  Second-order coefficient of the radial distortion polynomal [pixels\f$^{-2}\f$]
+     * @param p1
+     *  First coefficient of the tangential distortion model.
+     * @param p2
+     *  Second coefficient of the tangential distortion model.
      */
-    PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
-                                      const double &k2);
+    PinholeCameraWithSipDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
+                                      const double &k2, const double &p1, const double &p2);
 
-    ~PinholeCameraWithRadialDistortion();
+    ~PinholeCameraWithSipDistortion();
 
     /**
      * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
@@ -55,6 +64,16 @@ public:
      * which seems to emerge naturally when fitting polynomials with few terms.
      */
     double K2;
+
+    /**
+     * @brief First coefficient of the tangential distortion model.
+     */
+    double p1;
+
+    /**
+     * @brief Second coefficient of the tangential distortion model.
+     */
+    double p2;
 
     /**
      * @brief Threshold on the radial distance of (undistorted) points from the distortion centre [pixels].
@@ -154,6 +173,8 @@ public:
     void serialize(Archive & ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
         ar & BOOST_SERIALIZATION_NVP(K2);
+        ar & BOOST_SERIALIZATION_NVP(p1);
+        ar & BOOST_SERIALIZATION_NVP(p2);
         this->init();
     }
 

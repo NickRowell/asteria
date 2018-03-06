@@ -63,7 +63,7 @@ SOURCES += \
     infra/imaged.cpp \
     infra/imageui.cpp \
     math/geocalfitter.cpp \
-    optics/pinholecamerawithradialandtangentialdistortion.cpp
+    optics/pinholecamerawithsipdistortion.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -133,7 +133,7 @@ HEADERS += \
     util/serializationutil.h \
     infra/imageui.h \
     math/geocalfitter.h \
-    optics/pinholecamerawithradialandtangentialdistortion.h
+    optics/pinholecamerawithsipdistortion.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization

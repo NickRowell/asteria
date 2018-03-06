@@ -1,27 +1,27 @@
-#include "optics/pinholecamerawithradialdistortion.h"
 #include "optics/pinholecamerawithsipdistortion.h"
+#include "optics/pinholecamerawithradialdistortion.h"
 #include "util/coordinateutil.h"
 
-BOOST_CLASS_EXPORT(PinholeCameraWithRadialDistortion)
+BOOST_CLASS_EXPORT(PinholeCameraWithSipDistortion)
 
-PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion()  :
-    PinholeCamera(), K2(0.0) {
+PinholeCameraWithSipDistortion::PinholeCameraWithSipDistortion()  :
+    PinholeCamera(), K2(0.0), p1(0.0), p2(0.0) {
 
 }
 
-PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi,
-    const double &fj, const double &pi, const double &pj, const double &k2) :
-    PinholeCamera(width, height, fi, fj, pi, pj), K2(k2) {
+PinholeCameraWithSipDistortion::PinholeCameraWithSipDistortion(const unsigned int &width, const unsigned int &height, const double &fi,
+    const double &fj, const double &pi, const double &pj, const double &k2, const double &p1, const double &p2) :
+    PinholeCamera(width, height, fi, fj, pi, pj), K2(k2), p1(p1), p2(p2) {
     init();
 }
 
-PinholeCameraWithRadialDistortion::~PinholeCameraWithRadialDistortion() {
+PinholeCameraWithSipDistortion::~PinholeCameraWithSipDistortion() {
 
 }
 
-PinholeCamera * PinholeCameraWithRadialDistortion::convertToPinholeCamera() const {
+PinholeCamera * PinholeCameraWithSipDistortion::convertToPinholeCamera() const {
 
-    fprintf(stderr, "Converting a PinholeCameraWithRadialDistortion to a PinholeCamera\n");
+    fprintf(stderr, "Converting a PinholeCameraWithSipDistortion to a PinholeCamera\n");
 
     // Discard the distortion coefficients
     PinholeCamera * cam = new PinholeCamera(this->width, this->height, this->fi, this->fj, this->pi, this->pj);
@@ -29,9 +29,9 @@ PinholeCamera * PinholeCameraWithRadialDistortion::convertToPinholeCamera() cons
     return cam;
 }
 
-PinholeCameraWithRadialDistortion * PinholeCameraWithRadialDistortion::convertToPinholeCameraWithRadialDistortion() const {
+PinholeCameraWithRadialDistortion * PinholeCameraWithSipDistortion::convertToPinholeCameraWithRadialDistortion() const {
 
-    fprintf(stderr, "Converting a PinholeCameraWithRadialDistortion to a PinholeCameraWithRadialDistortion\n");
+    fprintf(stderr, "Converting a PinholeCameraWithSipDistortion to a PinholeCameraWithRadialDistortion\n");
 
     PinholeCameraWithRadialDistortion * cam = new PinholeCameraWithRadialDistortion(
                 this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->K2);
@@ -39,18 +39,17 @@ PinholeCameraWithRadialDistortion * PinholeCameraWithRadialDistortion::convertTo
     return cam;
 }
 
-PinholeCameraWithSipDistortion * PinholeCameraWithRadialDistortion::convertToPinholeCameraWithSipDistortion() const {
+PinholeCameraWithSipDistortion * PinholeCameraWithSipDistortion::convertToPinholeCameraWithSipDistortion() const {
 
-    fprintf(stderr, "Converting a PinholeCameraWithRadialDistortion to a PinholeCameraWithRadialAndTangentialDistortion\n");
+    fprintf(stderr, "Converting a PinholeCameraWithSipDistortion to a PinholeCameraWithSipDistortion\n");
 
-    // Set tangential distortion coefficients to zero
     PinholeCameraWithSipDistortion * cam = new PinholeCameraWithSipDistortion(
-                this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->K2, 0.0, 0.0);
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->K2, this->p1, this->p2);
 
     return cam;
 }
 
-void PinholeCameraWithRadialDistortion::init() {
+void PinholeCameraWithSipDistortion::init() {
 
     // Call init() of superclass
     PinholeCamera::init();
@@ -125,11 +124,11 @@ void PinholeCameraWithRadialDistortion::init() {
     }
 }
 
-unsigned int PinholeCameraWithRadialDistortion::getNumParameters() const {
+unsigned int PinholeCameraWithSipDistortion::getNumParameters() const {
     return 5;
 }
 
-void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
+void PinholeCameraWithSipDistortion::getParameters(double * params) const {
     params[0] = fi;
     params[1] = fj;
     params[2] = pi;
@@ -137,7 +136,7 @@ void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
     params[4] = K2;
 }
 
-void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_cam) const {
+void PinholeCameraWithSipDistortion::getIntrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_cam) const {
 
     double x_cam = r_cam[0];
     double y_cam = r_cam[1];
@@ -181,7 +180,7 @@ void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *d
     }
 }
 
-void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam) const {
+void PinholeCameraWithSipDistortion::getExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d &r_sez, const Quaterniond &q_sez_cam) const {
 
     // Get the position vector in the camera frame
     Matrix3d r_sez_cam = q_sez_cam.toRotationMatrix();
@@ -254,7 +253,7 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
     }
 }
 
-void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
+void PinholeCameraWithSipDistortion::setParameters(const double *params) {
     fi = params[0];
     fj = params[1];
     pi = params[2];
@@ -263,7 +262,7 @@ void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
     init();
 }
 
-Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & ip, const double & jp) const {
+Eigen::Vector3d PinholeCameraWithSipDistortion::deprojectPixel(const double & ip, const double & jp) const {
 
     // Remove the distortion to get the undistorted pixel coordinates
     double dip, djp;
@@ -276,7 +275,7 @@ Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double &
     return PinholeCamera::deprojectPixel(i, j);
 }
 
-bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_cam, double & ip, double & jp) const {
+bool PinholeCameraWithSipDistortion::projectVector(const Eigen::Vector3d & r_cam, double & ip, double & jp) const {
 
     // Use function in superclass to project vector to undistorted pixel coordinates
     double i, j, di, dj;
@@ -289,6 +288,7 @@ bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_
     jp = j + dj;
 
     // Determine visibility
+
     if(r_cam[2] < 0.0) {
         // Ray is behind the camera
         return false;
@@ -312,11 +312,20 @@ bool PinholeCameraWithRadialDistortion::projectVector(const Eigen::Vector3d & r_
     return true;
 }
 
-std::string PinholeCameraWithRadialDistortion::getModelName() const {
-    return "PinholeCameraWithRadialDistortion";
+std::string PinholeCameraWithSipDistortion::getModelName() const {
+    return "PinholeCameraWithSipDistortion";
 }
 
-void PinholeCameraWithRadialDistortion::getForwardDistortionOffset(const double &i, const double &j, double &di, double &dj) const {
+
+
+
+
+
+
+
+
+
+void PinholeCameraWithSipDistortion::getForwardDistortionOffset(const double &i, const double &j, double &di, double &dj) const {
 
     double r = std::sqrt(((i-pi)/fi)*((i-pi)/fi) + ((j-pj)/fj)*((j-pj)/fj));
 
@@ -324,7 +333,7 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionOffset(const double 
     dj = K2 * r * r * (j - pj);
 }
 
-void PinholeCameraWithRadialDistortion::getInverseDistortionOffset(const double &ip, const double &jp, double &dip, double &djp, const double tol) const {
+void PinholeCameraWithSipDistortion::getInverseDistortionOffset(const double &ip, const double &jp, double &dip, double &djp, const double tol) const {
 
     // Current guess for the undistorted pixel coordinates, initialised to the distorted pixel coordinates
     // according to the iterative inversion algorithm
@@ -371,7 +380,7 @@ void PinholeCameraWithRadialDistortion::getInverseDistortionOffset(const double 
     djp = j_k - jp;
 }
 
-void PinholeCameraWithRadialDistortion::getForwardDistortionIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
+void PinholeCameraWithSipDistortion::getForwardDistortionIntrinsicPartialDerivatives(double * derivs, const Eigen::Vector3d & r_cam) const {
 
     double x_cam = r_cam[0];
     double y_cam = r_cam[1];
@@ -402,7 +411,7 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionIntrinsicPartialDeri
     derivs[9] = R2 * fj * (y_cam/z_cam);
 }
 
-void PinholeCameraWithRadialDistortion::getForwardDistortionExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond &q_sez_cam) const {
+void PinholeCameraWithSipDistortion::getForwardDistortionExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond &q_sez_cam) const {
 
     // Compute some convenience terms
 
