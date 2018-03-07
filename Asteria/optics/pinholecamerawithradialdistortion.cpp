@@ -5,13 +5,13 @@
 BOOST_CLASS_EXPORT(PinholeCameraWithRadialDistortion)
 
 PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion()  :
-    PinholeCamera(), K2(0.0) {
+    PinholeCamera(), k2(0.0) {
 
 }
 
 PinholeCameraWithRadialDistortion::PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi,
-    const double &fj, const double &pi, const double &pj, const double &k2) :
-    PinholeCamera(width, height, fi, fj, pi, pj), K2(k2) {
+    const double &fj, const double &pi, const double &pj, const double &k1, const double &k2) :
+    PinholeCamera(width, height, fi, fj, pi, pj), k1(k1), k2(k2) {
     init();
 }
 
@@ -34,7 +34,7 @@ PinholeCameraWithRadialDistortion * PinholeCameraWithRadialDistortion::convertTo
     fprintf(stderr, "Converting a PinholeCameraWithRadialDistortion to a PinholeCameraWithRadialDistortion\n");
 
     PinholeCameraWithRadialDistortion * cam = new PinholeCameraWithRadialDistortion(
-                this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->K2);
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->k1, this->k2);
 
     return cam;
 }
@@ -45,7 +45,7 @@ PinholeCameraWithSipDistortion * PinholeCameraWithRadialDistortion::convertToPin
 
     // Set tangential distortion coefficients to zero
     PinholeCameraWithSipDistortion * cam = new PinholeCameraWithSipDistortion(
-                this->width, this->height, this->fi, this->fj, this->pi, this->pj, this->K2, 0.0, 0.0);
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     return cam;
 }
@@ -126,7 +126,7 @@ void PinholeCameraWithRadialDistortion::init() {
 }
 
 unsigned int PinholeCameraWithRadialDistortion::getNumParameters() const {
-    return 5;
+    return 6;
 }
 
 void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
@@ -134,7 +134,18 @@ void PinholeCameraWithRadialDistortion::getParameters(double * params) const {
     params[1] = fj;
     params[2] = pi;
     params[3] = pj;
-    params[4] = K2;
+    params[4] = k1;
+    params[5] = k2;
+}
+
+void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
+    fi = params[0];
+    fj = params[1];
+    pi = params[2];
+    pj = params[3];
+    k1 = params[4];
+    k2 = params[5];
+    init();
 }
 
 void PinholeCameraWithRadialDistortion::getIntrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_cam) const {
@@ -254,15 +265,6 @@ void PinholeCameraWithRadialDistortion::getExtrinsicPartialDerivatives(double *d
     }
 }
 
-void PinholeCameraWithRadialDistortion::setParameters(const double *params) {
-    fi = params[0];
-    fj = params[1];
-    pi = params[2];
-    pj = params[3];
-    K2 = params[4];
-    init();
-}
-
 Eigen::Vector3d PinholeCameraWithRadialDistortion::deprojectPixel(const double & ip, const double & jp) const {
 
     // Remove the distortion to get the undistorted pixel coordinates
@@ -320,8 +322,8 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionOffset(const double 
 
     double r = std::sqrt(((i-pi)/fi)*((i-pi)/fi) + ((j-pj)/fj)*((j-pj)/fj));
 
-    di = K2 * r * r * (i - pi);
-    dj = K2 * r * r * (j - pj);
+    di = (k1 * r + k2 * r * r) * (i - pi);
+    dj = (k1 * r + k2 * r * r) * (j - pj);
 }
 
 void PinholeCameraWithRadialDistortion::getInverseDistortionOffset(const double &ip, const double &jp, double &dip, double &djp, const double tol) const {
@@ -377,17 +379,17 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionIntrinsicPartialDeri
     double y_cam = r_cam[1];
     double z_cam = r_cam[2];
 
-    double R = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
-    double R2 = R*R;
+    double r = std::sqrt((x_cam/z_cam)*(x_cam/z_cam) + (y_cam/z_cam)*(y_cam/z_cam));
+    double r2 = r*r;
 
     // dD/dfi
-    derivs[0] = K2 * R2 * (x_cam/z_cam);
+    derivs[0] = (k1 * r + k2 * r2) * (x_cam/z_cam);
     // dE/dfi
     derivs[1] = 0.0;
     // dD/dfj
     derivs[2] = 0.0;
     // dE/dfj
-    derivs[3] = K2 * R2 * (y_cam/z_cam);
+    derivs[3] = (k1 * r + k2 * r2) * (y_cam/z_cam);
     // dD/dpi
     derivs[4] = 0.0;
     // dE/dpi
@@ -396,10 +398,15 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionIntrinsicPartialDeri
     derivs[6] = 0.0;
     // dE/dpj
     derivs[7] = 0.0;
+    // dD/dK1
+    derivs[8] = r * fi * (x_cam/z_cam);
+    // dE/dK1
+    derivs[9] = r * fj * (y_cam/z_cam);
     // dD/dK2
-    derivs[8] = R2 * fi * (x_cam/z_cam);
+    derivs[10] = r2 * fi * (x_cam/z_cam);
     // dE/dK2
-    derivs[9] = R2 * fj * (y_cam/z_cam);
+    derivs[11] = r2 * fj * (y_cam/z_cam);
+
 }
 
 void PinholeCameraWithRadialDistortion::getForwardDistortionExtrinsicPartialDerivatives(double *derivs, const Eigen::Vector3d & r_sez, const Eigen::Quaterniond &q_sez_cam) const {
@@ -464,20 +471,19 @@ void PinholeCameraWithRadialDistortion::getForwardDistortionExtrinsicPartialDeri
     // Put it all together:
 
     // dD/dq0
-    derivs[0] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq0 + r * r * x_q0);
+    derivs[0] = fi * (x_cam / z_cam) * dR_dq0 * (k1 + 2 * k2 * r) + fi * r * x_q0 * (k1 + k2 * r);
     // dE/dq0
-    derivs[1] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq0 + r * r * y_q0);
+    derivs[1] = fj * (y_cam / z_cam) * dR_dq0 * (k1 + 2 * k2 * r) + fj * r * y_q0 * (k1 + k2 * r);
     // dD/dq1
-    derivs[2] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq1 + r * r * x_q1);
+    derivs[2] = fi * (x_cam / z_cam) * dR_dq1 * (k1 + 2 * k2 * r) + fi * r * x_q1 * (k1 + k2 * r);
     // dE/dq1
-    derivs[3] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq1 + r * r * y_q1);
+    derivs[3] = fj * (y_cam / z_cam) * dR_dq1 * (k1 + 2 * k2 * r) + fj * r * y_q1 * (k1 + k2 * r);
     // dD/dq2
-    derivs[4] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq2 + r * r * x_q2);
+    derivs[4] = fi * (x_cam / z_cam) * dR_dq2 * (k1 + 2 * k2 * r) + fi * r * x_q2 * (k1 + k2 * r);
     // dE/dq2
-    derivs[5] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq2 + r * r * y_q2);
+    derivs[5] = fj * (y_cam / z_cam) * dR_dq2 * (k1 + 2 * k2 * r) + fj * r * y_q2 * (k1 + k2 * r);
     // dD/dq3
-    derivs[6] = fi * K2 * (2.0 * r * (x_cam / z_cam) * dR_dq3 + r * r * x_q3);
+    derivs[6] = fi * (x_cam / z_cam) * dR_dq3 * (k1 + 2 * k2 * r) + fi * r * x_q3 * (k1 + k2 * r);
     // dE/dq3
-    derivs[7] = fj * K2 * (2.0 * r * (y_cam / z_cam) * dR_dq3 + r * r * y_q3);
-
+    derivs[7] = fj * (y_cam / z_cam) * dR_dq3 * (k1 + 2 * k2 * r) + fj * r * y_q3 * (k1 + k2 * r);
 }

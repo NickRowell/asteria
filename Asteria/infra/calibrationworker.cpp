@@ -8,6 +8,7 @@
 #include "util/mathutil.h"
 #include "infra/calibrationinventory.h"
 #include "optics/pinholecamerawithradialdistortion.h"
+#include "optics/pinholecamerawithsipdistortion.h"
 #include "math/geocalfitter.h"
 
 #include "infra/image.h"
@@ -264,6 +265,7 @@ void CalibrationWorker::process() {
         fprintf(stderr, "%.10f\t", camPar[n]);
     }
 
+//    calInv.cam = initial->cam->convertToPinholeCameraWithSipDistortion();
     calInv.cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
 //    calInv.cam = initial->cam->convertToPinholeCamera();
 //    calInv.cam = initial->cam;

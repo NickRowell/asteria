@@ -32,29 +32,37 @@ public:
      * @param pj
      *  Coordinate of the principal point in the j (vertical) direction [pixels]
      * @param k2
+     *  First-order coefficient of the radial distortion polynomal [pixels\f$^{-1}\f$]
+     * @param k2
      *  Second-order coefficient of the radial distortion polynomal [pixels\f$^{-2}\f$]
      */
     PinholeCameraWithRadialDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
-                                      const double &k2);
+                                      const double &k1, const double &k2);
 
     ~PinholeCameraWithRadialDistortion();
 
+
     /**
-     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
+     * @brief First-order coefficient of the forward radial distortion polynomial [pixels\f$^{-1}\f$].
      *
      * The forward radial distortion factor is computed according to:
      *
-     * \f$C(R) = 1 + K2*R^2 + ... \f$
+     * \f$C(R) = k1*R + k2*R^2 \f$
      *
      * where \f$R\f$ is measured from the distortion centre, which coincides with the principal point.
      * Note that the distortion factor is dimensionless. The distortion polynomial can be extended with
      * higher order terms with a bit of ajustment to the partial derivatives. It is unwise to add a
-     * constant (K0) term because this is degenerate with the focal length. Higher order terms can be
+     * constant (k0) term because this is degenerate with the focal length. Higher order terms can be
      * difficult to constrain and lead to quite unphysical distortion functions. In general the function
      * should be monotonic, which is difficult (read: impossible) to apply rigorously in the fitting but
      * which seems to emerge naturally when fitting polynomials with few terms.
      */
-    double K2;
+    double k1;
+
+    /**
+     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
+     */
+    double k2;
 
     /**
      * @brief Threshold on the radial distance of (undistorted) points from the distortion centre [pixels].
@@ -153,7 +161,8 @@ public:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
-        ar & BOOST_SERIALIZATION_NVP(K2);
+        ar & BOOST_SERIALIZATION_NVP(k1);
+        ar & BOOST_SERIALIZATION_NVP(k2);
         this->init();
     }
 

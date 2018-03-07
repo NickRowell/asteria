@@ -36,44 +36,22 @@ public:
      *  Coordinate of the principal point in the i (horizontal) direction [pixels]
      * @param pj
      *  Coordinate of the principal point in the j (vertical) direction [pixels]
-     * @param k2
-     *  Second-order coefficient of the radial distortion polynomal [pixels\f$^{-2}\f$]
-     * @param p1
-     *  First coefficient of the tangential distortion model.
-     * @param p2
-     *  Second coefficient of the tangential distortion model.
      */
     PinholeCameraWithSipDistortion(const unsigned int &width, const unsigned int &height, const double &fi, const double &fj, const double &pi, const double &pj,
-                                      const double &k2, const double &p1, const double &p2);
+                                   const double &d0, const double &d1, const double &d2, const double &d3, const double &d4, const double &d5, const double &d6,
+                                   const double &e0, const double &e1, const double &e2, const double &e3, const double &e4, const double &e5, const double &e6);
 
     ~PinholeCameraWithSipDistortion();
 
     /**
-     * @brief Second-order coefficient of the forward radial distortion polynomial [pixels\f$^{-2}\f$].
-     *
-     * The forward radial distortion factor is computed according to:
-     *
-     * \f$C(R) = 1 + K2*R^2 + ... \f$
-     *
-     * where \f$R\f$ is measured from the distortion centre, which coincides with the principal point.
-     * Note that the distortion factor is dimensionless. The distortion polynomial can be extended with
-     * higher order terms with a bit of ajustment to the partial derivatives. It is unwise to add a
-     * constant (K0) term because this is degenerate with the focal length. Higher order terms can be
-     * difficult to constrain and lead to quite unphysical distortion functions. In general the function
-     * should be monotonic, which is difficult (read: impossible) to apply rigorously in the fitting but
-     * which seems to emerge naturally when fitting polynomials with few terms.
+     * @brief Coefficients of i' distortion function
      */
-    double K2;
+    double d0, d1, d2, d3, d4, d5, d6;
 
     /**
-     * @brief First coefficient of the tangential distortion model.
+     * @brief Coefficients of j' distortion function
      */
-    double p1;
-
-    /**
-     * @brief Second coefficient of the tangential distortion model.
-     */
-    double p2;
+    double e0, e1, e2, e3, e4, e5, e6;
 
     /**
      * @brief Threshold on the radial distance of (undistorted) points from the distortion centre [pixels].
@@ -172,9 +150,20 @@ public:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(PinholeCamera);
-        ar & BOOST_SERIALIZATION_NVP(K2);
-        ar & BOOST_SERIALIZATION_NVP(p1);
-        ar & BOOST_SERIALIZATION_NVP(p2);
+        ar & BOOST_SERIALIZATION_NVP(d0);
+        ar & BOOST_SERIALIZATION_NVP(d1);
+        ar & BOOST_SERIALIZATION_NVP(d2);
+        ar & BOOST_SERIALIZATION_NVP(d3);
+        ar & BOOST_SERIALIZATION_NVP(d4);
+        ar & BOOST_SERIALIZATION_NVP(d5);
+        ar & BOOST_SERIALIZATION_NVP(d6);
+        ar & BOOST_SERIALIZATION_NVP(e0);
+        ar & BOOST_SERIALIZATION_NVP(e1);
+        ar & BOOST_SERIALIZATION_NVP(e2);
+        ar & BOOST_SERIALIZATION_NVP(e3);
+        ar & BOOST_SERIALIZATION_NVP(e4);
+        ar & BOOST_SERIALIZATION_NVP(e5);
+        ar & BOOST_SERIALIZATION_NVP(e6);
         this->init();
     }
 

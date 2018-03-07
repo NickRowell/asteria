@@ -33,7 +33,7 @@ PinholeCameraWithRadialDistortion * PinholeCamera::convertToPinholeCameraWithRad
 
     // Set all distortion coefficients to zero
     PinholeCameraWithRadialDistortion * cam = new PinholeCameraWithRadialDistortion(
-                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0);
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0, 0.0);
 
     return cam;
 }
@@ -44,7 +44,7 @@ PinholeCameraWithSipDistortion * PinholeCamera::convertToPinholeCameraWithSipDis
 
     // Set all distortion coefficients to zero
     PinholeCameraWithSipDistortion * cam = new PinholeCameraWithSipDistortion(
-                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0, 0.0, 0.0);
+                this->width, this->height, this->fi, this->fj, this->pi, this->pj, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     return cam;
 }
