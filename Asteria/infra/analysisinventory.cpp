@@ -2,6 +2,7 @@
 #include "util/timeutil.h"
 #include "util/fileutil.h"
 #include "util/serializationutil.h"
+#include "util/jpgutil.h"
 
 #include <fstream>
 #include <iostream>
@@ -166,12 +167,18 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
 
     // Write out processed data
 
+    // TODO: encode a video from the raw frames, for display on the website
+
     // Write out the peak hold image
     char filename [100];
     sprintf(filename, "%s/peakhold.pgm", processed.c_str());
     std::ofstream out(filename);
     out << *peakHold;
     out.close();
+
+    // Write out the peak hold image in JPG format
+    sprintf(filename, "%s/peakhold.jpg", processed.c_str());
+    JpgUtil::writeJpeg(peakHold->rawImage, peakHold->width, peakHold->height, filename);
 
     // Write out the localisation information
     sprintf(filename, "%s/localisation.xml", processed.c_str());

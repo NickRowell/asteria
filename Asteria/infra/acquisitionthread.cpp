@@ -548,7 +548,7 @@ void AcquisitionThread::run() {
             }
             case V4L2_PIX_FMT_MJPEG: {
                 // Convert the JPEG image to greyscale
-                JpgUtil::convertJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->rawImage);
+                JpgUtil::readJpeg((unsigned char *)buffer_start[j], bufferinfo->bytesused, image->rawImage);
                 break;
             }
             case V4L2_PIX_FMT_YUYV: {

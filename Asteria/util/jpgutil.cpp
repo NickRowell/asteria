@@ -26,7 +26,7 @@ void JpgUtil::convertYuyv422(unsigned char * buffer, const unsigned long insize,
     }
 }
 
-void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage) {
+void JpgUtil::readJpeg(unsigned char * buffer, const unsigned long insize, std::vector<unsigned char> &decodedImage) {
 
     unsigned char r, g, b;
     int width, height;
@@ -83,5 +83,50 @@ void JpgUtil::convertJpeg(unsigned char * buffer, const unsigned long insize, st
     jpeg_destroy_decompress(&cinfo);
 }
 
+
+void JpgUtil::writeJpeg(std::vector<unsigned char> &image, const unsigned int width, const unsigned int height, char *filename) {
+
+    FILE *outfile = fopen( filename, "wb" );
+    if ( !outfile )
+    {
+        fprintf(stderr, "Error opening output jpeg file %s\n!", filename );
+        return;
+    }
+
+    int bytes_per_pixel = sizeof(unsigned char);
+
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    cinfo.err = jpeg_std_error( &jerr );
+    jpeg_create_compress(&cinfo);
+    jpeg_stdio_dest(&cinfo, outfile);
+
+    // Setting the parameters of the output file here
+    cinfo.image_width = width;
+    cinfo.image_height = height;
+    cinfo.input_components = bytes_per_pixel;
+    cinfo.in_color_space = JCS_GRAYSCALE;
+
+    // Default compression parameters, we shouldn't be worried about these
+    jpeg_set_defaults( &cinfo );
+    /* Now do the compression .. */
+    jpeg_start_compress( &cinfo, TRUE );
+
+    // Write one row at a time
+    // This is a pointer to one row of image data
+    JSAMPROW row_pointer[1];
+    while( cinfo.next_scanline < cinfo.image_height )
+    {
+        row_pointer[0] = &image[ cinfo.next_scanline * cinfo.image_width *  cinfo.input_components / bytes_per_pixel];
+        jpeg_write_scanlines( &cinfo, row_pointer, 1 );
+    }
+
+    // Clean up after we're done compressing
+    jpeg_finish_compress( &cinfo );
+    jpeg_destroy_compress( &cinfo );
+    fclose( outfile );
+
+    return;
+}
 
 
