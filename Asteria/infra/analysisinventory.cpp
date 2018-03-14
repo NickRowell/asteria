@@ -167,7 +167,14 @@ void AnalysisInventory::saveToDir(std::string topLevelPath) {
 
     // Write out processed data
 
-    // TODO: encode a video from the raw frames, for display on the website
+    // Encode a video from the raw frames, for display on the website
+    // Video can be encoded using the command:
+    // $ cat *.pgm | avconv -f image2pipe -i pipe:.pgm -vcodec libx264 -crf 0 neognc.avi
+    // ...and decoded to individual frames using the command:
+    // $ avconv -i neognc.avi -vsync 1 -r 25 -an -y out_%04d.pgm
+    char command [1000];
+    sprintf(command, "cat %s/*.pgm | avconv -f image2pipe -framerate 25 -i pipe:.pgm -vcodec libx264 -crf 0 %s/%s.avi", raw.c_str(), processed.c_str(), utc.c_str());
+    system(command);
 
     // Write out the peak hold image
     char filename [100];
