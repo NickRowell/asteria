@@ -1,7 +1,6 @@
 #include "jpgutil.h"
 
-JpgUtil::JpgUtil()
-{
+JpgUtil::JpgUtil() {
 
 }
 
@@ -83,7 +82,6 @@ void JpgUtil::readJpeg(unsigned char * buffer, const unsigned long insize, std::
     jpeg_destroy_decompress(&cinfo);
 }
 
-
 void JpgUtil::writeJpeg(std::vector<unsigned char> &image, const unsigned int width, const unsigned int height, char *filename) {
 
     FILE *outfile = fopen( filename, "wb" );
@@ -128,5 +126,3 @@ void JpgUtil::writeJpeg(std::vector<unsigned char> &image, const unsigned int wi
 
     return;
 }
-
-

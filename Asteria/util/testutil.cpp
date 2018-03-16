@@ -418,7 +418,5 @@ void TestUtil::testImagedReadWrite() {
     for(unsigned int i=0; i<testIm2.rawImage.size(); i++) {
         fprintf(stderr, "rawImage[%d] = %f\n", i, testIm2.rawImage[i]);
     }
-
-
-
 }
+

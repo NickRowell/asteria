@@ -22,8 +22,7 @@ VideoDirectoryModel::~VideoDirectoryModel() {
     delete rootItem;
 }
 
-QModelIndex VideoDirectoryModel::index(int row, int column, const QModelIndex &parent) const
-{
+QModelIndex VideoDirectoryModel::index(int row, int column, const QModelIndex &parent) const {
     if(!hasIndex(row, column, parent)) {
         return QModelIndex();
     }
@@ -47,7 +46,6 @@ QModelIndex VideoDirectoryModel::index(int row, int column, const QModelIndex &p
     }
 }
 
-
 QModelIndex VideoDirectoryModel::parent(const QModelIndex &index) const {
 
     if(!index.isValid()) {
@@ -64,7 +62,6 @@ QModelIndex VideoDirectoryModel::parent(const QModelIndex &index) const {
     return createIndex(parentItem->row(), 0, parentItem);
 }
 
-
 int VideoDirectoryModel::rowCount(const QModelIndex &parent) const {
 
     if(parent.column() > 0) {
@@ -79,7 +76,6 @@ int VideoDirectoryModel::rowCount(const QModelIndex &parent) const {
     }
 }
 
-
 int VideoDirectoryModel::columnCount(const QModelIndex &parent) const {
     if(!parent.isValid()) {
         return rootItem->columnCount();
@@ -88,7 +84,6 @@ int VideoDirectoryModel::columnCount(const QModelIndex &parent) const {
         return static_cast<TreeItem*>(parent.internalPointer())->columnCount();
     }
 }
-
 
 QVariant VideoDirectoryModel::data(const QModelIndex &index, int role) const {
 
@@ -256,8 +251,6 @@ void VideoDirectoryModel::setupModelData(const std::string &rootPath) {
                     clipItem->setIcon(meteorIcon);
                     addContextMenu(clipItem);
                     dayItem->appendChild(clipItem);
-
-
                 }
             } // Close loop over DD
         } // Close loop over MM

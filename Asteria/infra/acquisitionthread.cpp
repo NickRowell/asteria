@@ -510,7 +510,24 @@ void AcquisitionThread::run() {
 
 
         /////////////////////////////////////////////////////////////// TEMP:
-//        double jd = TimeUtil::epochToJd(epochTimeStamp_us);
+
+
+        // Get the current epoch time
+//        struct timeval epochtime;
+//        gettimeofday(&epochtime, NULL);
+//        long long epoch_us =  epochtime.tv_sec * 1000000LL  + (long long) epochtime.tv_usec;
+        // Convert this to UTC string
+//        std::string utcStrTmp = TimeUtil::epochToUtcString(epoch_us);
+        // Convert this back to epoch time
+//        long long epochTime_us_tmp = TimeUtil::utcStringToEpoch(utcStrTmp);
+//        long long diff = epochTime_us_tmp - epoch_us;
+//        fprintf(stderr, "epoch_us = %lld\n", epoch_us);
+//        fprintf(stderr, "utcStrTmp = %s\n", utcStrTmp.c_str());
+//        fprintf(stderr, "epochTime_us_tmp = %lld\n", epochTime_us_tmp);
+//        fprintf(stderr, "diff = %lld\n", diff);
+
+
+        //        double jd = TimeUtil::epochToJd(epochTimeStamp_us);
 //        double gmst = TimeUtil::epochToGmst(epochTimeStamp_us);
 //        double lst = TimeUtil::gmstToLst(gmst, state->longitude);
 

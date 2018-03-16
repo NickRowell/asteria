@@ -203,6 +203,14 @@ int main(int argc, char **argv)
         }
 
         // All parameters OK.
+
+
+        // TODO: load the most recent CalibrationInventory, if available
+
+
+
+
+
         if(state->headless) {
             // Headless mode
             // TODO: introduce a small class to encapsulate the thread and close it down cleanly etc
