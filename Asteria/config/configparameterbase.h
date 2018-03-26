@@ -62,12 +62,25 @@ public:
     QWidget * entryField;
 
     /**
-     * @brief Reads the value of the parameter from the entryField QWidget, parses and validates it.
+     * @brief Reads the value of the parameter from the QWidget, parses and validates it. On exit, the internal
+     * field ConfigParameterBase::isValid contains the results of the validation and the ConfigParameterBase::message
+     * contains a message explaining the problem in the event that validation failed.
      */
-//    virtual void parseAndValidate() =0;
+    virtual void parseAndValidate() =0;
 
-    // Abstract validation method that all parameters must override
-    // The =0 syntax makes this a 'pure virtual' function that MUST be overridden in derived classes.
+    /**
+     * @brief Writes the internal value of the parameter to the QWidget.
+     */
+    virtual void writeToGui() =0;
+
+    /**
+     * @brief Parses the value of the parameter from the string and validates it. On exit, the internal
+     * field ConfigParameterBase::isValid contains the results of the validation and the ConfigParameterBase::message
+     * contains a message explaining the problem in the event that validation failed.
+     *
+     * @param stringRep
+     *  The string from which the parameter value should be parsed.
+     */
     virtual void parseAndValidate(const string stringRep) =0;
 };
 

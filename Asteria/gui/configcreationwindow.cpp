@@ -72,16 +72,9 @@ ConfigCreationWindow::~ConfigCreationWindow() {
 
 // Read files in the config directory, pick out the parameters and load them into the GUI form
 void ConfigCreationWindow::loadClicked() {
-
     QString path = QFileDialog::getOpenFileName(this, tr("Select asteria.config file"), "", tr("Config Files (*.config)"));
-
     string pathStr = path.toUtf8().constData();
-
     store->loadFromFile(pathStr);
-
-    for(unsigned int famOff = 0; famOff < store->numFamilies; famOff++) {
-        tabs[famOff]->updateForm();
-    }
 }
 
 // Write parameters from the GUI form to disk

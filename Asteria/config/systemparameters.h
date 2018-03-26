@@ -2,7 +2,7 @@
 #define SYSTEMPARAMETERS_H
 
 #include "config/configparameterfamily.h"
-#include "config/parameterdir.h"
+#include "config/singleparameter.h"
 #include "infra/asteriastate.h"
 
 class SystemParameters : public ConfigParameterFamily {
@@ -27,12 +27,12 @@ public:
         validators[3] = new ValidatePath(true, false, true, false);
 
         // Create parameters
-        parameters[0] = new ParameterDir("configDir", "Configuration directory", "", validators[0], &(state->configDirPath));
-        parameters[1] = new ParameterDir("calibrationDir", "Calibration directory", "", validators[1], &(state->calibrationDirPath));
-        parameters[2] = new ParameterDir("videoDir", "Video directory", "", validators[2], &(state->videoDirPath));
-        parameters[3] = new ParameterDir("refStarCatPath", "Reference star catalogue", "", validators[3], &(state->refStarCataloguePath));
+        parameters[0] = new SingleParameter<string>("configDir", "Configuration directory", "", validators[0], &(state->configDirPath));
+        parameters[1] = new SingleParameter<string>("calibrationDir", "Calibration directory", "", validators[1], &(state->calibrationDirPath));
+        parameters[2] = new SingleParameter<string>("videoDir", "Video directory", "", validators[2], &(state->videoDirPath));
+        parameters[3] = new SingleParameter<string>("refStarCatPath", "Reference star catalogue", "", validators[3], &(state->refStarCataloguePath));
 
-//        parameters[3] = new ParameterDir("JPL ephemeris file", &(state->jplEphemerisPath));
+//        parameters[3] = new SingleParameter<string>("JPL ephemeris file", &(state->jplEphemerisPath));
     }
 
 };

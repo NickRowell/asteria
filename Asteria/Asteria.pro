@@ -16,7 +16,6 @@ SOURCES += \
     config/configparameterfamily.cpp \
     config/configstore.cpp \
     gui/configparameterfamilytab.cpp \
-    config/parameterdir.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
     infra/referencestar.cpp \
@@ -59,8 +58,7 @@ SOURCES += \
     infra/imaged.cpp \
     infra/imageui.cpp \
     math/geocalfitter.cpp \
-    optics/pinholecamerawithsipdistortion.cpp \
-    config/parametermultiplechoice.cpp
+    optics/pinholecamerawithsipdistortion.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -74,7 +72,6 @@ HEADERS += \
     gui/configparameterfamilytab.h \
     config/systemparameters.h \
     config/cameraparameters.h \
-    config/parameterdir.h \
     config/validate.h \
     infra/ringbuffer.h \
     config/detectionparameters.h \

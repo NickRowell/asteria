@@ -1,4 +1,4 @@
-#include "doubleslider.h"
+#include "gui/doubleslider.h"
 
 DoubleSlider::DoubleSlider(QWidget *parent, const double min, const double max, const double init, unsigned int steps) : QSlider(Qt::Horizontal, parent) {
     this->min = min;

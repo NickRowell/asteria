@@ -1,13 +1,9 @@
 #ifndef CONFIGPARAMETERFAMILYTAB_H
 #define CONFIGPARAMETERFAMILYTAB_H
 
-#include <QWidget>
-#include <QLineEdit>
-
-#include <vector>
-#include <utility>    // provides pair
-
 #include "config/configparameterfamily.h"
+
+#include <QWidget>
 
 class ConfigParameterFamilyTab : public QWidget
 {
@@ -18,20 +14,21 @@ public:
 
 private:
     /**
-     * @brief Used to maintain link between the line entry fields (that we use to read/write parameters) and the
-     * parameters in memory.
+     * @brief Pointer to the ConfigParameterFamily that this ConfigParameterFamilyTab is presenting.
      */
-    std::vector< std::pair< QLineEdit *, ConfigParameterBase * > > links;
+    ConfigParameterFamily *fam;
 
 signals:
 
-
 public slots:
 
-    void updateForm();
-
+    /**
+     * @brief Read the parameter values entered in the GUI and check their validity. The parsed values
+     * are stored to the internal values of the config parameters.
+     * @return
+     *  A boolean flag indicating if all the parameters are valid.
+     */
     bool readAndValidate();
-
 };
 
 #endif // CONFIGPARAMETERFAMILYTAB_H
