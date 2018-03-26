@@ -59,7 +59,7 @@ public:
 
         value = stringRep;
 
-        // TODO: parse generic type parameter.
+        // Parse generic type parameter.
         // See https://stackoverflow.com/questions/7254009/how-to-convert-a-string-to-a-templated-type-in-c
         T parsed;
         std::stringstream  linestream(stringRep);

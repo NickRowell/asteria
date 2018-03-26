@@ -17,7 +17,6 @@ SOURCES += \
     config/configstore.cpp \
     gui/configparameterfamilytab.cpp \
     config/parameterdir.cpp \
-    config/parameteruintarray.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
     infra/referencestar.cpp \
@@ -50,7 +49,6 @@ SOURCES += \
     gui/videoplayerwidget.cpp \
     gui/videoplayerthread.cpp \
     util/testutil.cpp \
-    config/parameterdoublearray.cpp \
     gui/referencestarwidget.cpp \
     gui/doubleslider.cpp \
     optics/pinholecamera.cpp \
@@ -78,7 +76,6 @@ HEADERS += \
     config/cameraparameters.h \
     config/parameterdir.h \
     config/validate.h \
-    config/parameteruintarray.h \
     infra/ringbuffer.h \
     config/detectionparameters.h \
     util/timeutil.h \
@@ -116,7 +113,6 @@ HEADERS += \
     gui/videoplayerwidget.h \
     gui/videoplayerthread.h \
     util/testutil.h \
-    config/parameterdoublearray.h \
     gui/referencestarwidget.h \
     gui/doubleslider.h \
     optics/pinholecamera.h \
@@ -132,7 +128,8 @@ HEADERS += \
     optics/pinholecamerawithsipdistortion.h \
     config/parametermultiplechoice.h \
     config/configparameterbase.h \
-    config/singleparameter.h
+    config/singleparameter.h \
+    config/arrayparameter.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization
