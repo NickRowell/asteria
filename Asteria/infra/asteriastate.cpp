@@ -1,4 +1,5 @@
 #include "infra/asteriastate.h"
+#include "infra/calibrationinventory.h"
 
 // Define global state variables
 
@@ -9,9 +10,11 @@ const unsigned int AsteriaState::preferredFormats[3] = {V4L2_PIX_FMT_GREY, V4L2_
 const unsigned int AsteriaState::preferredFormatsN = 3;
 
 AsteriaState::AsteriaState() {
-    // Nothing to construct
 }
 
 AsteriaState::~AsteriaState() {
-    // Nothing to deconstruct
+    // Deconstruct any existing camera calibration
+    if(cal) {
+        delete cal;
+    }
 }

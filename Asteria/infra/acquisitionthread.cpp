@@ -3,6 +3,7 @@
 #include "infra/calibrationworker.h"
 #include "infra/meteorimagelocationmeasurement.h"
 #include "util/jpgutil.h"
+#include "util/fileutil.h"
 #include "util/timeutil.h"
 #include "util/ioutil.h"
 #include "util/v4l2util.h"
@@ -134,11 +135,32 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
+    //      Load the most recent calibration inventory       //
+    //                                                       //
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    std::map<long long, std::string> map = FileUtil::mapVideoDirectory(this->state->calibrationDirPath);
+
+    if(!map.empty()) {
+        // Get most recent calibration and load from disk
+        std::string calInvDir = map.rbegin()->second;
+        this->state->cal = CalibrationInventory::loadFromDir(calInvDir);
+        if(!this->state->cal) {
+            fprintf(stderr, "Failed to load most recent calibration from %s\n", calInvDir.c_str());
+        }
+    }
+    else {
+        // No calibration available - no further action to take here
+        fprintf(stderr, "No camera calibration available; restricted event processing until calibration is generated\n");
+    }
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    //                                                       //
     //  Determine number of frames between calibration runs  //
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calibration_intervals_frames = (1.0 / framePeriodSecs) * 60 * state->calibration_interval;
+    calibration_intervals_frames = (1.0 / framePeriodSecs) * 60 * this->state->calibration_interval;
 
     fprintf(stderr, "Interval between calibration runs = %d [frames]\n", calibration_intervals_frames);
 
@@ -148,7 +170,7 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    max_clip_length_frames = (1.0 / framePeriodSecs) * 60 * state->clip_max_length;
+    max_clip_length_frames = (1.0 / framePeriodSecs) * 60 * this->state->clip_max_length;
 
     fprintf(stderr, "Maximum length of a clip = %d [frames]\n", max_clip_length_frames);
 
@@ -731,7 +753,7 @@ void AcquisitionThread::run() {
                 if(calibrationFrames.size() >= state->calibration_stack) {
                     // Got enough frames: run calibration algorithm
                     QThread* thread = new QThread;
-                    CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, NULL, calibrationFrames);
+                    CalibrationWorker* worker = new CalibrationWorker(NULL, this->state, this->state->cal, calibrationFrames);
                     worker->moveToThread(thread);
                     connect(thread, SIGNAL(started()), worker, SLOT(process()));
                     connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));

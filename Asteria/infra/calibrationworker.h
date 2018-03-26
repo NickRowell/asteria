@@ -16,15 +16,36 @@ class CalibrationWorker : public QObject
     Q_OBJECT
 
 public:
-    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, const CalibrationInventory *initial = 0, std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
+    /**
+     * @brief Constructor for the CalibrationWorker.
+     * @param parent
+     *  The parent widget, if it exists.
+     * @param state
+     *  Pointer to the AsteriaState object that contains various parameters of the calibration algorithms.
+     * @param initial
+     *  Pointer to the initial CalibrationInventory which will provide initial guess solution and be used to
+     * propagate certain calibrations in time.
+     * @param calibrationFrames
+     *  Vector of frames to be used to determine calibration.
+     */
+    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, const CalibrationInventory *initial = 0,
+                      std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~CalibrationWorker();
 
 public slots:
-    // The command to start processing the images
+
+    /**
+     * @brief The command to start processing the calibration.
+     */
     void process();
 
 signals:
-    // Emitted once processing is complete
+
+    /**
+     * @brief Emitted once processing is complete.
+     * @param utc
+     *  String containing the UTC of the new calibration; the calibration data is stored in a directory with this name.
+     */
     void finished(std::string utc);
 
 private:
@@ -39,6 +60,9 @@ private:
      */
     const CalibrationInventory * initial;
 
+    /**
+     * @brief Vector of frames to be used to determine calibration.
+     */
     std::vector<std::shared_ptr<Imageuc>> calibrationFrames;
 };
 

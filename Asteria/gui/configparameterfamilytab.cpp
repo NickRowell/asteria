@@ -1,6 +1,6 @@
-#include "configparameterfamilytab.h"
-
-#include "config/configparameter.h"
+#include "gui/configparameterfamilytab.h"
+#include "config/configparameterbase.h"
+#include "config/parametermultiplechoice.h"
 
 #include <QLabel>
 #include <QLineEdit>
@@ -37,9 +37,8 @@ ConfigParameterFamilyTab::ConfigParameterFamilyTab(ConfigParameterFamily *fam, Q
 }
 
 /**
- * Read the values of the parameters and write them to the text fields in the GUI,
+ * @brief Read the values of the parameters and write them to the text fields in the GUI,
  * indicating any error messages.
- * @brief ConfigParameterFamilyTab::updateForm
  */
 void ConfigParameterFamilyTab::updateForm() {
 

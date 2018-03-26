@@ -1,8 +1,7 @@
 #ifndef CONFIGSTORE_H
 #define CONFIGSTORE_H
 
-#include "configparameter.h"
-#include "parameterdouble.h"
+#include "configparameterbase.h"
 #include "configparameterfamily.h"
 
 class AsteriaState;

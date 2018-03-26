@@ -13,12 +13,10 @@ SOURCES += \
     gui/mainwindow.cpp \
     gui/glmeteordrawer.cpp \
     util/jpgutil.cpp \
-    config/parameterdouble.cpp \
     config/configparameterfamily.cpp \
     config/configstore.cpp \
     gui/configparameterfamilytab.cpp \
     config/parameterdir.cpp \
-    config/parameteruint.cpp \
     config/parameteruintarray.cpp \
     util/timeutil.cpp \
     infra/analysisworker.cpp \
@@ -63,7 +61,8 @@ SOURCES += \
     infra/imaged.cpp \
     infra/imageui.cpp \
     math/geocalfitter.cpp \
-    optics/pinholecamerawithsipdistortion.cpp
+    optics/pinholecamerawithsipdistortion.cpp \
+    config/parametermultiplechoice.cpp
 
 HEADERS += \
     gui/cameraselectionwindow.h \
@@ -71,16 +70,13 @@ HEADERS += \
     gui/mainwindow.h \
     gui/glmeteordrawer.h \
     util/jpgutil.h \
-    config/configparameter.h \
     config/configstore.h \
-    config/parameterdouble.h \
     config/configparameterfamily.h \
     config/stationparameters.h \
     gui/configparameterfamilytab.h \
     config/systemparameters.h \
     config/cameraparameters.h \
     config/parameterdir.h \
-    config/parameteruint.h \
     config/validate.h \
     config/parameteruintarray.h \
     infra/ringbuffer.h \
@@ -133,7 +129,10 @@ HEADERS += \
     util/serializationutil.h \
     infra/imageui.h \
     math/geocalfitter.h \
-    optics/pinholecamerawithsipdistortion.h
+    optics/pinholecamerawithsipdistortion.h \
+    config/parametermultiplechoice.h \
+    config/configparameterbase.h \
+    config/singleparameter.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization

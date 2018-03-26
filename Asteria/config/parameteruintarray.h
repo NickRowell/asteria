@@ -2,7 +2,7 @@
 #define PARAMETERINTARRAY_H
 
 #include <string>
-#include "configparameter.h"
+#include "configparameterbase.h"
 
 class ParameterUintArray : public ConfigParameterBase
 {

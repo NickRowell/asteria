@@ -9,8 +9,12 @@ ConfigParameterFamily::~ConfigParameterFamily() {
 
     // Delete parameters and validators
     for(unsigned int parOff = 0; parOff < numPar; parOff++) {
-        delete parameters[parOff];
-        delete validators[parOff];
+        if(parameters[parOff]) {
+            delete parameters[parOff];
+        }
+        if(validators[parOff]) {
+            delete validators[parOff];
+        }
     }
     // Delete arrays
     delete [] parameters;

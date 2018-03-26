@@ -1,7 +1,7 @@
 #ifndef PARAMETERDIR_H
 #define PARAMETERDIR_H
 
-#include "configparameter.h"
+#include "configparameterbase.h"
 
 class ParameterDir : public ConfigParameterBase
 {

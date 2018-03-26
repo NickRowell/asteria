@@ -97,7 +97,7 @@ void CalibrationWidget::loadClip(const QModelIndex &index) {
 
 void CalibrationWidget::loadClip(QString path) {
 
-    // If there's already an AnalysisInventory loaded then delete it
+    // If there's already a CalibrationInventory loaded then delete it
     if(inv) {
         delete inv;
     }

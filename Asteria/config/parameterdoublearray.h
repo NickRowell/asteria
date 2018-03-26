@@ -2,7 +2,7 @@
 #define PARAMETERDOUBLEARRAY_H
 
 #include <string>
-#include "configparameter.h"
+#include "configparameterbase.h"
 
 class ParameterDoubleArray : public ConfigParameterBase
 {

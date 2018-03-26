@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <QWidget>
+
 using namespace std;
 
 /**
@@ -31,13 +33,13 @@ protected:
 
 public:
 
-    // Key used to enumerate the parameter; no spaces etc
+    // Key used to identify the parameter in config file etc; no spaces etc
     const string key;
 
     // Descriptive name of the parameter
     const string title;
 
-    // Descriptive name of the units
+    // Descriptive name of the units, if appropriate to the parameter
     const string units;
 
     // Validator for the parameter value
@@ -51,6 +53,18 @@ public:
 
     // Contains error message explaining why the value cannot be parsed from the string
     string message;
+
+    /**
+     * @brief A pointer to a QWidget that can be inserted into a GUI to allow the user to configure the
+     * value of the parameter. The type of widget that is actually used will vary depending on the type
+     * of parameter.
+     */
+    QWidget * entryField;
+
+    /**
+     * @brief Reads the value of the parameter from the entryField QWidget, parses and validates it.
+     */
+//    virtual void parseAndValidate() =0;
 
     // Abstract validation method that all parameters must override
     // The =0 syntax makes this a 'pure virtual' function that MUST be overridden in derived classes.

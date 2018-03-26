@@ -5,11 +5,16 @@
 #include <linux/videodev2.h>
 #include <string>
 #include <vector>
-#include <cstring>              // memset
+#include <cstring>
+
+class CalibrationInventory;
 
 using namespace std;
 
-
+/**
+ * @brief Encapsulates all the parameters of the current instance of the Asteria application and maintains
+ * certain global fields that are shared among different processes, such as the camera calibration.
+ */
 class AsteriaState
 {
 
@@ -20,7 +25,7 @@ public:
     static const unsigned int preferredFormatsN;
 
     /**
-     * @brief MeteorCaptureState
+     * @brief Constructor for the AsteriaState
      */
     AsteriaState();
 
@@ -35,17 +40,19 @@ public:
     // Application parameters (read from command line, affect behaviour of application)
     // e.g. run headless
     //      config directory location
+
     /**
      * @brief Boolean flag to indicate if we're running without a GUI.
      */
     int headless = 0;
 
-    // Chosen pixel format
+    /**
+     * @brief Chosen pixel format
+     */
     unsigned int selectedFormat;
 
     /**
-     * @brief configDirPath
-     * Directory where calibration info is to be stored
+     * @brief Directory where calibration info is to be stored
      */
     string configDirPath;
 
@@ -59,12 +66,17 @@ public:
      */
     int * fd;
 
+    /**
+     * @brief The camera calibration data currently in use for processing new events. By default this is the most
+     * recent found in the calibration directory, or NULL if none exists.
+     */
+    CalibrationInventory * cal;
+
     // Cannot be loaded from config file: must be created programmatically,
     // either by user selection or automated selection of default camera.
 
     /**
-     * @brief epochTimeDiffUs
-     * Time difference between system clock time (since startup/hibernation) and the
+     * @brief Time difference between system clock time (since startup/hibernation) and the
      * current epoch time. Used to convert image time codes to UTC.
      */
     long long epochTimeDiffUs;
@@ -119,15 +131,13 @@ public:
     // either by user selection or automated selection of default camera.
 
     /**
-     * @brief frameperiodUs
-     * Nominal interval between frames in microseconds. The actual period as determined by the
+     * @brief Nominal interval between frames in microseconds. The actual period as determined by the
      * capture times of individual frames may vary by up to 10% or so.
      */
     unsigned int nominalFramePeriodUs;
 
     /**
-     * @brief nominalExposureTimeUs
-     * Nominal exposure time for frames in microseconds.
+     * @brief Nominal exposure time for frames in microseconds.
      */
     unsigned int nominalExposureTimeUs;
 
@@ -139,27 +149,27 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
-     * @brief videoDirPath
+     * @brief Directory to store raw and processed data from detected events.
      */
     string videoDirPath;
 
     /**
-     * @brief calibrationDirPath
+     * @brief Directory to store generated system calibration data.
      */
     string calibrationDirPath;
 
     /**
-     * @brief refStarCataloguePath
+     * @brief Path to the reference star catalogue.
      */
     string refStarCataloguePath;
 
     /**
-     * @brief refStarCatalogue
+     * @brief The loaded contents of the reference star catalogue.
      */
     vector<ReferenceStar> refStarCatalogue;
 
     /**
-     * @brief jplEphemerisPath
+     * @brief Path to the JPL Earth ephemeris.
      */
     string jplEphemerisPath;
 
@@ -236,6 +246,11 @@ public:
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
     /**
+     * @brief The name of the type of camera model to be used.
+     */
+    string camera_model_type;
+
+    /**
      * @brief Period between calibration routine executions [minutes]
      */
     double calibration_interval;
@@ -264,4 +279,4 @@ public:
 
 };
 
-#endif // METEORCAPTURESTATE_H
+#endif // ASTERIASTATE_H

@@ -1,10 +1,12 @@
 #include "fileutil.h"
+#include "util/timeutil.h"
 
 #include <fstream>      // std::ofstream
 #include <iostream>     // std::cin, std::cout
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <regex>
 
 // TODO: this is only used for strcmp; try using cstring instead BUT be very careful that
 // it's the same function because there's a risk of recursively deleting everything in the
@@ -162,4 +164,99 @@ bool FileUtil::fileExists(std::string path) {
 
     // Something else
     return false;
+}
+
+std::map<long long, std::string> FileUtil::mapVideoDirectory(std::string rootPath) {
+
+    std::map<long long, std::string> map;
+
+    // This regex usage relies on version 4.9 or later of the GCC
+    const std::regex yearRegex("[0-9]{4}");
+    const std::regex monthDayRegex("[0-9]{2}");
+
+    DIR *rootDir;
+    if ((rootDir = opendir (rootPath.c_str())) == NULL) {
+        // Couldn't open root directory; return empty map
+        return map;
+    }
+
+    // Loop over all the files/directories in the root directory
+    struct dirent *yyyy;
+    while ((yyyy = readdir (rootDir)) != NULL) {
+
+        // Detect directories with names matching the format YYYY
+        if(!(yyyy->d_type == DT_DIR && std::regex_match (yyyy->d_name, yearRegex))) {
+            // Not a YYYY directory
+            continue;
+        }
+
+        // Found a directory called e.g. 2018/. Now search the contents.
+        std::string yearPath = rootPath + "/" + yyyy->d_name;
+
+        DIR *yearDir;
+        if ((yearDir = opendir (yearPath.c_str())) == NULL) {
+            // Couldn't open the year directory; skip it
+            continue;
+        }
+
+        struct dirent *mm;
+        while ((mm = readdir (yearDir)) != NULL) {
+
+            // Detect directories with names matching the format MM
+            if(!(mm->d_type == DT_DIR && std::regex_match (mm->d_name, monthDayRegex))) {
+                // Not a MM directory
+                continue;
+            }
+
+            // Found a subdirectory called e.g. 03/. Now search the contents.
+            std::string monthPath = yearPath + "/" + mm->d_name;
+
+            DIR *monthDir;
+            if ((monthDir = opendir (monthPath.c_str())) == NULL) {
+                // Couldn't open the month directory; skip it
+                continue;
+            }
+
+            struct dirent *dd;
+            while ((dd = readdir (monthDir)) != NULL) {
+                // Detect directories with names matching the format DD
+                if(!(dd->d_type == DT_DIR && std::regex_match (dd->d_name, monthDayRegex))) {
+                    // Not a DD directory
+                    continue;
+                }
+
+                // Found a subdirectory called e.g. 29/. Now search the contents.
+                std::string dayPath = monthPath + "/" + dd->d_name;
+
+                DIR *dayDir;
+                if ((dayDir = opendir (dayPath.c_str())) == NULL) {
+                    // Couldn't open the day directory; skip it
+                    continue;
+                }
+                struct dirent *utc;
+                while ((utc = readdir (dayDir)) != NULL) {
+                    // Detect directories with names matching the UTC format
+                    if(!(utc->d_type == DT_DIR && std::regex_match (utc->d_name, TimeUtil::utcRegex))) {
+                        // Not a UTC directory
+                        continue;
+                    }
+
+                    // Found a directory with a name that is a UTC.
+                    std::string clipPath = dayPath + "/" + utc->d_name;
+
+                    // Get the epoch time corresponding to this UTC
+                    long long epochTime_us = TimeUtil::utcStringToEpoch(utc->d_name);
+
+                    // Insert it into the map.
+                    map.insert ( std::pair<long long, std::string>(epochTime_us, clipPath));
+                }
+                closedir (dayDir);
+            }
+            closedir (monthDir);
+        }
+        closedir (yearDir);
+    }
+    closedir (rootDir);
+
+    return map;
 }

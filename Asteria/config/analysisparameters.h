@@ -2,7 +2,7 @@
 #define ANALYSISPARAMETERS_H
 
 #include "config/configparameterfamily.h"
-#include "config/parameterdouble.h"
+#include "config/singleparameter.h"
 #include "infra/asteriastate.h"
 
 class AnalysisParameters : public ConfigParameterFamily {
@@ -18,7 +18,7 @@ public:
         validators[0] = new ValidateWithinLimits<double>(0.0, 100.0);
 
         // Create parameters
-        parameters[0] = new ParameterDouble("linearity_threshold", "Linearity threshold", "pixels", validators[0], &(state->linearity_threshold));
+        parameters[0] = new SingleParameter<double>("linearity_threshold", "Linearity threshold", "pixels", validators[0], &(state->linearity_threshold));
     }
 };
 

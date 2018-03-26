@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     // Implements returning from config window to camera window
     QObject::connect(&configWin, SIGNAL (cancel()), &camWin, SLOT (show()));
 
-    // If camera is specified then attempt to open a connection
+    // If camera is specified via command line then attempt to open a connection
     if(camera) {
 
         // Attempt to connect to camera; bypass the camera selection GUI
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
         camWin.show();
     }
 
-    // If config is specified then attempt to parse the file
+    // If config is specified via command line then attempt to parse the file
     if(config) {
 
         string configFile = string(config);
@@ -203,13 +203,6 @@ int main(int argc, char **argv)
         }
 
         // All parameters OK.
-
-
-        // TODO: load the most recent CalibrationInventory, if available
-
-
-
-
 
         if(state->headless) {
             // Headless mode

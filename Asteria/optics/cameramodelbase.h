@@ -3,6 +3,8 @@
 
 #include "util/serializationutil.h"
 
+#include <vector>
+
 #include <Eigen/Dense>
 
 class PinholeCamera;
@@ -36,6 +38,13 @@ public:
     ~CameraModelBase();
 
     /**
+     * @brief The CameraModelType enum enumerates the available types of camera model.
+     */
+    enum CameraModelType{PINHOLECAMERA, PINHOLECAMERAWITHRADIALDISTORTION, PINHOLECAMERAWITHSIPDISTORTION};
+
+    static const std::vector<CameraModelType> cameraModelTypes;
+
+    /**
      * Width of the detector [pixels]
      */
     unsigned int width;
@@ -44,6 +53,15 @@ public:
      * Height of the detector [pixels]
      */
     unsigned int height;
+
+    /**
+     * @brief Returns a default camera model of the specified type.
+     * @param type
+     *  The type of the camera model
+     * @return
+     *  A default camera model of the specified type.
+     */
+    static CameraModelBase * getCameraModelFromEnum(const CameraModelType &type);
 
     /**
      * @brief Converts the camera model to the equivalent PinholeCamera type, or as close as possible
