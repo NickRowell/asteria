@@ -2,7 +2,7 @@
 #define STATIONPARAMETERS_H
 
 #include "config/configparameterfamily.h"
-#include "config/singleparameter.h"
+#include "config/parametersingle.h"
 #include "config/validate.h"
 #include "infra/asteriastate.h"
 
@@ -21,9 +21,9 @@ public:
         validators[2] = new ValidateWithinLimits<double>(-100.0, 5000.0);
 
         // Create parameters
-        parameters[0] = new SingleParameter<double>("longitude", "Longitude (+ve E)", "deg", validators[0], &(state->longitude));
-        parameters[1] = new SingleParameter<double>("latitude", "Latitude", "deg", validators[1], &(state->latitude));
-        parameters[2] = new SingleParameter<double>("altitude", "Altitude", "m", validators[2], &(state->altitude));
+        parameters[0] = new ParameterSingle<double>("longitude", "Longitude (+ve E)", "deg", validators[0], &(state->longitude));
+        parameters[1] = new ParameterSingle<double>("latitude", "Latitude", "deg", validators[1], &(state->latitude));
+        parameters[2] = new ParameterSingle<double>("altitude", "Altitude", "m", validators[2], &(state->altitude));
     }
 
 };

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <memory>
 
 class CalibrationInventory;
 
@@ -70,7 +71,7 @@ public:
      * @brief The camera calibration data currently in use for processing new events. By default this is the most
      * recent found in the calibration directory, or NULL if none exists.
      */
-    CalibrationInventory * cal;
+    std::shared_ptr<CalibrationInventory> cal;
 
     // Cannot be loaded from config file: must be created programmatically,
     // either by user selection or automated selection of default camera.

@@ -33,7 +33,7 @@ const std::string AcquisitionThread::acquisitionStateNames[] = {"PREVIEWING", "P
 const std::string AcquisitionThread::actionNames[] = {"PREVIEW", "PAUSE", "DETECT"};
 
 AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
-    : QThread(parent), state(state), detectionHeadBuffer(state->detection_head), abort(false) {
+    : QThread(parent), state(state), abort(false), detectionHeadBuffer(state->detection_head) {
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -147,6 +147,9 @@ AcquisitionThread::AcquisitionThread(QObject *parent, AsteriaState * state)
         this->state->cal = CalibrationInventory::loadFromDir(calInvDir);
         if(!this->state->cal) {
             fprintf(stderr, "Failed to load most recent calibration from %s\n", calInvDir.c_str());
+        }
+        else {
+            fprintf(stderr, "Loaded calibration from %s\n", TimeUtil::epochToUtcString(this->state->cal->epochTimeUs).c_str());
         }
     }
     else {
@@ -309,6 +312,16 @@ void AcquisitionThread::toggleOverlay(int checkBoxState) {
         showOverlayImage = false;
         break;
     }
+}
+
+void AcquisitionThread::updateCalibration(std::shared_ptr<CalibrationInventory> cal) {
+    string utcOld = TimeUtil::epochToUtcString(state->cal->epochTimeUs);
+    string utcNew = TimeUtil::epochToUtcString(cal->epochTimeUs);
+
+    fprintf(stderr, "Replacing calibration from %s with calibration from %s\n", utcOld.c_str(), utcNew.c_str());
+
+    // TODO: replace the calibration
+    state->cal.swap(cal);
 }
 
 void AcquisitionThread::transitionToState(AcquisitionThread::AcquisitionState newState) {
@@ -659,7 +672,7 @@ void AcquisitionThread::run() {
                 unsigned char newPixel = image->rawImage[p];
                 unsigned char oldPixel = prev->rawImage[p];
 
-                if(abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
+                if((unsigned int)abs(newPixel - oldPixel) > state->pixel_difference_threshold) {
                     nChangedPixels++;
                     if(newPixel - oldPixel > 0) {
                         loc.changedPixelsPositive.push_back(p);
@@ -713,7 +726,7 @@ void AcquisitionThread::run() {
             if(eventFrames.size() >= max_clip_length_frames || nFramesSinceLastTrigger > state->detection_tail) {
                 // Create an AnalysisWorker to analyse the clip in a dedicated thread
                 QThread* thread = new QThread;
-                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, eventFrames);
+                AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, this->state->cal, eventFrames);
                 worker->moveToThread(thread);
                 connect(thread, SIGNAL(started()), worker, SLOT(process()));
                 connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));
@@ -761,6 +774,8 @@ void AcquisitionThread::run() {
                     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
                     // Notify listeners when a new calibration is available
                     connect(worker, SIGNAL(finished(std::string)), this, SIGNAL(acquiredCalibration(std::string)));
+                    // Swap out the current calibration for the new one
+                    connect(worker, SIGNAL(finished(std::shared_ptr<CalibrationInventory>)), this, SLOT(updateCalibration(std::shared_ptr<CalibrationInventory>)));
                     thread->start();
 
                     // Clear the calibration buffer, reset the counter

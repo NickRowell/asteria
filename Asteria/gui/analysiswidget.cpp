@@ -97,7 +97,8 @@ void AnalysisWidget::loadClip(QString path) {
             return;
         }
         QThread* thread = new QThread;
-        AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, inv->eventFrames);
+        // TODO: reanalyse using specific calibration and not the one currently loaded in the state object, which may be inappropriate
+        AnalysisWorker* worker = new AnalysisWorker(NULL, this->state, this->state->cal, inv->eventFrames);
         worker->moveToThread(thread);
         connect(thread, SIGNAL(started()), worker, SLOT(process()));
         connect(worker, SIGNAL(finished(std::string)), thread, SLOT(quit()));

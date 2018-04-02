@@ -15,7 +15,8 @@ class AnalysisWorker : public QObject
     Q_OBJECT
 
 public:
-    AnalysisWorker(QObject *parent = 0, AsteriaState * state = 0, std::vector<std::shared_ptr<Imageuc>> eventFrames = std::vector<std::shared_ptr<Imageuc>>());
+    AnalysisWorker(QObject *parent = 0, AsteriaState * state = 0, const std::shared_ptr<CalibrationInventory> calibration = 0,
+                   std::vector<std::shared_ptr<Imageuc>> eventFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~AnalysisWorker();
 
 public slots:
@@ -28,8 +29,19 @@ signals:
 
 private:
 
+    /**
+     * @brief Pointer to the state object that contains various parameters of the event analysis algorithms.
+     */
     AsteriaState * state;
 
+    /**
+     * @brief Camera calibration; may not be set if there is no calibration available.
+     */
+    const std::shared_ptr<CalibrationInventory> calibration;
+
+    /**
+     * @brief The images containing the event to be analysed.
+     */
     std::vector<std::shared_ptr<Imageuc>> eventFrames;
 };
 

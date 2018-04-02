@@ -13,8 +13,9 @@
  *  - Implement finer localisation algorithms
  */
 
-AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, std::vector<std::shared_ptr<Imageuc>> eventFrames)
-    : QObject(parent), state(state), eventFrames(eventFrames) {
+AnalysisWorker::AnalysisWorker(QObject *parent, AsteriaState * state, const std::shared_ptr<CalibrationInventory> calibration,
+                               std::vector<std::shared_ptr<Imageuc>> eventFrames)
+    : QObject(parent), state(state), calibration(calibration), eventFrames(eventFrames) {
 
 }
 

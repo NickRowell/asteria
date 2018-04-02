@@ -3,7 +3,7 @@
 
 #include "config/configparameterfamily.h"
 #include "config/parametermultiplechoice.h"
-#include "config/singleparameter.h"
+#include "config/parametersingle.h"
 #include "infra/asteriastate.h"
 #include "optics/cameramodelbase.h"
 
@@ -37,12 +37,11 @@ public:
         }
 
         parameters[0] = new ParameterMultipleChoice<string>("camera_model_type", "Camera Model Type", cameraModelTypeOptions, &(state->camera_model_type));
-
-        parameters[1] = new SingleParameter<double>("calibration_interval", "Calibration Interval", "minutes", validators[1], &(state->calibration_interval));
-        parameters[2] = new SingleParameter<unsigned int>("calibration_stack", "Number of frames used for calibration", "frames", validators[2], &(state->calibration_stack));
-        parameters[3] = new SingleParameter<unsigned int>("bkg_median_filter_half_width", "Half-width of median filter kernel for background estimation", "pixels", validators[3], &(state->bkg_median_filter_half_width));
-        parameters[4] = new SingleParameter<double>("source_detection_threshold_sigmas", "Source detection threshold, in sigmas above the background level", "-", validators[4], &(state->source_detection_threshold_sigmas));
-        parameters[5] = new SingleParameter<double>("ref_star_faint_mag_limit", "Reference star faint magnitude limit", "mag", validators[5], &(state->ref_star_faint_mag_limit));
+        parameters[1] = new ParameterSingle<double>("calibration_interval", "Calibration Interval", "minutes", validators[1], &(state->calibration_interval));
+        parameters[2] = new ParameterSingle<unsigned int>("calibration_stack", "Number of frames used for calibration", "frames", validators[2], &(state->calibration_stack));
+        parameters[3] = new ParameterSingle<unsigned int>("bkg_median_filter_half_width", "Half-width of median filter kernel for background estimation", "pixels", validators[3], &(state->bkg_median_filter_half_width));
+        parameters[4] = new ParameterSingle<double>("source_detection_threshold_sigmas", "Source detection threshold, in sigmas above the background level", "-", validators[4], &(state->source_detection_threshold_sigmas));
+        parameters[5] = new ParameterSingle<double>("ref_star_faint_mag_limit", "Reference star faint magnitude limit", "mag", validators[5], &(state->ref_star_faint_mag_limit));
     }
 };
 

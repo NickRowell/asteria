@@ -32,7 +32,7 @@ public:
     /**
      * @brief The CalibrationInventory that is currently being displayed by the widget.
      */
-    CalibrationInventory * inv;
+    std::shared_ptr<CalibrationInventory> inv;
 
     /**
      * @brief The calibration signal image being displayed.
@@ -114,7 +114,7 @@ signals:
 public slots:
 
     void slide(double position);
-    void loadCalibration(CalibrationInventory * inv);
+    void loadCalibration(std::shared_ptr<CalibrationInventory> inv);
     void update();
     void toggleDisplayRefStars(int checkBoxState);
     void toggleDisplaySources(int checkBoxState);

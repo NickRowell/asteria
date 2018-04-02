@@ -12,14 +12,16 @@
 #include <functional>
 
 CalibrationInventory::CalibrationInventory() {
-
 }
 
 CalibrationInventory::CalibrationInventory(const std::vector<std::shared_ptr<Imageuc> > &calibrationFrames) : calibrationFrames(calibrationFrames) {
-
 }
 
-CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
+CalibrationInventory::~CalibrationInventory() {
+    fprintf(stderr, "Freeing memory for CalibrationInventory %s\n", TimeUtil::epochToUtcString(calibrationFrames[0u]->epochTimeUs).c_str());
+}
+
+std::shared_ptr<CalibrationInventory> CalibrationInventory::loadFromDir(std::string path) {
 
     std::string raw = path + "/raw";
     std::string processed = path + "/processed";
@@ -31,7 +33,7 @@ CalibrationInventory *CalibrationInventory::loadFromDir(std::string path) {
         return NULL;
     }
 
-    CalibrationInventory * inv = new CalibrationInventory();
+    auto inv = std::make_shared<CalibrationInventory>();
 
     // Loop over the contents of the directory
     struct dirent *child;

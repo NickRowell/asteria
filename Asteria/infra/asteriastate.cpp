@@ -13,8 +13,4 @@ AsteriaState::AsteriaState() {
 }
 
 AsteriaState::~AsteriaState() {
-    // Deconstruct any existing camera calibration
-    if(cal) {
-        delete cal;
-    }
 }

@@ -77,11 +77,21 @@ public slots:
      */
     void toggleOverlay(int checkBoxState);
 
+    /**
+     * @brief Replaces the CalibrationInventory currently in use with the given one.
+     * @param cal
+     *  A shared_ptr to the new CalibrationInventory
+     */
+    void updateCalibration(std::shared_ptr<CalibrationInventory> cal);
+
 protected:
     void run() Q_DECL_OVERRIDE;
 
 private:
 
+    /**
+     * @brief The main state object.
+     */
     AsteriaState * state;
 
     /**

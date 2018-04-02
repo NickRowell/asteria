@@ -14,8 +14,7 @@
 #include <QGroupBox>
 #include <QCheckBox>
 
-// TODO: integrate the new camera models.
-// TODO: integrate and display detected Sources; enable creation of cross-matches by user clicks.
+// TODO: enable creation of cross-matches by user clicks.
 // TODO: remove cross-matches for stars that move out of FOV during user adjustment.
 // TODO: display azimuth, elevation, roll and focal length in the GUI, and icons depicting mouse controls.
 
@@ -71,7 +70,7 @@ ReferenceStarWidget::ReferenceStarWidget(QWidget *parent, AsteriaState *state) :
     this->setLayout(medianImageLayout);
 }
 
-void ReferenceStarWidget::loadCalibration(CalibrationInventory * inv) {
+void ReferenceStarWidget::loadCalibration(std::shared_ptr<CalibrationInventory> inv) {
     this->inv = inv;
     this->signal = make_shared<Imageuc>(*(this->inv->signal));
     update();

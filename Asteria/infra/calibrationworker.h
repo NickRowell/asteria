@@ -28,7 +28,7 @@ public:
      * @param calibrationFrames
      *  Vector of frames to be used to determine calibration.
      */
-    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, const CalibrationInventory *initial = 0,
+    CalibrationWorker(QObject *parent = 0, AsteriaState * state = 0, const std::shared_ptr<CalibrationInventory> initial = 0,
                       std::vector<std::shared_ptr<Imageuc>> calibrationFrames = std::vector<std::shared_ptr<Imageuc>>());
     ~CalibrationWorker();
 
@@ -48,6 +48,13 @@ signals:
      */
     void finished(std::string utc);
 
+    /**
+     * @brief Emitted once processing is complete
+     * @param cal
+     *  Shared pointer to the new calibration.
+     */
+    void finished(std::shared_ptr<CalibrationInventory> cal);
+
 private:
 
     /**
@@ -58,7 +65,7 @@ private:
     /**
      * @brief Initial guess calibration, used to initialise the fit and propagate certain calibrations in time.
      */
-    const CalibrationInventory * initial;
+    const std::shared_ptr<CalibrationInventory> initial;
 
     /**
      * @brief Vector of frames to be used to determine calibration.
@@ -66,4 +73,4 @@ private:
     std::vector<std::shared_ptr<Imageuc>> calibrationFrames;
 };
 
-#endif // ANALYSISWORKER_H
+#endif // CALIBRATIONWORKER_H

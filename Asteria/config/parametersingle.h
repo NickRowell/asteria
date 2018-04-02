@@ -1,5 +1,5 @@
-#ifndef SINGLEPARAMETER_H
-#define SINGLEPARAMETER_H
+#ifndef PARAMETERSINGLE_H
+#define PARAMETERSINGLE_H
 
 #include "config/configparameterbase.h"
 
@@ -12,12 +12,12 @@ template < typename T >
  * @brief Represents a scalar parameter that can be of any generic type capable of being parsed from a string
  * using stream insertion operator of the stringstream class.
  */
-class SingleParameter : public ConfigParameterBase
+class ParameterSingle : public ConfigParameterBase
 {
 
 public:
 
-    SingleParameter(const string key, const string title, const string units, const ParameterValidator * validator, T * const data)
+    ParameterSingle(const string key, const string title, const string units, const ParameterValidator * validator, T * const data)
         : ConfigParameterBase(key, title, units, validator), data(data) {
 
         entryField = new QLineEdit();

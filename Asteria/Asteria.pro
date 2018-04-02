@@ -125,8 +125,8 @@ HEADERS += \
     optics/pinholecamerawithsipdistortion.h \
     config/parametermultiplechoice.h \
     config/configparameterbase.h \
-    config/singleparameter.h \
-    config/arrayparameter.h
+    config/parameterarray.h \
+    config/parametersingle.h
 
 # Add precompiled libraries (-L vs. -l: -L specifies where to look; -l specifies the library name)
 LIBS += -L/usr/local/lib -lboost_serialization -lboost_system -lboost_wserialization

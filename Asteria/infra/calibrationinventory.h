@@ -28,6 +28,8 @@ public:
     CalibrationInventory();
     CalibrationInventory(const std::vector<std::shared_ptr<Imageuc>> &calibrationFrames);
 
+    ~CalibrationInventory();
+
     /**
      * @brief Records the epoch time in microseconds, i.e. the time elapsed since 1970-01-01T00:00:00Z,
      * of the average frame capture time of the images used to generate the calibration.
@@ -97,7 +99,7 @@ public:
 
 public slots:
 
-    static CalibrationInventory * loadFromDir(std::string path);
+    static std::shared_ptr<CalibrationInventory> loadFromDir(std::string path);
 
     void saveToDir(std::string topLevelPath);
 

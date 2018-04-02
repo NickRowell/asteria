@@ -11,6 +11,7 @@
 #include "infra/acquisitionvideostats.h"
 #include "infra/analysisvideostats.h"
 #include "util/testutil.h"
+#include "infra/calibrationinventory.h"
 
 #include <Eigen/Dense>
 
@@ -48,6 +49,7 @@ int main(int argc, char **argv)
     qRegisterMetaType<AcquisitionThread::AcquisitionState>("AcquisitionThread::AcquisitionState");
     qRegisterMetaType<AcquisitionVideoStats>("AcquisitionVideoStats");
     qRegisterMetaType<AnalysisVideoStats>("AnalysisVideoStats");
+    qRegisterMetaType<std::shared_ptr<CalibrationInventory>>("std::shared_ptr<CalibrationInventory>");
 
     // Initialise the state object
     AsteriaState * state = new AsteriaState();

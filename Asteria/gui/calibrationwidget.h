@@ -43,7 +43,7 @@ public:
     /**
      * @brief The CalibrationInventory that is currently being displayed by the widget.
      */
-    CalibrationInventory * inv;
+    std::shared_ptr<CalibrationInventory> inv;
 
     /**
      * @brief Video player widget used to replay the raw calibration footage.

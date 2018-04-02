@@ -27,7 +27,8 @@
 #include <QGridLayout>
 #include <QThread>
 
-CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, const CalibrationInventory *initial, std::vector<std::shared_ptr<Imageuc>> calibrationFrames)
+CalibrationWorker::CalibrationWorker(QObject *parent, AsteriaState * state, const std::shared_ptr<CalibrationInventory> initial,
+                                     std::vector<std::shared_ptr<Imageuc>> calibrationFrames)
     : QObject(parent), state(state), initial(initial), calibrationFrames(calibrationFrames) {
 
 }
@@ -46,13 +47,13 @@ void CalibrationWorker::process() {
     fprintf(stderr, "Got %lu frames for calibration\n", calibrationFrames.size());
 
     // The calibration data is assigned to fields of the CalibrationInventory for storage
-    CalibrationInventory calInv(calibrationFrames);
+    auto calInv = std::make_shared<CalibrationInventory>(calibrationFrames);
 
     long long midTimeStamp = (calibrationFrames.front()->epochTimeUs + calibrationFrames.back()->epochTimeUs) >> 1;
     unsigned int width = calibrationFrames.front()->width;
     unsigned int height = calibrationFrames.front()->height;
 
-    calInv.epochTimeUs = midTimeStamp;
+    calInv->epochTimeUs = midTimeStamp;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -122,17 +123,17 @@ void CalibrationWorker::process() {
         }
     }
 
-    calInv.noise = make_shared<Imaged>(width, height);
-    calInv.noise->epochTimeUs = midTimeStamp;
-    calInv.noise->rawImage = noise;
+    calInv->noise = make_shared<Imaged>(width, height);
+    calInv->noise->epochTimeUs = midTimeStamp;
+    calInv->noise->rawImage = noise;
 
-    calInv.signal = make_shared<Imaged>(width, height);
-    calInv.signal->epochTimeUs = midTimeStamp;
-    calInv.signal->rawImage = signal;
+    calInv->signal = make_shared<Imaged>(width, height);
+    calInv->signal->epochTimeUs = midTimeStamp;
+    calInv->signal->rawImage = signal;
 
-    calInv.background = make_shared<Imaged>(width, height);
-    calInv.background->epochTimeUs = midTimeStamp;
-    calInv.background->rawImage = background;
+    calInv->background = make_shared<Imaged>(width, height);
+    calInv->background->epochTimeUs = midTimeStamp;
+    calInv->background->rawImage = background;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -140,7 +141,7 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calInv.sources = SourceDetector::getSources(calInv.signal->rawImage, calInv.background->rawImage, calInv.noise->rawImage,
+    calInv->sources = SourceDetector::getSources(calInv->signal->rawImage, calInv->background->rawImage, calInv->noise->rawImage,
                                                              width, height, state->source_detection_threshold_sigmas);
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -201,10 +202,10 @@ void CalibrationWorker::process() {
     double minSepThreshold = 20.0;
 
     // Compute the covariance-weighted separations of all pairs of sources and reference stars
-    double covWeightedSep[calInv.sources.size()][visibleReferenceStars.size()];
-    for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
+    double covWeightedSep[calInv->sources.size()][visibleReferenceStars.size()];
+    for(unsigned int s1=0; s1<calInv->sources.size(); s1++) {
 
-        Source * source = &(calInv.sources[s1]);
+        Source * source = &(calInv->sources[s1]);
         Matrix2d s;
         s << source->c_ii, source->c_ij, source->c_ij, source->c_jj;
 
@@ -218,7 +219,7 @@ void CalibrationWorker::process() {
         }
     }
 
-    for(unsigned int s1=0; s1<calInv.sources.size(); s1++) {
+    for(unsigned int s1=0; s1<calInv->sources.size(); s1++) {
 
         // Locate the closest reference star to source s1
         unsigned int closestStarIdx;
@@ -238,7 +239,7 @@ void CalibrationWorker::process() {
         // Find the closest source to this reference star
         minSep = 2.0 * minSepThreshold;
         unsigned int closestSourceIdx;
-        for(unsigned int s2=0; s2<calInv.sources.size(); s2++) {
+        for(unsigned int s2=0; s2<calInv->sources.size(); s2++) {
             if(covWeightedSep[s2][closestStarIdx] < minSep) {
                 minSep = covWeightedSep[s2][closestStarIdx];
                 closestSourceIdx = s2;
@@ -247,7 +248,7 @@ void CalibrationWorker::process() {
 
         // If the closest source to this reference star is the original source, then we have a match
         if(closestSourceIdx == s1) {
-            calInv.xms.push_back(pair<Source, ReferenceStar>(calInv.sources[closestSourceIdx], visibleReferenceStars[closestStarIdx]));
+            calInv->xms.push_back(pair<Source, ReferenceStar>(calInv->sources[closestSourceIdx], visibleReferenceStars[closestStarIdx]));
         }
     }
 
@@ -265,36 +266,57 @@ void CalibrationWorker::process() {
         fprintf(stderr, "%.10f\t", camPar[n]);
     }
 
-//    calInv.cam = initial->cam->convertToPinholeCameraWithSipDistortion();
-    calInv.cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
-//    calInv.cam = initial->cam->convertToPinholeCamera();
-//    calInv.cam = initial->cam;
+    // Initialise a new calibration of whatever type the user specified. If this is different to the type of the initial
+    // calibration then we have to think about the effect that has on any running calibration as the number of parameters
+    // would be different.
 
-    calInv.q_sez_cam = initial->q_sez_cam;
+    if(this->state->camera_model_type.compare("PinholeCamera") == 0) {
+        calInv->cam = initial->cam->convertToPinholeCamera();
+        if(initial->cam->getModelName().compare("PinholeCamera") != 0) {
+            // TODO: Changing camera model - need to reset running calibration...?
+        }
+    }
+    else if(this->state->camera_model_type.compare("PinholeCameraWithRadialDistortion") == 0) {
+        calInv->cam = initial->cam->convertToPinholeCameraWithRadialDistortion();
+        if(initial->cam->getModelName().compare("PinholeCameraWithRadialDistortion") != 0) {
+            // TODO: Changing camera model - need to reset running calibration...?
+        }
+    }
+    else if(this->state->camera_model_type.compare("PinholeCameraWithSipDistortion") == 0) {
+        calInv->cam = initial->cam->convertToPinholeCameraWithSipDistortion();
+        if(initial->cam->getModelName().compare("PinholeCameraWithSipDistortion") != 0) {
+            // TODO: Changing camera model - need to reset running calibration...?
+        }
+    }
+    else {
+        fprintf(stderr, "Failed to recognise camera model type name %s! No calibration performed.\n", this->state->camera_model_type.c_str());
+        return;
+    }
 
-    fprintf(stderr, "Initial quaternion normalisation = %f\n", calInv.q_sez_cam.norm());
-    calInv.q_sez_cam.normalize();
+    calInv->q_sez_cam = initial->q_sez_cam;
+
+    fprintf(stderr, "Initial quaternion normalisation = %f\n", calInv->q_sez_cam.norm());
+    calInv->q_sez_cam.normalize();
 
     fprintf(stderr, "Initial parameters = \nIntrinsic = ");
-    camPar[calInv.cam->getNumParameters()];
-    calInv.cam->getParameters(camPar);
-    for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
+    camPar[calInv->cam->getNumParameters()];
+    calInv->cam->getParameters(camPar);
+    for(unsigned int n=0; n<calInv->cam->getNumParameters(); n++) {
         fprintf(stderr, "%f\t", camPar[n]);
     }
-    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv.q_sez_cam.w(), calInv.q_sez_cam.x(), calInv.q_sez_cam.y(), calInv.q_sez_cam.z());
+    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv->q_sez_cam.w(), calInv->q_sez_cam.x(), calInv->q_sez_cam.y(), calInv->q_sez_cam.z());
 
-    GeoCalFitter fitter(calInv.cam, &(calInv.q_sez_cam), &(calInv.xms), gmst, lon, lat);
+    GeoCalFitter fitter(calInv->cam, &(calInv->q_sez_cam), &(calInv->xms), gmst, lon, lat);
     fitter.fit(500, true);
 
-    fprintf(stderr, "Final quaternion normalisation = %f\n", calInv.q_sez_cam.norm());
+    fprintf(stderr, "Final quaternion normalisation = %f\n", calInv->q_sez_cam.norm());
 
     fprintf(stderr, "Fitted parameters = \nIntrinsic = ");
-    calInv.cam->getParameters(camPar);
-    for(unsigned int n=0; n<calInv.cam->getNumParameters(); n++) {
+    calInv->cam->getParameters(camPar);
+    for(unsigned int n=0; n<calInv->cam->getNumParameters(); n++) {
         fprintf(stderr, "%f\t", camPar[n]);
     }
-    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv.q_sez_cam.w(), calInv.q_sez_cam.x(), calInv.q_sez_cam.y(), calInv.q_sez_cam.z());
-
+    fprintf(stderr, "\nExtrinsic = %f\t%f\t%f\t%f\n", calInv->q_sez_cam.w(), calInv->q_sez_cam.x(), calInv->q_sez_cam.y(), calInv->q_sez_cam.z());
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -304,7 +326,7 @@ void CalibrationWorker::process() {
 
     // TODO: Measure xrange from percentiles of data
     // TODO: Get readnoise estimate from data
-    calInv.readNoiseAdu = 5.0;
+    calInv->readNoiseAdu = 5.0;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -312,9 +334,9 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calInv.longitude = initial->longitude;
-    calInv.latitude = initial->latitude;
-    calInv.altitude = initial->altitude;
+    calInv->longitude = initial->longitude;
+    calInv->latitude = initial->latitude;
+    calInv->altitude = initial->altitude;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     //                                                       //
@@ -322,8 +344,9 @@ void CalibrationWorker::process() {
     //                                                       //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    calInv.saveToDir(state->calibrationDirPath);
+    calInv->saveToDir(state->calibrationDirPath);
 
-    // All done - emit signal
-    emit finished(TimeUtil::epochToUtcString(calibrationFrames[0u]->epochTimeUs));
+    // All done - emit signals
+    emit finished(TimeUtil::epochToUtcString(calInv->epochTimeUs));
+    emit finished(calInv);
 }
